@@ -1,18 +1,26 @@
 <script setup>
 import { ref } from 'vue'
-import Sidebar from './Sidebar.vue'
-import Cytoscape from './Cytoscape.vue' 
-defineProps({
-  
-})
+import LeftSideOverlay from './LeftSideOverlay.vue'
+import CytoscapeGraph from './CytoscapeGraph.vue'
 
-const count = ref(0)
+const cytoscapeRef = ref(null)
+
+const handleShowAiView = () => {
+  cytoscapeRef.value?.showAiView()
+}
+
+const handleShowMembersView = () => {
+  cytoscapeRef.value?.showMembersView()
+}
 </script>
 
 <template>
   <div class="app-container">
-    <Sidebar />
-    <Cytoscape />
+    <LeftSideOverlay 
+      @showAiView="handleShowAiView"
+      @showMembersView="handleShowMembersView"
+    />
+    <CytoscapeGraph ref="cytoscapeRef" />
   </div>
 </template>
 
