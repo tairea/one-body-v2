@@ -4,8 +4,7 @@ import cytoscape from 'cytoscape'
 import { select, selectAll } from "d3-selection"
 import cytoscapeCola from "cytoscape-cola"
 import cytoscapeQtip from "cytoscape-qtip"
-import { people } from "../assets/people"
-import { recommendations } from "../assets/recommendations"
+import { SERVER_BASE_URL } from "../constants.js"
 
 // Register Cytoscape extensions
 try {
@@ -61,38 +60,31 @@ const graphConfig = {
   },
 }
 
+const fetchGraphData = async () => {
+  const graphUrl = new URL("/graph", SERVER_BASE_URL)
+  const response = await fetch(graphUrl)
+  if (!response.ok) {
+    throw new Error(`Failed to fetch graph with status ${response.status}`)
+  }
+  return await response.json()
+}
+
 // Initialize graph data
 const initializeGraphData = async () => {
+  const { people, recommendations } = await fetchGraphData();
+
   if (!people || !Array.isArray(people)) {
     console.error('People data is not available or not an array')
     return { nodes: [], edges: [] }
   }
 
-  const nodes = await Promise.all(
-    people
-      .filter(person => person && person.person && person.person.name && person.person.photo)
-      .map(async (person) => {
-        try {
-          const photoUrl = new URL(`../assets/profile-photos/${person.person.photo}`, import.meta.url).href
-          return {
-            data: {
-              id: person.person.name,
-              label: person.person.name,
-              photo: photoUrl,
-            },
-          }
-        } catch (error) {
-          console.warn(`Could not load photo for ${person.person.name}:`, error)
-          return {
-            data: {
-              id: person.person.name,
-              label: person.person.name,
-              photo: '', // Fallback to no image
-            },
-          }
-        }
-      })
-  )
+  const nodes = people.map(({ person }) => ({
+    data: {
+      id: person.name,
+      label: person.name,
+      photo: new URL(person.photo, SERVER_BASE_URL),
+    },
+  }))
 
   if (!recommendations || !recommendations.matches || !Array.isArray(recommendations.matches)) {
     console.error('Recommendations data is not available or not an array')
@@ -117,7 +109,7 @@ const initializeGraphData = async () => {
 
 const showAiView = () => {
   if (!cy.value) return
-  
+
   // Add edges with matches data
   cy.value.add(edges.value)
 
@@ -133,7 +125,7 @@ const showAiView = () => {
 
 const showMembersView = () => {
   if (!cy.value) return
-  
+
   // Remove all edges
   cy.value.elements('edge').remove()
 
@@ -169,7 +161,7 @@ onMounted(async () => {
   await nextTick()
   console.log('Container ref:', containerRef.value)
   console.log('Container dimensions:', containerRef.value?.offsetWidth, containerRef.value?.offsetHeight)
-  
+
   // Ensure the container ref is available
   if (!containerRef.value) {
     console.error('Container ref is not available')
@@ -179,7 +171,7 @@ onMounted(async () => {
   try {
     const { nodes } = await initializeGraphData()
     console.log('Initialized nodes:', nodes.length)
-    
+
     cy.value = cytoscape({
       container: containerRef.value,
       elements: {
@@ -188,7 +180,7 @@ onMounted(async () => {
       },
       ...graphConfig
     })
-    
+
     console.log('Cytoscape initialized successfully')
     console.log('Graph elements:', cy.value.elements().length)
   } catch (error) {
@@ -240,4 +232,4 @@ onMounted(async () => {
   pointer-events: none;
   z-index: 1;
 }
-</style> 
+</style>

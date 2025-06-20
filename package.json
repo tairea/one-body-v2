@@ -4,19 +4,24 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev:express": "node --watch src/server/main.js",
+    "dev:vite": "vite",
+    "dev": "run-p --print-label dev:*",
     "build": "vite build",
     "preview": "vite preview"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "cytoscape": "^3.32.0",
     "cytoscape-cola": "^2.5.1",
     "cytoscape-qtip": "^2.8.0",
     "d3-selection": "^3.0.0",
+    "express": "^5.1.0",
     "vue": "^3.5.13"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
+    "npm-run-all2": "^8.0.4",
     "vite": "^6.3.5"
   }
 }

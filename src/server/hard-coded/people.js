@@ -3,7 +3,7 @@ export const people = [
     {
       person: {
         name: "Ian Tairea",
-        photo: "ian.jpeg",
+        photo: "/profile-photos/ian.jpeg",
       },
       values: ["smart work", "faith", "solar punk", "servig our people"],
       vision: [
@@ -47,7 +47,7 @@ export const people = [
     {
       person: {
         name: "Henry Herman",
-        photo: "henry.jpeg",
+        photo: "/profile-photos/henry.jpeg",
       },
       values: [
         "faithful love",
@@ -79,7 +79,7 @@ export const people = [
     {
       person: {
         name: "Victor Mataora",
-        photo: "victor.png",
+        photo: "/profile-photos/victor.png",
       },
       values: [
         "integrity",
@@ -119,7 +119,7 @@ export const people = [
     {
       person: {
         name: "Ben Koteka",
-        photo: "ben.png",
+        photo: "/profile-photos/ben.png",
       },
       values: [
         "God first",
@@ -156,7 +156,7 @@ export const people = [
     {
       person: {
         name: "Gina Tavioni-Bamber",
-        photo: "gina.png",
+        photo: "/profile-photos/gina.png",
       },
       values: [
         "authenticity",
@@ -197,7 +197,7 @@ export const people = [
     {
       person: {
         name: "Nina Neubauer",
-        photo: "nina.png",
+        photo: "/profile-photos/nina.png",
       },
       values: [
         "research",
@@ -223,7 +223,7 @@ export const people = [
     {
       person: {
         name: "Liz Nootai",
-        photo: "liz.png",
+        photo: "/profile-photos/liz.png",
       },
       values: [
         "family",
@@ -251,7 +251,7 @@ export const people = [
     {
       person: {
         name: "Bianca Herman",
-        photo: "bianca.jpg",
+        photo: "/profile-photos/bianca.jpg",
       },
       values: [
         "compassion",
@@ -293,7 +293,7 @@ export const people = [
     {
       person: {
         name: "Lynne Samuel",
-        photo: "lynne.png",
+        photo: "/profile-photos/lynne.png",
       },
       values: [
         "honesty",
@@ -327,7 +327,7 @@ export const people = [
     {
       person: {
         name: "Lyle & Natia Wichman",
-        photo: "lyle-natia.jpg",
+        photo: "/profile-photos/lyle-natia.jpg",
       },
       values: [
         "community & family",
@@ -349,7 +349,7 @@ export const people = [
     {
       person: {
         name: "Kevin Iro",
-        photo: "kevin.jpg",
+        photo: "/profile-photos/kevin.jpg",
       },
       values: ["Godly principals", "Family values", "Reciprocity", "Faith"],
       vision: [
@@ -371,7 +371,7 @@ export const people = [
     {
       person: {
         name: "Fred Nicholas",
-        photo: "fred.png",
+        photo: "/profile-photos/fred.png",
       },
       values: ["family", "love", "honesty", "determined"],
       vision: [
@@ -388,7 +388,7 @@ export const people = [
     {
       person: {
         name: "Ben Maxwell",
-        photo: "ben-m.png",
+        photo: "/profile-photos/ben-m.png",
       },
       values: [
         "family",
@@ -436,7 +436,7 @@ export const people = [
     {
       person: {
         name: "Piriariki Maao",
-        photo: "piri.png",
+        photo: "/profile-photos/piri.png",
       },
       values: [
         "Integrity",
@@ -468,7 +468,7 @@ export const people = [
     {
       person: {
         name: "Esther & Tama Heather",
-        photo: "esther-tama.jpg",
+        photo: "/profile-photos/esther-tama.jpg",
       },
       values: ["Stewardship", "Diligence", "Respect", "Well-being"],
       vision: [
@@ -484,7 +484,7 @@ export const people = [
     {
       person: {
         name: "Jamie Short",
-        photo: "jamie.jpg",
+        photo: "/profile-photos/jamie.jpg",
       },
       values: ["Respect for nature", "Respect for all living things"],
       vision: [
@@ -508,7 +508,7 @@ export const people = [
     {
       person: {
         name: "Matthew Rima",
-        photo: "matthew-r.jpg",
+        photo: "/profile-photos/matthew-r.jpg",
       },
       values: [
         "God",
@@ -545,7 +545,7 @@ export const people = [
     {
       person: {
         name: "Jackie Rongo",
-        photo: "jackie-r.jpg",
+        photo: "/profile-photos/jackie-r.jpg",
       },
       values: [
         "Integrity (honesty)",
@@ -574,7 +574,7 @@ export const people = [
     {
       person: {
         name: "Teina Rongo",
-        photo: "teina-r.jpg",
+        photo: "/profile-photos/teina-r.jpg",
       },
       values: [
         "Trust",
@@ -606,7 +606,7 @@ export const people = [
     {
       person: {
         name: "Andre Jensen",
-        photo: "andre.jpg",
+        photo: "/profile-photos/andre.jpg",
       },
       values: [
         "Support",
@@ -639,7 +639,7 @@ export const people = [
     {
       person: {
         name: "Pa Maoate",
-        photo: "pa.jpg",
+        photo: "/profile-photos/pa.jpg",
       },
       values: ["Trust", "Love", "Honesty", "Health", "Family"],
       vision: [
@@ -655,7 +655,7 @@ export const people = [
     {
       person: {
         name: "Latishia Maui-Mataora",
-        photo: "latishia.jpg",
+        photo: "/profile-photos/latishia.jpg",
       },
       values: ["Honesty", "Family", "Transparency", "Integrity", "Inclusive", "Health", "Support", ],
       vision: [
@@ -674,7 +674,7 @@ export const people = [
     {
       person: {
         name: "Rev. Mata Tumu-Makara",
-        photo: "mata.jpg",
+        photo: "/profile-photos/mata.jpg",
       },
       values: ["God", "Family", "Church", "Friendship", "Love"],
       vision: [
