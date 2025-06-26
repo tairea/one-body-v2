@@ -1,11 +1,14 @@
 <script setup>
 import { defineEmits } from 'vue'
+import { useAppStore } from '../stores/app'
 
 const emit = defineEmits(['showAiView', 'showMembersView'])
+
+const appStore = useAppStore()
 </script>
 
 <template>
-  <div class="left-overlay">
+  <div class="left-overlay" :class="{ 'dark-mode': appStore.isDarkMode }">
     <!-- DWEB LOGO & TITLE -->
     <div id="wg">
       <img id="logo" src="../assets/org_logo_DWeb.jpeg" width="100" />
@@ -98,5 +101,27 @@ h2 {
   display: block;
   margin: 0 auto 0 0;
   text-align: left;
+}
+
+/* Dark mode styles */
+.left-overlay.dark-mode h1 {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.left-overlay.dark-mode h2 {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.left-overlay.dark-mode .b1 {
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.left-overlay.dark-mode .button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.left-overlay.dark-mode .button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
 </style> 

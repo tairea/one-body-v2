@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import LeftSideOverlay from './LeftSideOverlay.vue'
 import CytoscapeGraph from './CytoscapeGraph.vue'
+import DarkModeToggle from './DarkModeToggle.vue'
 
 const cytoscapeRef = ref(null)
 
@@ -16,6 +17,7 @@ const handleShowMembersView = () => {
 
 <template>
   <div class="app-container">
+    <DarkModeToggle />
     <LeftSideOverlay 
       @showAiView="handleShowAiView"
       @showMembersView="handleShowMembersView"
