@@ -7,6 +7,8 @@
     "dev:express": "node --watch src/server/main.js",
     "dev:vite": "vite",
     "dev": "run-p --print-label dev:*",
+    "database:seed": "node src/server/database/seed.js",
+    "database:clear": "rm src/server/database/database.sqlite3",
     "format": "prettier --write .",
     "build": "vite build",
     "preview": "vite preview"
