@@ -1,10 +1,27 @@
 <script setup>
-import { defineEmits } from 'vue'
+import { defineEmits, ref } from 'vue'
 import { useAppStore } from '../stores/app'
+import AddPersonDialog from './AddPersonDialog.vue'
 
 const emit = defineEmits(['showAiView', 'showMembersView'])
 
 const appStore = useAppStore()
+const showAddPersonDialog = ref(false)
+
+const handleShowAddPersonDialog = () => {
+  showAddPersonDialog.value = true
+}
+
+const handleCloseDialog = () => {
+  showAddPersonDialog.value = false
+}
+
+const handleSavePerson = (personData) => {
+  // Here you can handle saving the person data
+  console.log('Saving person:', personData)
+  // You might want to emit this data to the parent component or store it
+  showAddPersonDialog.value = false
+}
 </script>
 
 <template>
@@ -29,7 +46,22 @@ const appStore = useAppStore()
       <img src="../assets/chatgpt.png" width="20" height="20" />
       <p class="b1">Ai suggested collabs</p>
     </div>
+    
+    <!-- Add Person Button -->
+    <div id="add-person" class="button" @click="handleShowAddPersonDialog">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <p class="b1">Add Person</p>
+    </div>
   </div>
+
+  <!-- Add Person Dialog -->
+  <AddPersonDialog 
+    v-if="showAddPersonDialog"
+    @close="handleCloseDialog"
+    @save="handleSavePerson"
+  />
 </template>
 
 <style scoped>
@@ -123,5 +155,15 @@ h2 {
 
 .left-overlay.dark-mode .button:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Add Person button specific styles */
+#add-person svg {
+  margin-right: 10px;
+  color: #333;
+}
+
+.left-overlay.dark-mode #add-person svg {
+  color: rgba(255, 255, 255, 0.87);
 }
 </style> 
