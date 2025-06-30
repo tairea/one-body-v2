@@ -1,6 +1,7 @@
 <script setup>
 import { defineEmits, ref } from 'vue'
 import { useAppStore } from '../stores/app'
+import { SERVER_BASE_URL } from "../constants.js"
 import AddPersonDialog from './AddPersonDialog.vue'
 
 const emit = defineEmits(['showAiView', 'showMembersView'])
@@ -16,11 +17,18 @@ const handleCloseDialog = () => {
   showAddPersonDialog.value = false
 }
 
-const handleSavePerson = (personData) => {
+const handleSavePerson = async (personData) => {
   // Here you can handle saving the person data
   console.log('Saving person:', personData)
   // You might want to emit this data to the parent component or store it
   showAddPersonDialog.value = false
+
+  const addPersonUrl = new URL("/addperson", SERVER_BASE_URL)
+  const response = await fetch(addPersonUrl, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(personData),
+  })
 }
 </script>
 
@@ -46,7 +54,7 @@ const handleSavePerson = (personData) => {
       <img src="../assets/chatgpt.png" width="20" height="20" />
       <p class="b1">Ai suggested collabs</p>
     </div>
-    
+
     <!-- Add Person Button -->
     <div id="add-person" class="button" @click="handleShowAddPersonDialog">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -57,7 +65,7 @@ const handleSavePerson = (personData) => {
   </div>
 
   <!-- Add Person Dialog -->
-  <AddPersonDialog 
+  <AddPersonDialog
     v-if="showAddPersonDialog"
     @close="handleCloseDialog"
     @save="handleSavePerson"
@@ -166,4 +174,4 @@ h2 {
 .left-overlay.dark-mode #add-person svg {
   color: rgba(255, 255, 255, 0.87);
 }
-</style> 
+</style>

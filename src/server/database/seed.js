@@ -9,9 +9,9 @@ const __dirname = path.dirname(__filename);
 const hardCodedDirPath = path.join(__dirname, "..", "hard-coded");
 
 for (const person of people) {
-  const photoPath = path.join(hardCodedDirPath, person.person.photo);
+  const photoPath = path.join(hardCodedDirPath, person.photo);
   addPerson({
-    name: person.person.name,
+    name: person.name,
     photo: fs.readFileSync(photoPath),
     email: null,
     values: person.values,

@@ -125,10 +125,10 @@ const graphConfig = {
 // Function to update graph styles based on dark mode
 const updateGraphStyles = () => {
   if (!cy.value) return
-  
+
   const newStyles = appStore.isDarkMode ? darkModeStyles : lightModeStyles
   cy.value.style(newStyles)
-  
+
   // Update CSS custom properties for background colors
   const backgroundColor = appStore.isDarkMode ? '#242424' : '#ffffff'
   const root = document.documentElement
@@ -158,11 +158,12 @@ const initializeGraphData = async () => {
     return { nodes: [], edges: [] }
   }
 
-  const nodes = people.map(({ person }) => ({
+  const nodes = people.map(( person ) => ({
     data: {
       id: person.name,
       label: person.name,
-      photo: new URL(person.photo, SERVER_BASE_URL),
+      // TODO
+      // photo: new URL(person.photo, SERVER_BASE_URL),
     },
   }))
 

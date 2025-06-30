@@ -14,8 +14,8 @@ const db = new Database(databasePath);
 const createSchemasSql = fs.readFileSync(createSchemasPath, "utf8");
 db.exec(createSchemasSql);
 
-const jsonToBlob = (json) => Buffer.from(JSON.stringify(json))
-const blobToJson = (blob) => JSON.parse(blob.toString())
+const jsonToBlob = (json) => Buffer.from(JSON.stringify(json));
+const blobToJson = (blob) => JSON.parse(blob.toString());
 
 export function addPerson(person) {
   const addPersonStatement = db.prepare(`
@@ -51,9 +51,9 @@ export function addPerson(person) {
     locationName: person.locationName,
     locationLatitude: person.locationLatitude,
     locationLongitude: person.locationLongitude,
-    valuesList: jsonToBlob(person.values),
-    visionList: jsonToBlob(person.vision),
-    vehiclesList: jsonToBlob(person.vehicles),
+    valuesList: jsonToBlob(person.values || []),
+    visionList: jsonToBlob(person.vision || []),
+    vehiclesList: jsonToBlob(person.vehicles || []),
   });
 }
 
