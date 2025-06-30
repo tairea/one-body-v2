@@ -1,26 +1,26 @@
 <script setup>
-import { onMounted, ref, defineExpose, nextTick, watch } from 'vue'
-import cytoscape from 'cytoscape'
-import { select, selectAll } from "d3-selection"
-import cytoscapeCola from "cytoscape-cola"
-import cytoscapeQtip from "cytoscape-qtip"
-import { SERVER_BASE_URL } from "../constants.js"
-import { useAppStore } from '../stores/app'
+import { onMounted, ref, defineExpose, nextTick, watch } from "vue";
+import cytoscape from "cytoscape";
+import { select, selectAll } from "d3-selection";
+import cytoscapeCola from "cytoscape-cola";
+import cytoscapeQtip from "cytoscape-qtip";
+import { SERVER_BASE_URL } from "../constants.js";
+import { useAppStore } from "../stores/app";
 
 // Register Cytoscape extensions
 try {
-  cytoscape.use(cytoscapeCola)
-  cytoscape.use(cytoscapeQtip)
+  cytoscape.use(cytoscapeCola);
+  cytoscape.use(cytoscapeQtip);
 } catch (error) {
-  console.warn('Some Cytoscape extensions failed to load:', error)
+  console.warn("Some Cytoscape extensions failed to load:", error);
 }
 
-const containerRef = ref(null)
-const cy = ref(null)
-const edges = ref([])
+const containerRef = ref(null);
+const cy = ref(null);
+const edges = ref([]);
 
 // Get dark mode state
-const appStore = useAppStore()
+const appStore = useAppStore();
 
 // Light mode styles
 const lightModeStyles = [
@@ -33,7 +33,7 @@ const lightModeStyles = [
       "text-outline-color": "#ffffff",
       "text-outline-width": "2px",
       "text-outline-opacity": "0.8",
-      "color": "#333333",
+      color: "#333333",
       width: 25,
       height: 25,
       "font-size": "7px",
@@ -54,17 +54,17 @@ const lightModeStyles = [
       "text-wrap": "wrap",
       "text-margin-y": -10,
       "text-max-width": 40,
-      "color": "#666666",
+      color: "#666666",
       width: 1,
     },
   },
   {
     selector: "core",
     style: {
-      "background-color": "#ffffff"
-    }
-  }
-]
+      "background-color": "#ffffff",
+    },
+  },
+];
 
 // Dark mode styles
 const darkModeStyles = [
@@ -77,7 +77,7 @@ const darkModeStyles = [
       "text-outline-color": "#242424",
       "text-outline-width": "2px",
       "text-outline-opacity": "0.8",
-      "color": "#ffffff",
+      color: "#ffffff",
       width: 25,
       height: 25,
       "font-size": "7px",
@@ -98,81 +98,88 @@ const darkModeStyles = [
       "text-wrap": "wrap",
       "text-margin-y": -10,
       "text-max-width": 40,
-      "color": "#cccccc",
+      color: "#cccccc",
       width: 1,
     },
   },
   {
     selector: "core",
     style: {
-      "background-color": "#242424"
-    }
-  }
-]
+      "background-color": "#242424",
+    },
+  },
+];
 
 // Graph configuration
 const graphConfig = {
   style: lightModeStyles, // Default to light mode
   layout: {
-    name: 'cola',
-      animate: true,
-      fit: true,
-      padding: 120,
-      duration: 1000
+    name: "cola",
+    animate: true,
+    fit: true,
+    padding: 120,
+    duration: 1000,
   },
-}
+};
 
 // Function to update graph styles based on dark mode
 const updateGraphStyles = () => {
-  if (!cy.value) return
+  if (!cy.value) return;
 
-  const newStyles = appStore.isDarkMode ? darkModeStyles : lightModeStyles
-  cy.value.style(newStyles)
+  const newStyles = appStore.isDarkMode ? darkModeStyles : lightModeStyles;
+  cy.value.style(newStyles);
 
   // Update CSS custom properties for background colors
-  const backgroundColor = appStore.isDarkMode ? '#242424' : '#ffffff'
-  const root = document.documentElement
-  root.style.setProperty('--graph-background-color', backgroundColor)
-}
+  const backgroundColor = appStore.isDarkMode ? "#242424" : "#ffffff";
+  const root = document.documentElement;
+  root.style.setProperty("--graph-background-color", backgroundColor);
+};
 
 // Watch for dark mode changes
-watch(() => appStore.isDarkMode, () => {
-  updateGraphStyles()
-})
+watch(
+  () => appStore.isDarkMode,
+  () => {
+    updateGraphStyles();
+  },
+);
 
 const fetchGraphData = async () => {
-  const graphUrl = new URL("/graph", SERVER_BASE_URL)
-  const response = await fetch(graphUrl)
+  const graphUrl = new URL("/graph", SERVER_BASE_URL);
+  const response = await fetch(graphUrl);
   if (!response.ok) {
-    throw new Error(`Failed to fetch graph with status ${response.status}`)
+    throw new Error(`Failed to fetch graph with status ${response.status}`);
   }
-  return await response.json()
-}
+  return await response.json();
+};
 
 // Initialize graph data
 const initializeGraphData = async () => {
   const { people, recommendations } = await fetchGraphData();
 
   if (!people || !Array.isArray(people)) {
-    console.error('People data is not available or not an array')
-    return { nodes: [], edges: [] }
+    console.error("People data is not available or not an array");
+    return { nodes: [], edges: [] };
   }
 
-  const nodes = people.map(( person ) => ({
+  const nodes = people.map((person) => ({
     data: {
       id: person.name,
       label: person.name,
       // TODO
       // photo: new URL(person.photo, SERVER_BASE_URL),
     },
-  }))
+  }));
 
-  if (!recommendations || !recommendations.matches || !Array.isArray(recommendations.matches)) {
-    console.error('Recommendations data is not available or not an array')
-    edges.value = []
+  if (
+    !recommendations ||
+    !recommendations.matches ||
+    !Array.isArray(recommendations.matches)
+  ) {
+    console.error("Recommendations data is not available or not an array");
+    edges.value = [];
   } else {
     edges.value = recommendations.matches
-      .filter(match => match && match.person1 && match.person2)
+      .filter((match) => match && match.person1 && match.person2)
       .map((match, index) => ({
         data: {
           id: `edge${index}`,
@@ -182,84 +189,94 @@ const initializeGraphData = async () => {
           reason: match.reason,
           potential: match.potential,
         },
-      }))
+      }));
   }
 
-  return { nodes, edges: edges.value }
-}
+  return { nodes, edges: edges.value };
+};
 
 const showAiView = () => {
-  if (!cy.value) return
+  if (!cy.value) return;
 
   // Add edges with matches data
-  cy.value.add(edges.value)
+  cy.value.add(edges.value);
 
   // Apply circle layout
-  cy.value.layout({
-    name: "circle",
-    animate: true,
-    fit: true,
-    padding: 70,
-    duration: 1000,
-  }).run()
-}
+  cy.value
+    .layout({
+      name: "circle",
+      animate: true,
+      fit: true,
+      padding: 70,
+      duration: 1000,
+    })
+    .run();
+};
 
 const showMembersView = () => {
-  if (!cy.value) return
+  if (!cy.value) return;
 
   // Remove all edges
-  cy.value.elements('edge').remove()
+  cy.value.elements("edge").remove();
 
   // Apply layout with fallback
   try {
-    cy.value.layout({
-      name: 'cola',
-      animate: true,
-      fit: true,
-      padding: 120,
-      duration: 1000
-    }).run()
+    cy.value
+      .layout({
+        name: "cola",
+        animate: true,
+        fit: true,
+        padding: 120,
+        duration: 1000,
+      })
+      .run();
   } catch (error) {
-    console.warn('Cola layout not available, using random layout:', error)
-    cy.value.layout({
-      name: 'random',
-      animate: true,
-      fit: true,
-      padding: 120,
-      duration: 1000
-    }).run()
+    console.warn("Cola layout not available, using random layout:", error);
+    cy.value
+      .layout({
+        name: "random",
+        animate: true,
+        fit: true,
+        padding: 120,
+        duration: 1000,
+      })
+      .run();
   }
-}
+};
 
 // Expose the methods to parent components
 defineExpose({
   showAiView,
-  showMembersView
-})
+  showMembersView,
+});
 
 onMounted(async () => {
   // Wait for next tick to ensure DOM is fully rendered
-  await nextTick()
-  console.log('Container ref:', containerRef.value)
-  console.log('Container dimensions:', containerRef.value?.offsetWidth, containerRef.value?.offsetHeight)
+  await nextTick();
+  console.log("Container ref:", containerRef.value);
+  console.log(
+    "Container dimensions:",
+    containerRef.value?.offsetWidth,
+    containerRef.value?.offsetHeight,
+  );
 
   // Initialize CSS custom property for background color
-  const root = document.documentElement
-  const initialBackgroundColor = appStore.isDarkMode ? '#242424' : '#ffffff'
-  root.style.setProperty('--graph-background-color', initialBackgroundColor)
+  const root = document.documentElement;
+  const initialBackgroundColor = appStore.isDarkMode ? "#242424" : "#ffffff";
+  root.style.setProperty("--graph-background-color", initialBackgroundColor);
 
   // Ensure the container ref is available
   if (!containerRef.value) {
-    console.error('Container ref is not available')
-    return
+    console.error("Container ref is not available");
+    return;
   }
 
   try {
-    const { nodes } = await initializeGraphData()
-    console.log('Initialized nodes:', nodes.length)
+    const { nodes } = await initializeGraphData();
+    console.log("Initialized nodes:", nodes.length);
 
     // Set initial styles based on current dark mode state
-    graphConfig.style = appStore.isDarkMode ? darkModeStyles : lightModeStyles
+    graphConfig.style = appStore.isDarkMode ? darkModeStyles : lightModeStyles;
 
     cy.value = cytoscape({
       container: containerRef.value,
@@ -267,18 +284,18 @@ onMounted(async () => {
         nodes,
         edges: [], // Members view starts with no edges
       },
-      ...graphConfig
-    })
+      ...graphConfig,
+    });
 
     // Set initial background colors for all containers
-    updateGraphStyles()
+    updateGraphStyles();
 
-    console.log('Cytoscape initialized successfully')
-    console.log('Graph elements:', cy.value.elements().length)
+    console.log("Cytoscape initialized successfully");
+    console.log("Graph elements:", cy.value.elements().length);
   } catch (error) {
-    console.error('Error initializing Cytoscape graph:', error)
+    console.error("Error initializing Cytoscape graph:", error);
   }
-})
+});
 </script>
 
 <template>

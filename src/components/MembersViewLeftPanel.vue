@@ -1,35 +1,35 @@
 <script setup>
-import { defineEmits, ref } from 'vue'
-import { useAppStore } from '../stores/app'
-import { SERVER_BASE_URL } from "../constants.js"
-import AddPersonDialog from './AddPersonDialog.vue'
+import { defineEmits, ref } from "vue";
+import { useAppStore } from "../stores/app";
+import { SERVER_BASE_URL } from "../constants.js";
+import AddPersonDialog from "./AddPersonDialog.vue";
 
-const emit = defineEmits(['showAiView', 'showMembersView'])
+const emit = defineEmits(["showAiView", "showMembersView"]);
 
-const appStore = useAppStore()
-const showAddPersonDialog = ref(false)
+const appStore = useAppStore();
+const showAddPersonDialog = ref(false);
 
 const handleShowAddPersonDialog = () => {
-  showAddPersonDialog.value = true
-}
+  showAddPersonDialog.value = true;
+};
 
 const handleCloseDialog = () => {
-  showAddPersonDialog.value = false
-}
+  showAddPersonDialog.value = false;
+};
 
 const handleSavePerson = async (personData) => {
   // Here you can handle saving the person data
-  console.log('Saving person:', personData)
+  console.log("Saving person:", personData);
   // You might want to emit this data to the parent component or store it
-  showAddPersonDialog.value = false
+  showAddPersonDialog.value = false;
 
-  const addPersonUrl = new URL("/addperson", SERVER_BASE_URL)
+  const addPersonUrl = new URL("/addperson", SERVER_BASE_URL);
   const response = await fetch(addPersonUrl, {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(personData),
-  })
-}
+  });
+};
 </script>
 
 <template>
@@ -42,7 +42,12 @@ const handleSavePerson = async (personData) => {
     </div>
 
     <!-- BUTTONS -->
-    <div id="members" class="button" style="margin-top: 40px;" @click="emit('showMembersView')">
+    <div
+      id="members"
+      class="button"
+      style="margin-top: 40px"
+      @click="emit('showMembersView')"
+    >
       <img src="../assets/members.png" width="20" height="20" />
       <p class="b1">25 Members</p>
     </div>
@@ -57,8 +62,20 @@ const handleSavePerson = async (personData) => {
 
     <!-- Add Person Button -->
     <div id="add-person" class="button" @click="handleShowAddPersonDialog">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 5V19M5 12H19" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12 5V19M5 12H19"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
       </svg>
       <p class="b1">Add Person</p>
     </div>

@@ -1,18 +1,16 @@
 <script setup>
-import Home from './components/Home.vue'
-import { useAppStore } from './stores/app'
-import { onMounted } from 'vue'
+import Home from "./components/Home.vue";
+import { useAppStore } from "./stores/app";
+import { onMounted } from "vue";
 
-const appStore = useAppStore()
+const appStore = useAppStore();
 onMounted(() => {
-  appStore.initializeDarkMode()
-})
+  appStore.initializeDarkMode();
+});
 </script>
 
 <template>
   <Home />
 </template>
 
-<style scoped>
-
-</style>
+<style scoped></style>

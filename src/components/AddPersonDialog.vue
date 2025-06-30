@@ -1,51 +1,55 @@
 <script>
-import { useAppStore } from '../stores/app'
+import { useAppStore } from "../stores/app";
 
 export default {
-  name: 'AddPersonDialog',
-  emits: ['close', 'save'],
+  name: "AddPersonDialog",
+  emits: ["close", "save"],
   data() {
     return {
-      name: '',
-      email: ''
-    }
+      name: "",
+      email: "",
+    };
   },
   computed: {
     appStore() {
-      return useAppStore()
-    }
+      return useAppStore();
+    },
   },
   methods: {
     handleSave() {
       if (this.name.trim() && this.email.trim()) {
-        this.$emit('save', {
+        this.$emit("save", {
           name: this.name.trim(),
-          email: this.email.trim()
-        })
+          email: this.email.trim(),
+        });
         // Reset form
-        this.name = ''
-        this.email = ''
+        this.name = "";
+        this.email = "";
       }
     },
     handleCancel() {
-      this.$emit('close')
+      this.$emit("close");
       // Reset form
-      this.name = ''
-      this.email = ''
+      this.name = "";
+      this.email = "";
     },
     handleClose() {
-      this.$emit('close')
+      this.$emit("close");
       // Reset form
-      this.name = ''
-      this.email = ''
-    }
-  }
-}
+      this.name = "";
+      this.email = "";
+    },
+  },
+};
 </script>
 
 <template>
   <div class="dialog-overlay" @click="handleClose">
-    <div class="dialog" :class="{ 'dark-mode': appStore.isDarkMode }" @click.stop>
+    <div
+      class="dialog"
+      :class="{ 'dark-mode': appStore.isDarkMode }"
+      @click.stop
+    >
       <!-- Close button -->
       <button class="close-button" @click="handleClose">
         <span>&times;</span>
@@ -60,10 +64,10 @@ export default {
       <div class="dialog-content">
         <div class="form-group">
           <label for="name">Name:</label>
-          <input 
+          <input
             id="name"
             v-model="name"
-            type="text" 
+            type="text"
             placeholder="Enter full name"
             class="form-input"
           />
@@ -71,10 +75,10 @@ export default {
 
         <div class="form-group">
           <label for="email">Email:</label>
-          <input 
+          <input
             id="email"
             v-model="email"
-            type="email" 
+            type="email"
             placeholder="Enter email address"
             class="form-input"
           />
@@ -83,11 +87,9 @@ export default {
 
       <!-- Dialog actions -->
       <div class="dialog-actions">
-        <button class="btn btn-secondary" @click="handleCancel">
-          Cancel
-        </button>
-        <button 
-          class="btn btn-primary" 
+        <button class="btn btn-secondary" @click="handleCancel">Cancel</button>
+        <button
+          class="btn btn-primary"
           @click="handleSave"
           :disabled="!name.trim() || !email.trim()"
         >
@@ -257,4 +259,4 @@ export default {
 .dialog.dark-mode .close-button:hover {
   background-color: #4a5568;
 }
-</style> 
+</style>

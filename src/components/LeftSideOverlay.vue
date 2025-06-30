@@ -1,13 +1,16 @@
 <script setup>
-import MembersViewLeftPanel from './MembersViewLeftPanel.vue'
-import { defineEmits } from 'vue'
+import MembersViewLeftPanel from "./MembersViewLeftPanel.vue";
+import { defineEmits } from "vue";
 
-const emit = defineEmits(['showAiView', 'showMembersView'])
+const emit = defineEmits(["showAiView", "showMembersView"]);
 // Component logic can be added here
 </script>
 
 <template>
-  <MembersViewLeftPanel @showAiView="emit('showAiView')" @showMembersView="emit('showMembersView')" />
+  <MembersViewLeftPanel
+    @showAiView="emit('showAiView')"
+    @showMembersView="emit('showMembersView')"
+  />
 </template>
 
 <style scoped>
@@ -80,4 +83,4 @@ h2 {
   margin: 0 auto 0 0;
   text-align: left;
 }
-</style> 
+</style>
