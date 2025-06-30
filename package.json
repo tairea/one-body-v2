@@ -11,6 +11,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "better-sqlite3": "^12.2.0",
     "cors": "^2.8.5",
     "cytoscape": "^3.32.0",
     "cytoscape-cola": "^2.5.1",
