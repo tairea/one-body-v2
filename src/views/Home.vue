@@ -1,8 +1,8 @@
 <script setup>
 import { ref } from "vue";
-import LeftSideOverlay from "./LeftSideOverlay.vue";
-import CytoscapeGraph from "./CytoscapeGraph.vue";
-import DarkModeToggle from "./DarkModeToggle.vue";
+import LeftSideOverlay from "../components/LeftSideOverlay.vue";
+import CytoscapeGraph from "../components/CytoscapeGraph.vue";
+import DarkModeToggle from "../components/DarkModeToggle.vue";
 
 const cytoscapeRef = ref(null);
 

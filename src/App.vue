@@ -1,5 +1,4 @@
 <script setup>
-import Home from "./components/Home.vue";
 import { useAppStore } from "./stores/app";
 import { onMounted } from "vue";
 
@@ -10,7 +9,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <Home />
+  <RouterView />
 </template>
 
 <style scoped></style>
