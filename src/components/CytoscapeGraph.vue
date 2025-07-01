@@ -149,7 +149,19 @@ const fetchGraphData = async () => {
   if (!response.ok) {
     throw new Error(`Failed to fetch graph with status ${response.status}`);
   }
-  return await response.json();
+  const json = await response.json();
+  return {
+    ...json,
+    people: json.people.map((person) => {
+      const photoBase64 = person.photo;
+      const photoUrl = photoBase64 ? "data:;base64," + photoBase64 : null;
+      if (photoUrl) console.log(photoUrl);
+      return {
+        ...person,
+        photo: photoUrl,
+      };
+    }),
+  };
 };
 
 // Initialize graph data
@@ -165,8 +177,7 @@ const initializeGraphData = async () => {
     data: {
       id: person.name,
       label: person.name,
-      // TODO
-      // photo: new URL(person.photo, SERVER_BASE_URL),
+      photo: person.photo,
     },
   }));
 

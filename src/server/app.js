@@ -1,12 +1,7 @@
 import express from "express";
 import cors from "cors";
-import * as path from "node:path";
-import { fileURLToPath } from "node:url";
 import { addPerson, readPeople } from "./database/database.js";
 import { recommendations } from "./hard-coded/recommendations.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -14,11 +9,15 @@ app.use(express.json());
 
 app.use(cors());
 
-const profilePhotosDir = path.join(__dirname, "hard-coded", "profile-photos");
-app.use("/profile-photos", express.static(profilePhotosDir));
-
 app.get("/graph", (req, res) => {
-  res.json({ people: readPeople(), recommendations });
+  res.json({
+    people: readPeople().map((person) => ({
+      ...person,
+      photo: person.photo?.toString("base64"),
+    })),
+    // TODO: use real recommendations
+    recommendations,
+  });
 });
 
 app.post("/addperson", (req, res) => {
