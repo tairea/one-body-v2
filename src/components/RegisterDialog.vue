@@ -12,6 +12,7 @@ export default {
     return {
       name: "",
       email: "",
+      location: "",
     };
   },
   methods: {
@@ -24,6 +25,7 @@ export default {
         // Reset form
         this.name = "";
         this.email = "";
+        this.location = "";
       }
     },
     handleCancel() {
@@ -31,12 +33,14 @@ export default {
       // Reset form
       this.name = "";
       this.email = "";
+      this.location = "";
     },
     handleClose() {
       this.$emit("close");
       // Reset form
       this.name = "";
       this.email = "";
+      this.location = "";
     },
   },
 };
@@ -53,7 +57,10 @@ export default {
       <!-- Dialog header -->
       <div class="dialog-header">
         <h2>Please create your profile</h2>
-        <p class="dialog-subtitle">The point of this activity is to help us build a community of dWeb fellows. Please tell us a bit about yourself, so we can learn more about each other and what we are working on.</p>
+        <p class="dialog-subtitle">This activity is designed to help us grow our DWeb Fellows community. 
+          Tell us a bit about yourself, what excites you and what you're working on.
+          The more we share, the easier it is to connect and support each other along the way.
+          <br><br><em>Note: The info you enter below will only be visible by the other DWeb fellows.</em></p>
       </div>
 
       <!-- Dialog content -->
@@ -79,6 +86,17 @@ export default {
             class="form-input"
           />
         </div>
+
+        <div class="form-group">
+          <label for="location">Location:</label>
+          <input
+            id="location"
+            v-model="location"
+            type="text"
+            placeholder="Enter your location"
+            class="form-input"
+          />
+        </div>
       </div>
 
       <!-- Dialog actions -->
@@ -87,7 +105,7 @@ export default {
         <button
           class="button"
           @click="handleSave"
-          :disabled="!name.trim() || !email.trim()"
+          :disabled="!name.trim() || !email.trim() || !location.trim()"
         >
           Create Account
         </button>
