@@ -6,10 +6,7 @@ import { Buffer } from "node:buffer";
 import * as crypto from "node:crypto";
 
 // TODO: This should be moved to an environment variable.
-const SIGNUP_SECRET = Buffer.from(
-  "9f4fc06fc86cc81c52d30f7544d85577cbae86f2b4fbd84636db9c7dfbddcfd4",
-  "hex",
-);
+const SIGNUP_SECRET = Buffer.from("b212a1df912ed2f6", "hex");
 
 /**
  * @param {unknown} rawGuess
