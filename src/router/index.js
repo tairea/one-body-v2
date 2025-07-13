@@ -9,11 +9,11 @@ const routes = [
     component: Home
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: Login
-  }
-]
+    path: "/signup",
+    name: "Signup",
+    component: Signup,
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(),
