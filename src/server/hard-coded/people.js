@@ -3,6 +3,7 @@ export const people = [
   {
     name: "Ian Tairea",
     photo: "/profile-photos/ian.jpeg",
+    location: { lat: -21.2075, lng: -159.7756 }, // Rarotonga, Cook Islands
     values: ["smart work", "faith", "solar punk", "servig our people"],
     vision: [
       "youth",
@@ -45,6 +46,7 @@ export const people = [
   {
     name: "Henry Herman",
     photo: "/profile-photos/henry.jpeg",
+    location: { lat: -21.2333, lng: -159.7667 }, // Avarua, Cook Islands
     values: [
       "faithful love",
       "health",
@@ -75,6 +77,7 @@ export const people = [
   {
     name: "Victor Mataora",
     photo: "/profile-photos/victor.png",
+    location: { lat: -20.1500, lng: -157.3500 }, // Aitutaki, Cook Islands
     values: [
       "integrity",
       "traditional knowledge",
@@ -113,6 +116,7 @@ export const people = [
   {
     name: "Ben Koteka",
     photo: "/profile-photos/ben.png",
+    location: { lat: -19.2833, lng: -159.7833 }, // Mauke, Cook Islands
     values: [
       "God first",
       "family",
@@ -148,6 +152,7 @@ export const people = [
   {
     name: "Gina Tavioni-Bamber",
     photo: "/profile-photos/gina.png",
+    location: { lat: -18.8667, lng: -159.7833 }, // Mitiaro, Cook Islands
     values: [
       "authenticity",
       "faith, love, respect",
@@ -187,6 +192,7 @@ export const people = [
   {
     name: "Nina Neubauer",
     photo: "/profile-photos/nina.png",
+    location: { lat: -10.4500, lng: -105.6833 }, // Pitcairn Island
     values: [
       "research",
       "fairness",
@@ -211,6 +217,7 @@ export const people = [
   {
     name: "Liz Nootai",
     photo: "/profile-photos/liz.png",
+    location: { lat: -17.7500, lng: -149.5500 }, // Papeete, French Polynesia
     values: [
       "family",
       "christian faith",
@@ -237,6 +244,7 @@ export const people = [
   {
     name: "Bianca Herman",
     photo: "/profile-photos/bianca.jpg",
+    location: { lat: -21.1333, lng: -175.2000 }, // Nuku'alofa, Tonga
     values: [
       "compassion",
       "connection",
@@ -277,6 +285,7 @@ export const people = [
   {
     name: "Lynne Samuel",
     photo: "/profile-photos/lynne.png",
+    location: { lat: -36.8500, lng: 174.7833 }, // Auckland, New Zealand
     values: [
       "honesty",
       "family",
@@ -309,6 +318,7 @@ export const people = [
   {
     name: "Lyle & Natia Wichman",
     photo: "/profile-photos/lyle-natia.jpg",
+    location: { lat: -21.2000, lng: -159.8000 }, // Arorangi, Cook Islands
     values: [
       "community & family",
       "integrity",
@@ -329,6 +339,7 @@ export const people = [
   {
     name: "Kevin Iro",
     photo: "/profile-photos/kevin.jpg",
+    location: { lat: -18.1500, lng: -163.8000 }, // Pukapuka, Cook Islands
     values: ["Godly principals", "Family values", "Reciprocity", "Faith"],
     vision: [
       "Traditional Knowledge",
@@ -349,6 +360,7 @@ export const people = [
   {
     name: "Fred Nicholas",
     photo: "/profile-photos/fred.png",
+    location: { lat: -19.8000, lng: -158.3000 }, // Manihiki, Cook Islands
     values: ["family", "love", "honesty", "determined"],
     vision: [
       "Technology",
@@ -364,6 +376,7 @@ export const people = [
   {
     name: "Ben Maxwell",
     photo: "/profile-photos/ben-m.png",
+    location: { lat: -9.8000, lng: -139.0333 }, // Hiva Oa, French Polynesia
     values: [
       "family",
       "simple",
@@ -410,6 +423,7 @@ export const people = [
   {
     name: "Piriariki Maao",
     photo: "/profile-photos/piri.png",
+    location: { lat: -16.7000, lng: -151.4333 }, // Bora Bora, French Polynesia
     values: [
       "Integrity",
       "Creative",
@@ -440,6 +454,7 @@ export const people = [
   {
     name: "Esther & Tama Heather",
     photo: "/profile-photos/esther-tama.jpg",
+    location: { lat: -14.2667, lng: -170.7000 }, // Pago Pago, American Samoa
     values: ["Stewardship", "Diligence", "Respect", "Well-being"],
     vision: [
       "Legacy & future for children",
@@ -454,6 +469,7 @@ export const people = [
   {
     name: "Jamie Short",
     photo: "/profile-photos/jamie.jpg",
+    location: { lat: -13.8500, lng: -171.7500 }, // Apia, Samoa
     values: ["Respect for nature", "Respect for all living things"],
     vision: [
       "Organic movement",
@@ -476,6 +492,7 @@ export const people = [
   {
     name: "Matthew Rima",
     photo: "/profile-photos/matthew-r.jpg",
+    location: { lat: -17.5333, lng: -149.5667 }, // Moorea, French Polynesia
     values: [
       "God",
       "Support",
@@ -511,6 +528,7 @@ export const people = [
   {
     name: "Jackie Rongo",
     photo: "/profile-photos/jackie-r.jpg",
+    location: { lat: -22.4333, lng: -166.4500 }, // Noumea, New Caledonia
     values: [
       "Integrity (honesty)",
       "Kindness (generosity)",
@@ -538,6 +556,7 @@ export const people = [
   {
     name: "Teina Rongo",
     photo: "/profile-photos/teina-r.jpg",
+    location: { lat: -20.1500, lng: -164.8167 }, // Rakahanga, Cook Islands
     values: [
       "Trust",
       "Faith",
@@ -568,6 +587,7 @@ export const people = [
   {
     name: "Andre Jensen",
     photo: "/profile-photos/andre.jpg",
+    location: { lat: -15.5000, lng: -167.2000 }, // Luganville, Vanuatu
     values: [
       "Support",
       "Agriculture knowledge",
@@ -599,6 +619,7 @@ export const people = [
   {
     name: "Pa Maoate",
     photo: "/profile-photos/pa.jpg",
+    location: { lat: -12.5000, lng: 130.8500 }, // Darwin, Australia
     values: ["Trust", "Love", "Honesty", "Health", "Family"],
     vision: [
       "Local customs Eg. Planting with Arapo",
@@ -613,6 +634,7 @@ export const people = [
   {
     name: "Latishia Maui-Mataora",
     photo: "/profile-photos/latishia.jpg",
+    location: { lat: -25.0667, lng: 130.1000 }, // Alice Springs, Australia
     values: [
       "Honesty",
       "Family",
@@ -647,6 +669,7 @@ export const people = [
   {
     name: "Rev. Mata Tumu-Makara",
     photo: "/profile-photos/mata.jpg",
+    location: { lat: -18.8667, lng: -159.7833 }, // Mitiaro, Cook Islands
     values: ["God", "Family", "Church", "Friendship", "Love"],
     vision: [
       "People",

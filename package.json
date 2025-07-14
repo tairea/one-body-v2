@@ -14,7 +14,9 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@mdi/font": "^7.4.47",
     "better-sqlite3": "^12.2.0",
+    "clsx": "^2.1.1",
     "cors": "^2.8.5",
     "cytoscape": "^3.32.0",
     "cytoscape-cola": "^2.5.1",
@@ -29,6 +31,9 @@
     "@vitejs/plugin-vue": "^5.2.3",
     "npm-run-all2": "^8.0.4",
     "prettier": "^3.6.2",
-    "vite": "^6.3.5"
+    "sass-embedded": "^1.89.2",
+    "vite": "^6.3.5",
+    "vite-plugin-vuetify": "^2.1.1",
+    "vuetify": "^3.9.0"
   }
 }
