@@ -3,7 +3,7 @@ export const people = [
   {
     name: "Ian Tairea",
     photo: "/profile-photos/ian.jpeg",
-    location: { lat: -21.2075, lng: -159.7756 }, // Rarotonga, Cook Islands
+    location: { lat: 40.7128, lng: -74.0060 }, // New York City, USA
     values: ["smart work", "faith", "solar punk", "servig our people"],
     vision: [
       "youth",
@@ -46,7 +46,7 @@ export const people = [
   {
     name: "Henry Herman",
     photo: "/profile-photos/henry.jpeg",
-    location: { lat: -21.2333, lng: -159.7667 }, // Avarua, Cook Islands
+    location: { lat: 51.5074, lng: -0.1278 }, // London, UK
     values: [
       "faithful love",
       "health",
@@ -77,7 +77,7 @@ export const people = [
   {
     name: "Victor Mataora",
     photo: "/profile-photos/victor.png",
-    location: { lat: -20.1500, lng: -157.3500 }, // Aitutaki, Cook Islands
+    location: { lat: 35.6762, lng: 139.6503 }, // Tokyo, Japan
     values: [
       "integrity",
       "traditional knowledge",
@@ -116,7 +116,7 @@ export const people = [
   {
     name: "Ben Koteka",
     photo: "/profile-photos/ben.png",
-    location: { lat: -19.2833, lng: -159.7833 }, // Mauke, Cook Islands
+    location: { lat: 48.8566, lng: 2.3522 }, // Paris, France
     values: [
       "God first",
       "family",
@@ -152,7 +152,7 @@ export const people = [
   {
     name: "Gina Tavioni-Bamber",
     photo: "/profile-photos/gina.png",
-    location: { lat: -18.8667, lng: -159.7833 }, // Mitiaro, Cook Islands
+    location: { lat: 55.7558, lng: 37.6176 }, // Moscow, Russia
     values: [
       "authenticity",
       "faith, love, respect",
@@ -192,7 +192,7 @@ export const people = [
   {
     name: "Nina Neubauer",
     photo: "/profile-photos/nina.png",
-    location: { lat: -10.4500, lng: -105.6833 }, // Pitcairn Island
+    location: { lat: 52.5200, lng: 13.4050 }, // Berlin, Germany
     values: [
       "research",
       "fairness",
@@ -217,7 +217,7 @@ export const people = [
   {
     name: "Liz Nootai",
     photo: "/profile-photos/liz.png",
-    location: { lat: -17.7500, lng: -149.5500 }, // Papeete, French Polynesia
+    location: { lat: 41.9028, lng: 12.4964 }, // Rome, Italy
     values: [
       "family",
       "christian faith",
@@ -244,7 +244,7 @@ export const people = [
   {
     name: "Bianca Herman",
     photo: "/profile-photos/bianca.jpg",
-    location: { lat: -21.1333, lng: -175.2000 }, // Nuku'alofa, Tonga
+    location: { lat: 19.4326, lng: -99.1332 }, // Mexico City, Mexico
     values: [
       "compassion",
       "connection",
@@ -285,7 +285,7 @@ export const people = [
   {
     name: "Lynne Samuel",
     photo: "/profile-photos/lynne.png",
-    location: { lat: -36.8500, lng: 174.7833 }, // Auckland, New Zealand
+    location: { lat: -33.8688, lng: 151.2093 }, // Sydney, Australia
     values: [
       "honesty",
       "family",
@@ -318,7 +318,7 @@ export const people = [
   {
     name: "Lyle & Natia Wichman",
     photo: "/profile-photos/lyle-natia.jpg",
-    location: { lat: -21.2000, lng: -159.8000 }, // Arorangi, Cook Islands
+    location: { lat: 25.2048, lng: 55.2708 }, // Dubai, UAE
     values: [
       "community & family",
       "integrity",
@@ -339,7 +339,7 @@ export const people = [
   {
     name: "Kevin Iro",
     photo: "/profile-photos/kevin.jpg",
-    location: { lat: -18.1500, lng: -163.8000 }, // Pukapuka, Cook Islands
+    location: { lat: 39.9042, lng: 116.4074 }, // Beijing, China
     values: ["Godly principals", "Family values", "Reciprocity", "Faith"],
     vision: [
       "Traditional Knowledge",
@@ -360,7 +360,7 @@ export const people = [
   {
     name: "Fred Nicholas",
     photo: "/profile-photos/fred.png",
-    location: { lat: -19.8000, lng: -158.3000 }, // Manihiki, Cook Islands
+    location: { lat: 28.6139, lng: 77.2090 }, // New Delhi, India
     values: ["family", "love", "honesty", "determined"],
     vision: [
       "Technology",
@@ -376,7 +376,7 @@ export const people = [
   {
     name: "Ben Maxwell",
     photo: "/profile-photos/ben-m.png",
-    location: { lat: -9.8000, lng: -139.0333 }, // Hiva Oa, French Polynesia
+    location: { lat: -23.5505, lng: -46.6333 }, // São Paulo, Brazil
     values: [
       "family",
       "simple",
@@ -423,7 +423,7 @@ export const people = [
   {
     name: "Piriariki Maao",
     photo: "/profile-photos/piri.png",
-    location: { lat: -16.7000, lng: -151.4333 }, // Bora Bora, French Polynesia
+    location: { lat: 30.0444, lng: 31.2357 }, // Cairo, Egypt
     values: [
       "Integrity",
       "Creative",
@@ -454,7 +454,7 @@ export const people = [
   {
     name: "Esther & Tama Heather",
     photo: "/profile-photos/esther-tama.jpg",
-    location: { lat: -14.2667, lng: -170.7000 }, // Pago Pago, American Samoa
+    location: { lat: -26.2041, lng: 28.0473 }, // Johannesburg, South Africa
     values: ["Stewardship", "Diligence", "Respect", "Well-being"],
     vision: [
       "Legacy & future for children",
@@ -469,7 +469,7 @@ export const people = [
   {
     name: "Jamie Short",
     photo: "/profile-photos/jamie.jpg",
-    location: { lat: -13.8500, lng: -171.7500 }, // Apia, Samoa
+    location: { lat: 55.7558, lng: 37.6176 }, // Moscow, Russia (alternative location)
     values: ["Respect for nature", "Respect for all living things"],
     vision: [
       "Organic movement",
@@ -492,7 +492,7 @@ export const people = [
   {
     name: "Matthew Rima",
     photo: "/profile-photos/matthew-r.jpg",
-    location: { lat: -17.5333, lng: -149.5667 }, // Moorea, French Polynesia
+    location: { lat: 37.7749, lng: -122.4194 }, // San Francisco, USA
     values: [
       "God",
       "Support",
@@ -528,7 +528,7 @@ export const people = [
   {
     name: "Jackie Rongo",
     photo: "/profile-photos/jackie-r.jpg",
-    location: { lat: -22.4333, lng: -166.4500 }, // Noumea, New Caledonia
+    location: { lat: 35.6762, lng: 139.6503 }, // Tokyo, Japan (alternative location)
     values: [
       "Integrity (honesty)",
       "Kindness (generosity)",
@@ -556,7 +556,7 @@ export const people = [
   {
     name: "Teina Rongo",
     photo: "/profile-photos/teina-r.jpg",
-    location: { lat: -20.1500, lng: -164.8167 }, // Rakahanga, Cook Islands
+    location: { lat: 40.4168, lng: -3.7038 }, // Madrid, Spain
     values: [
       "Trust",
       "Faith",
@@ -587,7 +587,7 @@ export const people = [
   {
     name: "Andre Jensen",
     photo: "/profile-photos/andre.jpg",
-    location: { lat: -15.5000, lng: -167.2000 }, // Luganville, Vanuatu
+    location: { lat: 43.6532, lng: -79.3832 }, // Toronto, Canada
     values: [
       "Support",
       "Agriculture knowledge",
@@ -619,7 +619,7 @@ export const people = [
   {
     name: "Pa Maoate",
     photo: "/profile-photos/pa.jpg",
-    location: { lat: -12.5000, lng: 130.8500 }, // Darwin, Australia
+    location: { lat: 52.3676, lng: 4.9041 }, // Amsterdam, Netherlands
     values: ["Trust", "Love", "Honesty", "Health", "Family"],
     vision: [
       "Local customs Eg. Planting with Arapo",
@@ -634,7 +634,7 @@ export const people = [
   {
     name: "Latishia Maui-Mataora",
     photo: "/profile-photos/latishia.jpg",
-    location: { lat: -25.0667, lng: 130.1000 }, // Alice Springs, Australia
+    location: { lat: 59.3293, lng: 18.0686 }, // Stockholm, Sweden
     values: [
       "Honesty",
       "Family",
@@ -669,7 +669,7 @@ export const people = [
   {
     name: "Rev. Mata Tumu-Makara",
     photo: "/profile-photos/mata.jpg",
-    location: { lat: -18.8667, lng: -159.7833 }, // Mitiaro, Cook Islands
+    location: { lat: 22.3193, lng: 114.1694 }, // Hong Kong, China
     values: ["God", "Family", "Church", "Friendship", "Love"],
     vision: [
       "People",

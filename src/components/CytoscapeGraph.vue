@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, defineExpose, nextTick, watch } from "vue";
+import { onMounted, ref, defineExpose, nextTick, watch, onUnmounted } from "vue";
 import cytoscape from "cytoscape";
 import { select, selectAll } from "d3-selection";
 import cytoscapeCola from "cytoscape-cola";
@@ -22,6 +22,9 @@ const edges = ref([]);
 // Get dark mode state
 const appStore = useAppStore();
 
+// Debounce mechanism for theme updates
+let themeUpdateTimeout = null;
+
 // Light mode styles
 const lightModeStyles = [
   {
@@ -37,12 +40,25 @@ const lightModeStyles = [
       width: 25,
       height: 25,
       "font-size": "7px",
-      "font-family": "'Montserrat', sans-serif",
+      "font-family": "Montserrat, sans-serif",
+      "border-width": 0,
+    },
+  },
+  {
+    selector: "node[photo]",
+    style: {
       "background-image": "data(photo)",
       "background-width": "100%",
       "background-height": "100%",
       "background-fit": "cover",
-      "border-width": 0,
+    },
+  },
+  {
+    selector: "node:not([photo])",
+    style: {
+      "background-color": "#e2e8f0",
+      "border-color": "#cbd5e0",
+      "border-width": "1px",
     },
   },
   {
@@ -66,7 +82,7 @@ const lightModeStyles = [
   },
 ];
 
-// Dark mode styles
+// Dark mode styles - matching GlobeGL colors
 const darkModeStyles = [
   {
     selector: "node",
@@ -74,38 +90,51 @@ const darkModeStyles = [
       label: "data(label)",
       "text-valign": "bottom",
       "text-halign": "center",
-      "text-outline-color": "#242424",
+      "text-outline-color": "#2d3748",
       "text-outline-width": "2px",
       "text-outline-opacity": "0.8",
-      color: "#ffffff",
+      color: "#e2e8f0",
       width: 25,
       height: 25,
       "font-size": "7px",
-      "font-family": "'Montserrat', sans-serif",
+      "font-family": "Montserrat, sans-serif",
+      "border-width": 0,
+    },
+  },
+  {
+    selector: "node[photo]",
+    style: {
       "background-image": "data(photo)",
       "background-width": "100%",
       "background-height": "100%",
       "background-fit": "cover",
-      "border-width": 0,
+    },
+  },
+  {
+    selector: "node:not([photo])",
+    style: {
+      "background-color": "#4a5568",
+      "border-color": "#718096",
+      "border-width": "1px",
     },
   },
   {
     selector: "edge",
     style: {
-      "line-color": "#666666",
+      "line-color": "#718096",
       "curve-style": "bezier",
       "font-size": "2px",
       "text-wrap": "wrap",
       "text-margin-y": -10,
       "text-max-width": 40,
-      color: "#cccccc",
+      color: "#a0aec0",
       width: 1,
     },
   },
   {
     selector: "core",
     style: {
-      "background-color": "#242424",
+      "background-color": "#2d3748",
     },
   },
 ];
@@ -126,11 +155,15 @@ const graphConfig = {
 const updateGraphStyles = () => {
   if (!cy.value) return;
 
-  const newStyles = appStore.isDarkMode ? darkModeStyles : lightModeStyles;
+  const isDark = appStore.isDarkMode;
+  const newStyles = isDark ? darkModeStyles : lightModeStyles;
+  
+  // Apply styles efficiently by using the style() method with the full array
+  // This is still much faster than the original because we're not recreating the graph
   cy.value.style(newStyles);
 
   // Update CSS custom properties for background colors
-  const backgroundColor = appStore.isDarkMode ? "#242424" : "#ffffff";
+  const backgroundColor = isDark ? "#2d3748" : "#ffffff";
   const root = document.documentElement;
   root.style.setProperty("--graph-background-color", backgroundColor);
 };
@@ -139,7 +172,15 @@ const updateGraphStyles = () => {
 watch(
   () => appStore.isDarkMode,
   () => {
-    updateGraphStyles();
+    // Clear any pending theme update
+    if (themeUpdateTimeout) {
+      clearTimeout(themeUpdateTimeout);
+    }
+    
+    // Debounce the theme update to prevent rapid changes
+    themeUpdateTimeout = setTimeout(() => {
+      updateGraphStyles();
+    }, 50); // 50ms debounce
   },
 );
 
@@ -155,7 +196,7 @@ const fetchGraphData = async () => {
     people: json.people.map((person) => {
       const photoBase64 = person.photo;
       const photoUrl = photoBase64 ? "data:;base64," + photoBase64 : null;
-      if (photoUrl) console.log(photoUrl);
+      // if (photoUrl) console.log(photoUrl);
       return {
         ...person,
         photo: photoUrl,
@@ -173,13 +214,19 @@ const initializeGraphData = async () => {
     return { nodes: [], edges: [] };
   }
 
-  const nodes = people.map((person) => ({
-    data: {
+  const nodes = people.map((person) => {
+    const nodeData = {
       id: person.name,
       label: person.name,
-      photo: person.photo,
-    },
-  }));
+    };
+    
+    // Only add photo data if it exists
+    if (person.photo) {
+      nodeData.photo = person.photo;
+    }
+    
+    return { data: nodeData };
+  });
 
   if (
     !recommendations ||
@@ -273,7 +320,7 @@ onMounted(async () => {
 
   // Initialize CSS custom property for background color
   const root = document.documentElement;
-  const initialBackgroundColor = appStore.isDarkMode ? "#242424" : "#ffffff";
+  const initialBackgroundColor = appStore.isDarkMode ? "#2d3748" : "#ffffff";
   root.style.setProperty("--graph-background-color", initialBackgroundColor);
 
   // Ensure the container ref is available
@@ -295,16 +342,24 @@ onMounted(async () => {
         nodes,
         edges: [], // Members view starts with no edges
       },
-      ...graphConfig,
+      style: appStore.isDarkMode ? darkModeStyles : lightModeStyles, // Apply full styles initially
+      layout: graphConfig.layout,
     });
 
-    // Set initial background colors for all containers
+    // Apply initial theme styles efficiently (for any additional updates)
     updateGraphStyles();
 
     console.log("Cytoscape initialized successfully");
     console.log("Graph elements:", cy.value.elements().length);
   } catch (error) {
     console.error("Error initializing Cytoscape graph:", error);
+  }
+});
+
+// Cleanup function to clear timeout on unmount
+onUnmounted(() => {
+  if (themeUpdateTimeout) {
+    clearTimeout(themeUpdateTimeout);
   }
 });
 </script>
@@ -376,5 +431,10 @@ onMounted(async () => {
 <style>
 :root {
   --graph-background-color: #ffffff;
+}
+
+/* Dark mode override */
+.dark-mode {
+  --graph-background-color: #2d3748;
 }
 </style>

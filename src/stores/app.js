@@ -5,6 +5,9 @@ export const useAppStore = defineStore("app", {
     // Dark mode state
     isDarkMode: false,
 
+    // Component state
+    activeComponent: 'globe', // 'globe', 'cytoscape', or null
+
     // Other app-wide state can be added here
     // isLoading: false,
     // currentView: 'members', // or 'ai'
@@ -33,6 +36,17 @@ export const useAppStore = defineStore("app", {
     initializeDarkMode() {
       this.checkSystemPreference();
       this.listenToSystemPreference();
+    },
+
+    // Component switching actions
+    showGlobe() {
+      this.activeComponent = 'globe';
+    },
+    showCytoscape() {
+      this.activeComponent = 'cytoscape';
+    },
+    hideComponents() {
+      this.activeComponent = null;
     },
 
     // Other app actions can be added here

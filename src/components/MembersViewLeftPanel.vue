@@ -5,6 +5,14 @@ import { useAppStore } from "../stores/app";
 const emit = defineEmits(["showAiView", "showMembersView"]);
 
 const appStore = useAppStore();
+
+const handleShowGlobe = () => {
+  appStore.showGlobe();
+};
+
+const handleShowCytoscape = () => {
+  appStore.showCytoscape();
+};
 </script>
 
 <template>
@@ -17,15 +25,30 @@ const appStore = useAppStore();
     </div>
 
     <!-- BUTTONS -->
+
+    <div
+      id="global-distribution"
+      class="button"
+      @click="handleShowGlobe"
+            style="margin-top: 40px"
+    >
+      <v-icon icon="mdi-earth" size="20" />
+      <p class="b1">Our Global Distribution</p>
+    </div>
+
+
     <div
       id="members"
       class="button"
-      style="margin-top: 40px"
-      @click="emit('showMembersView')"
+
+      @click="handleShowCytoscape"
     >
       <img src="../assets/members.png" width="20" height="20" />
       <p class="b1">25 Members</p>
     </div>
+    
+  
+    
     <div id="ai-summary" class="button">
       <img src="../assets/chatgpt.png" width="20" height="20" />
       <p class="b1">Ai collective overview</p>
@@ -88,7 +111,8 @@ h2 {
   background-color: #f5f5f5;
 }
 
-.button img {
+.button img,
+.button .v-icon {
   margin-right: 10px;
 }
 
@@ -128,5 +152,9 @@ h2 {
 
 .left-overlay.dark-mode .button:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+
+.left-overlay.dark-mode .v-icon {
+  color: rgba(255, 255, 255, 0.87);
 }
 </style>

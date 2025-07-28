@@ -1,9 +1,12 @@
 <script setup>
 import { ref } from "vue";
+import { useAppStore } from "../stores/app";
 import LeftSideOverlay from "../components/LeftSideOverlay.vue";
 import CytoscapeGraph from "../components/CytoscapeGraph.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
+import GlobeGL from "../components/GlobeGL.vue";
 
+const appStore = useAppStore();
 const cytoscapeRef = ref(null);
 
 const handleShowAiView = () => {
@@ -22,7 +25,14 @@ const handleShowMembersView = () => {
       @showAiView="handleShowAiView"
       @showMembersView="handleShowMembersView"
     />
-    <CytoscapeGraph ref="cytoscapeRef" />
+    
+    <!-- Conditionally render components based on app store state -->
+    <CytoscapeGraph 
+      v-if="appStore.activeComponent === 'cytoscape'" 
+      ref="cytoscapeRef" 
+    />
+    <GlobeGL v-if="appStore.activeComponent === 'globe'" />
+     
   </div>
 </template>
 

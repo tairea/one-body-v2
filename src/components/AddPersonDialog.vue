@@ -179,7 +179,7 @@ export default {
   emits: ["close", "save"],
   data() {
     return {
-      currentStep: 4,
+      currentStep: 1,
       totalSteps: 6,
       name: "",
       email: "",

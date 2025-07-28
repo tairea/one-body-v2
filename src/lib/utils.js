@@ -9,6 +9,8 @@ const dWebColors = [
   //"#000000", // Black (background)
 ];
 
+export { dWebColors };
+
 /**
  * Returns a random color from the DWeb color palette
  * @returns {string} A random hex color from the DWeb palette
