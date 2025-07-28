@@ -8,6 +8,11 @@ export const useAppStore = defineStore("app", {
     // Component state
     activeComponent: 'globe', // 'globe', 'cytoscape', or null
 
+    // Cytoscape state
+    cytoscapeData: null,
+    cytoscapeInitialized: false,
+    cytoscapeInstance: null,
+
     // Other app-wide state can be added here
     // isLoading: false,
     // currentView: 'members', // or 'ai'
@@ -47,6 +52,17 @@ export const useAppStore = defineStore("app", {
     },
     hideComponents() {
       this.activeComponent = null;
+    },
+
+    // Cytoscape actions
+    setCytoscapeData(data) {
+      this.cytoscapeData = data;
+    },
+    setCytoscapeInitialized(initialized) {
+      this.cytoscapeInitialized = initialized;
+    },
+    setCytoscapeInstance(instance) {
+      this.cytoscapeInstance = instance;
     },
 
     // Other app actions can be added here

@@ -54,7 +54,7 @@ const lightModeStyles = [
     },
   },
   {
-    selector: "node:not([photo])",
+    selector: "node[!photo]",
     style: {
       "background-color": "#e2e8f0",
       "border-color": "#cbd5e0",
@@ -111,7 +111,7 @@ const darkModeStyles = [
     },
   },
   {
-    selector: "node:not([photo])",
+    selector: "node[!photo]",
     style: {
       "background-color": "#4a5568",
       "border-color": "#718096",
@@ -330,24 +330,44 @@ onMounted(async () => {
   }
 
   try {
-    const { nodes } = await initializeGraphData();
-    console.log("Initialized nodes:", nodes.length);
+    // Check if we already have data in the store
+    let graphData;
+    if (appStore.cytoscapeData && appStore.cytoscapeInitialized) {
+      console.log("Using cached Cytoscape data from store");
+      graphData = appStore.cytoscapeData;
+      cy.value = appStore.cytoscapeInstance;
+      
+      // Reattach to the new container
+      if (cy.value) {
+        cy.value.mount(containerRef.value);
+        updateGraphStyles();
+      }
+    } else {
+      console.log("Initializing new Cytoscape data");
+      const { nodes } = await initializeGraphData();
+      console.log("Initialized nodes:", nodes.length);
 
-    // Set initial styles based on current dark mode state
-    graphConfig.style = appStore.isDarkMode ? darkModeStyles : lightModeStyles;
+      // Set initial styles based on current dark mode state
+      graphConfig.style = appStore.isDarkMode ? darkModeStyles : lightModeStyles;
 
-    cy.value = cytoscape({
-      container: containerRef.value,
-      elements: {
-        nodes,
-        edges: [], // Members view starts with no edges
-      },
-      style: appStore.isDarkMode ? darkModeStyles : lightModeStyles, // Apply full styles initially
-      layout: graphConfig.layout,
-    });
+      cy.value = cytoscape({
+        container: containerRef.value,
+        elements: {
+          nodes,
+          edges: [], // Members view starts with no edges
+        },
+        style: appStore.isDarkMode ? darkModeStyles : lightModeStyles, // Apply full styles initially
+        layout: graphConfig.layout,
+      });
 
-    // Apply initial theme styles efficiently (for any additional updates)
-    updateGraphStyles();
+      // Store the data and instance in the store
+      appStore.setCytoscapeData({ nodes, edges: edges.value });
+      appStore.setCytoscapeInstance(cy.value);
+      appStore.setCytoscapeInitialized(true);
+
+      // Apply initial theme styles efficiently (for any additional updates)
+      updateGraphStyles();
+    }
 
     console.log("Cytoscape initialized successfully");
     console.log("Graph elements:", cy.value.elements().length);
@@ -375,8 +395,8 @@ onUnmounted(() => {
 
 <style scoped>
 .network-graph {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   border: none;
   z-index: 0;
   overflow: hidden;

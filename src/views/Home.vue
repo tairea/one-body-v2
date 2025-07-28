@@ -26,12 +26,16 @@ const handleShowMembersView = () => {
       @showMembersView="handleShowMembersView"
     />
     
-    <!-- Conditionally render components based on app store state -->
-    <CytoscapeGraph 
-      v-if="appStore.activeComponent === 'cytoscape'" 
-      ref="cytoscapeRef" 
-    />
-    <GlobeGL v-if="appStore.activeComponent === 'globe'" />
+    <!-- Both components always rendered, visibility controlled by CSS -->
+    <div class="components-container">
+      <CytoscapeGraph 
+        ref="cytoscapeRef" 
+        :class="{ 'active': appStore.activeComponent === 'cytoscape' }"
+      />
+      <GlobeGL 
+        :class="{ 'active': appStore.activeComponent === 'globe' }"
+      />
+    </div>
      
   </div>
 </template>
@@ -41,5 +45,28 @@ const handleShowMembersView = () => {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
+  position: relative;
+}
+
+.components-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.components-container > * {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.6s ease-in-out;
+  pointer-events: none;
+}
+
+.components-container > *.active {
+  opacity: 1;
+  pointer-events: auto;
 }
 </style>

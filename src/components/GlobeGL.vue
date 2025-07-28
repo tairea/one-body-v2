@@ -1,14 +1,16 @@
 <template>
-  <div ref="globeContainer" class="globe-container" :class="{ 'dark-mode': appStore.isDarkMode }"></div>
-  
-  <!-- Person Detail View -->
-  <PersonDetailView
-    v-if="selectedPerson"
-    :person="selectedPerson"
-    :is-visible="showPersonDetail"
-    @back-to-globe="handleBackToGlobe"
-    @image-loaded="onPersonImageLoaded"
-  />
+  <div class="globe-wrapper">
+    <div ref="globeContainer" class="globe-container" :class="{ 'dark-mode': appStore.isDarkMode }"></div>
+    
+    <!-- Person Detail View -->
+    <PersonDetailView
+      v-if="selectedPerson"
+      :person="selectedPerson"
+      :is-visible="showPersonDetail"
+      @back-to-globe="handleBackToGlobe"
+      @image-loaded="onPersonImageLoaded"
+    />
+  </div>
 </template>
 
 <script>
@@ -550,9 +552,15 @@ export default {
 </script>
 
 <style scoped>
+.globe-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
 .globe-container {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   background: #ffffff;
   transition: background-color 0.3s ease;
 }
