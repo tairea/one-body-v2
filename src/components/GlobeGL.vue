@@ -56,6 +56,16 @@ export default {
   watch: {
     'appStore.isDarkMode'() {
       this.updateTheme()
+    },
+    'appStore.activeComponent'(newComponent) {
+      // Pause/resume globe based on active component
+      if (this.globe) {
+        if (newComponent === 'globe') {
+          this.resumeGlobe()
+        } else {
+          this.pauseGlobe()
+        }
+      }
     }
   },
   methods: {
@@ -546,6 +556,45 @@ export default {
       
       // Reset cursor
       document.body.style.cursor = 'default'
+    },
+
+    pauseGlobe() {
+      if (this.globe) {
+        // Disable auto-rotation
+        this.globe.controls().autoRotate = false
+        
+        // Pause rendering
+        this.globe.pauseAnimation()
+        
+        // Remove global event listeners
+        if (this.clickListener) {
+          window.removeEventListener('click', this.clickListener)
+          this.clickListener = null
+        }
+        if (this.hoverListener) {
+          window.removeEventListener('mousemove', this.hoverListener)
+          this.hoverListener = null
+        }
+        
+        console.log('Globe paused')
+      }
+    },
+
+    resumeGlobe() {
+      if (this.globe) {
+        // Re-enable auto-rotation
+        this.globe.controls().autoRotate = true
+        this.globe.controls().autoRotateSpeed = 0.5
+        
+        // Resume rendering
+        this.globe.resumeAnimation()
+        
+        // Re-setup event listeners
+        this.setupPersonClickDetection()
+        this.setupHoverEffects()
+        
+        console.log('Globe resumed')
+      }
     }
   }
 }

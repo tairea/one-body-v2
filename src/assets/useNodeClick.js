@@ -6,12 +6,36 @@ export function useNodeClick(cy, svg, people) {
   const currentHoveredEdge = ref(null);
   const currentHoveredSourceNode = ref(null);
   const currentHoveredTargetNode = ref(null);
+  let clickTimeout = null;
 
   const handleNodeClick = async (event) => {
+    // Prevent multiple rapid clicks
+    if (clickTimeout) {
+      return;
+    }
+    
+    clickTimeout = setTimeout(() => {
+      clickTimeout = null;
+    }, 1000); // Prevent clicks for 1 second after a click
+    if (!cy || !svg) {
+      console.error("Cytoscape instance or SVG not available");
+      return;
+    }
+    
     const node = event.target;
+    
+    // Debug: Check node data
+    console.log("Clicked node data:", node.data());
+    console.log("Node has photo attribute:", node.data().hasPhoto);
+    console.log("Node photo URL:", node.data().photo);
 
     // Get people data from node.data().id
     const personData = people.find((p) => p.name === node.data().id);
+    if (!personData) {
+      console.error("Person data not found for:", node.data().id);
+      return;
+    }
+    
     const { values, vision, vehicles, name } = personData;
 
     // Hide all other nodes, edges, and labels
@@ -26,17 +50,28 @@ export function useNodeClick(cy, svg, people) {
       "text-opacity": 0,
     });
 
-    // Hide UI
-    document.getElementById("members").style.opacity = "0";
-    document.getElementById("ai").style.opacity = "0";
-    document.getElementById("ai-summary").style.opacity = "0";
-    document.getElementById("wg").style.opacity = "0";
+    // Hide UI elements (safely check if they exist)
+    const uiElements = ["members", "ai", "ai-summary", "wg"];
+    uiElements.forEach(id => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.style.opacity = "0";
+      }
+    });
+    
     // Show UI
-    document.getElementById("name").style.opacity = "1";
-    document.getElementById("n1").textContent = name.toUpperCase();
+    const nameElement = document.getElementById("name");
+    const n1Element = document.getElementById("n1");
+    if (nameElement && n1Element) {
+      nameElement.style.opacity = "1";
+      n1Element.textContent = name.toUpperCase();
+    }
 
     // Show the zoom-out button
-    document.getElementById("zoom-out").style.opacity = "1";
+    const zoomOutElement = document.getElementById("zoom-out");
+    if (zoomOutElement) {
+      zoomOutElement.style.opacity = "1";
+    }
 
     // Remove any circles and text
     svg.selectAll("circle").remove();
@@ -117,27 +152,42 @@ export function useNodeClick(cy, svg, people) {
           })
           .attr("fill", "none");
 
-        // Show UI
+        // Show UI (safely check if elements exist)
         if (d.onion === "values") {
-          document.getElementById("values").style.opacity = "1";
-          document.getElementById("vision").style.opacity = "0";
-          document.getElementById("vehicles").style.opacity = "0";
+          const valuesElement = document.getElementById("values");
+          const visionElement = document.getElementById("vision");
+          const vehiclesElement = document.getElementById("vehicles");
+          if (valuesElement) valuesElement.style.opacity = "1";
+          if (visionElement) visionElement.style.opacity = "0";
+          if (vehiclesElement) vehiclesElement.style.opacity = "0";
         } else if (d.onion === "vision") {
-          document.getElementById("values").style.opacity = "0";
-          document.getElementById("vision").style.opacity = "1";
-          document.getElementById("vehicles").style.opacity = "0";
+          const valuesElement = document.getElementById("values");
+          const visionElement = document.getElementById("vision");
+          const vehiclesElement = document.getElementById("vehicles");
+          if (valuesElement) valuesElement.style.opacity = "0";
+          if (visionElement) visionElement.style.opacity = "1";
+          if (vehiclesElement) vehiclesElement.style.opacity = "0";
         } else if (d.onion === "vehicles") {
-          document.getElementById("values").style.opacity = "0";
-          document.getElementById("vision").style.opacity = "0";
-          document.getElementById("vehicles").style.opacity = "1";
+          const valuesElement = document.getElementById("values");
+          const visionElement = document.getElementById("vision");
+          const vehiclesElement = document.getElementById("vehicles");
+          if (valuesElement) valuesElement.style.opacity = "0";
+          if (visionElement) visionElement.style.opacity = "0";
+          if (vehiclesElement) vehiclesElement.style.opacity = "1";
         }
       })
       .on("mouseout", function () {
         // Set the fill of all circles back to none
         selectAll(".onion").attr("fill", "none");
-        document.getElementById("values").style.opacity = "0";
-        document.getElementById("vision").style.opacity = "0";
-        document.getElementById("vehicles").style.opacity = "0";
+        
+        // Hide UI elements (safely check if they exist)
+        const uiElements = ["values", "vision", "vehicles"];
+        uiElements.forEach(id => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.style.opacity = "0";
+          }
+        });
       });
 
     const pointsOfPassion = layers
@@ -177,7 +227,7 @@ export function useNodeClick(cy, svg, people) {
 
     function updateCircleAndTextPosition(startTime) {
       const elapsed = Date.now() - startTime;
-      const duration = 1000; // duration of the animation in milliseconds
+      const duration = 600; // Reduced from 1000ms to 600ms for faster response
 
       const updatedPosition = node.renderedPosition();
       const updatedNodeSize = node.renderedOuterWidth();
@@ -189,26 +239,33 @@ export function useNodeClick(cy, svg, people) {
       ];
 
       const t = Math.min(elapsed / duration, 1); // calculate progress (0 to 1)
+      
+      // Use easing function for smoother animation
+      const easeOut = 1 - Math.pow(1 - t, 3);
 
-      svg
-        .selectAll("circle")
-        .attr("cx", updatedPosition.x)
-        .attr("cy", updatedPosition.y);
+      // Update circle positions less frequently
+      if (t % 0.1 < 0.05) { // Only update every 10% of progress
+        svg
+          .selectAll("circle")
+          .attr("cx", updatedPosition.x)
+          .attr("cy", updatedPosition.y);
+      }
 
-      circles.attr("r", (d, i) => t * updatedLayerWidths[i]);
+      circles.attr("r", (d, i) => easeOut * updatedLayerWidths[i]);
 
       passionGroup.attr("transform", (d, j) => {
         const r2 = updatedLayerWidths[d.i] - 37;
         const theta = ((2 * Math.PI) / d.len) * j;
-        const x = updatedPosition.x + t * r2 * Math.sin(theta);
-        const y = updatedPosition.y - t * r2 * Math.cos(theta);
+        const x = updatedPosition.x + easeOut * r2 * Math.sin(theta);
+        const y = updatedPosition.y - easeOut * r2 * Math.cos(theta);
         return `translate(${x}, ${y})`;
       });
 
-      textElements.style("opacity", t); // transition opacity from 0 to 1
+      textElements.style("opacity", easeOut); // transition opacity from 0 to 1
 
       if (t < 1) {
-        requestAnimationFrame(() => updateCircleAndTextPosition(startTime));
+        // Use setTimeout instead of requestAnimationFrame for less frequent updates
+        setTimeout(() => updateCircleAndTextPosition(startTime), 16); // ~60fps
       }
     }
 
@@ -226,7 +283,7 @@ export function useNodeClick(cy, svg, people) {
           y: node.position("y"),
         },
       },
-      duration: 1000,
+      duration: 600, // Reduced from 1000ms to 600ms for faster response
     });
   };
 
@@ -236,5 +293,12 @@ export function useNodeClick(cy, svg, people) {
     currentHoveredSourceNode,
     currentHoveredTargetNode,
     handleNodeClick,
+    // Cleanup function
+    cleanup: () => {
+      if (clickTimeout) {
+        clearTimeout(clickTimeout);
+        clickTimeout = null;
+      }
+    }
   };
 }
