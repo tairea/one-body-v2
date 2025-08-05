@@ -1,7 +1,9 @@
 import { ref } from "vue";
 import { select, selectAll } from "d3-selection";
+import { useAppStore } from "../stores/app";
 
 export function useNodeClick(cy, svg, people) {
+  const appStore = useAppStore();
   const isNodeView = ref(false);
   const currentHoveredEdge = ref(null);
   const currentHoveredSourceNode = ref(null);
@@ -36,6 +38,9 @@ export function useNodeClick(cy, svg, people) {
       return;
     }
     
+    // Save person data to store
+    appStore.setCurrentPersonData(personData);
+    
     const { values, vision, vehicles, name } = personData;
 
     // Hide all other nodes, edges, and labels
@@ -51,27 +56,32 @@ export function useNodeClick(cy, svg, people) {
     });
 
     // Hide UI elements (safely check if they exist)
-    const uiElements = ["members", "ai", "ai-summary", "wg"];
-    uiElements.forEach(id => {
-      const element = document.getElementById(id);
-      if (element) {
-        element.style.opacity = "0";
-      }
-    });
+
+    // hide component via store
+    appStore.setViewingProfile(true);
+    appStore.setCytoscapeSvg(svg);
+
+    // const uiElements = ["wg", "global-distribution","members", "ai", "ai-summary"];
+    // uiElements.forEach(id => {
+    //   const element = document.getElementById(id);
+    //   if (element) {
+    //     element.style.opacity = "0";
+    //   }
+    // });
     
     // Show UI
-    const nameElement = document.getElementById("name");
-    const n1Element = document.getElementById("n1");
-    if (nameElement && n1Element) {
-      nameElement.style.opacity = "1";
-      n1Element.textContent = name.toUpperCase();
-    }
+    // const nameElement = document.getElementById("name");
+    // const n1Element = document.getElementById("n1");
+    // if (nameElement && n1Element) {
+    //   nameElement.style.opacity = "1";
+    //   n1Element.textContent = name.toUpperCase();
+    // }
 
-    // Show the zoom-out button
-    const zoomOutElement = document.getElementById("zoom-out");
-    if (zoomOutElement) {
-      zoomOutElement.style.opacity = "1";
-    }
+    // // Show the zoom-out button
+    // const zoomOutElement = document.getElementById("zoom-out");
+    // if (zoomOutElement) {
+    //   zoomOutElement.style.opacity = "1";
+    // }
 
     // Remove any circles and text
     svg.selectAll("circle").remove();
@@ -129,7 +139,11 @@ export function useNodeClick(cy, svg, people) {
       .attr("stroke", "grey")
       .attr("stroke-opacity", 0.3)
       .attr("mask", "url(#seeThroughMask)")
+      .style("cursor", "pointer")
+      .style("transition", "fill 0.2s ease")
+      .style("pointer-events", "auto")
       .on("mouseover", function (event, d) {
+        console.log("mouseover", d);
         // Don't do anything if hovering person
         if (d.onion === "person") return;
 
@@ -154,40 +168,19 @@ export function useNodeClick(cy, svg, people) {
 
         // Show UI (safely check if elements exist)
         if (d.onion === "values") {
-          const valuesElement = document.getElementById("values");
-          const visionElement = document.getElementById("vision");
-          const vehiclesElement = document.getElementById("vehicles");
-          if (valuesElement) valuesElement.style.opacity = "1";
-          if (visionElement) visionElement.style.opacity = "0";
-          if (vehiclesElement) vehiclesElement.style.opacity = "0";
+          appStore.setActiveProfileSection("values");
         } else if (d.onion === "vision") {
-          const valuesElement = document.getElementById("values");
-          const visionElement = document.getElementById("vision");
-          const vehiclesElement = document.getElementById("vehicles");
-          if (valuesElement) valuesElement.style.opacity = "0";
-          if (visionElement) visionElement.style.opacity = "1";
-          if (vehiclesElement) vehiclesElement.style.opacity = "0";
+          appStore.setActiveProfileSection("vision");
         } else if (d.onion === "vehicles") {
-          const valuesElement = document.getElementById("values");
-          const visionElement = document.getElementById("vision");
-          const vehiclesElement = document.getElementById("vehicles");
-          if (valuesElement) valuesElement.style.opacity = "0";
-          if (visionElement) visionElement.style.opacity = "0";
-          if (vehiclesElement) vehiclesElement.style.opacity = "1";
+          appStore.setActiveProfileSection("vehicles");
         }
       })
       .on("mouseout", function () {
         // Set the fill of all circles back to none
         selectAll(".onion").attr("fill", "none");
         
-        // Hide UI elements (safely check if they exist)
-        const uiElements = ["values", "vision", "vehicles"];
-        uiElements.forEach(id => {
-          const element = document.getElementById(id);
-          if (element) {
-            element.style.opacity = "0";
-          }
-        });
+        // Hide UI elements using store
+        appStore.clearActiveProfileSection();
       });
 
     const pointsOfPassion = layers
@@ -218,7 +211,7 @@ export function useNodeClick(cy, svg, people) {
       .style("display", "flex")
       .style("justify-content", "center")
       .style("align-items", "center")
-      .style("color", "black")
+      .style("color", appStore.isDarkMode ? "rgba(255, 255, 255, 0.87)" : "black")
       .style("font-size", "13px")
       .style("text-align", "center")
       .style("white-space", "pre-wrap")

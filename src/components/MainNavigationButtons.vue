@@ -19,8 +19,8 @@ const handleShowCytoscape = () => {
   <div class="left-overlay" :class="{ 'dark-mode': appStore.isDarkMode }">
     <!-- DWEB LOGO & TITLE -->
     <div id="wg">
-      <img id="logo" src="../assets/org_logo_DWeb.jpeg" width="100" />
-      <h1>dWeb Fellows Alumni</h1>
+      <img id="logo" src="../assets/org_logo_DWeb.jpeg" width="100" class="mb-4"/>
+      <h1>DWeb Fellows Alumni</h1>
       <h2>A collective of dWeb camp fellows</h2>
     </div>
 
@@ -43,18 +43,18 @@ const handleShowCytoscape = () => {
 
       @click="handleShowCytoscape"
     >
-      <img src="../assets/members.png" width="20" height="20" />
+    <v-icon icon="mdi-account-group-outline" size="20" />
       <p class="b1">25 Members</p>
     </div>
     
   
     
     <div id="ai-summary" class="button">
-      <img src="../assets/chatgpt.png" width="20" height="20" />
+      <v-icon icon="mdi-robot-love-outline" size="20" />
       <p class="b1">Ai collective overview</p>
     </div>
     <div id="ai" class="button" @click="emit('showAiView')">
-      <img src="../assets/chatgpt.png" width="20" height="20" />
+      <v-icon icon="mdi-robot-love-outline" size="20" />
       <p class="b1">Ai suggested collabs</p>
     </div>
   </div>
@@ -114,6 +114,8 @@ h2 {
 .button img,
 .button .v-icon {
   margin-right: 10px;
+  color: #333; /* Explicit color for light mode */
+  transition: color 0.2s ease; /* Smooth transition for color changes */
 }
 
 .b1 {
@@ -154,7 +156,7 @@ h2 {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
-.left-overlay.dark-mode .v-icon {
-  color: rgba(255, 255, 255, 0.87);
+.left-overlay.dark-mode .button .v-icon {
+  color: rgba(255, 255, 255, 0.87) !important; /* More specific selector with !important to override Vuetify defaults */
 }
 </style>

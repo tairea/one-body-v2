@@ -1,13 +1,21 @@
 <script setup>
-import MembersViewLeftPanel from "./MembersViewLeftPanel.vue";
+import MainNavigationButtons from "./MainNavigationButtons.vue";
+import MemberProfileInfo from "./MemberProfileInfo.vue";
 import { defineEmits } from "vue";
+import { useAppStore } from "../stores/app";
 
 const emit = defineEmits(["showAiView", "showMembersView"]);
-// Component logic can be added here
+const appStore = useAppStore();
 </script>
 
 <template>
-  <MembersViewLeftPanel
+  <MainNavigationButtons
+    v-if="!appStore.isViewingProfile"
+    @showAiView="emit('showAiView')"
+    @showMembersView="emit('showMembersView')"
+  />
+  <MemberProfileInfo
+    v-else
     @showAiView="emit('showAiView')"
     @showMembersView="emit('showMembersView')"
   />

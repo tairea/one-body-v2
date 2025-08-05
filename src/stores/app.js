@@ -6,12 +6,18 @@ export const useAppStore = defineStore("app", {
     isDarkMode: false,
 
     // Component state
-    activeComponent: 'globe', // 'globe', 'cytoscape', or null
+    activeComponent: 'cytoscape', // 'globe', 'cytoscape', or null
+
+    // Profile view state
+    isViewingProfile: false,
+    currentPersonData: null, // Store the clicked person's data
+    activeProfileSection: null, // 'values', 'vision', 'vehicles', or null
 
     // Cytoscape state
     cytoscapeData: null,
     cytoscapeInitialized: false,
     cytoscapeInstance: null,
+    cytoscapeSvg: null, // Store SVG reference for cleanup
 
     // Other app-wide state can be added here
     // isLoading: false,
@@ -46,12 +52,35 @@ export const useAppStore = defineStore("app", {
     // Component switching actions
     showGlobe() {
       this.activeComponent = 'globe';
+      this.isViewingProfile = false; // Reset profile view when switching components
+      this.currentPersonData = null; // Clear person data when switching components
     },
     showCytoscape() {
       this.activeComponent = 'cytoscape';
+      this.isViewingProfile = false; // Reset profile view when switching components
+      this.currentPersonData = null; // Clear person data when switching components
     },
     hideComponents() {
       this.activeComponent = null;
+      this.isViewingProfile = false; // Reset profile view when hiding components
+      this.currentPersonData = null; // Clear person data when hiding components
+    },
+
+    // Profile view actions
+    setViewingProfile(viewing) {
+      this.isViewingProfile = viewing;
+    },
+    setCurrentPersonData(personData) {
+      this.currentPersonData = personData;
+    },
+    clearCurrentPersonData() {
+      this.currentPersonData = null;
+    },
+    setActiveProfileSection(section) {
+      this.activeProfileSection = section;
+    },
+    clearActiveProfileSection() {
+      this.activeProfileSection = null;
     },
 
     // Cytoscape actions
@@ -63,6 +92,12 @@ export const useAppStore = defineStore("app", {
     },
     setCytoscapeInstance(instance) {
       this.cytoscapeInstance = instance;
+    },
+    setCytoscapeSvg(svg) {
+      this.cytoscapeSvg = svg;
+    },
+    setConcentricZoomOut(zoomOutFunction) {
+      this.concentricZoomOut = zoomOutFunction;
     },
 
     // Other app actions can be added here

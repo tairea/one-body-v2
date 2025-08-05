@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from "vue";
 import { useAppStore } from "../stores/app";
-import LeftSideOverlay from "../components/LeftSideOverlay.vue";
+import LeftPanel from "../components/LeftPanel.vue";
 import CytoscapeGraph from "../components/CytoscapeGraph.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import GlobeGL from "../components/GlobeGL.vue";
@@ -9,21 +9,12 @@ import GlobeGL from "../components/GlobeGL.vue";
 const appStore = useAppStore();
 const cytoscapeRef = ref(null);
 
-const handleShowAiView = () => {
-  cytoscapeRef.value?.showAiView();
-};
-
-const handleShowMembersView = () => {
-  cytoscapeRef.value?.showMembersView();
-};
 </script>
 
 <template>
   <div class="app-container">
     <DarkModeToggle />
-    <LeftSideOverlay
-      @showAiView="handleShowAiView"
-      @showMembersView="handleShowMembersView"
+    <LeftPanel
     />
     
     <!-- Both components always rendered, visibility controlled by CSS -->
