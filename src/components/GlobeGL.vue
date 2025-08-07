@@ -37,6 +37,10 @@ export default {
       selectedPerson: null,
       showPersonDetail: false,
       personMeshes: new Map(), // Store references to person meshes for click detection
+      /** @type {null | ((event: MouseEvent) => unknown)} */
+      clickListener: null,
+      /** @type {null | ((event: MouseEvent) => unknown)} */
+      hoverListener: null,
     };
   },
   computed: {
