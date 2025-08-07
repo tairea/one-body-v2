@@ -4,6 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
+/** @import { Person } from "../../types.d.ts" */
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -15,9 +16,22 @@ const db = new Database(databasePath);
 const createSchemasSql = fs.readFileSync(createSchemasPath, "utf8");
 db.exec(createSchemasSql);
 
+/**
+ * @param {unknown} json
+ * @returns {Uint8Array}
+ */
 const jsonToBlob = (json) => Buffer.from(JSON.stringify(json));
+
+/**
+ * @param {Readonly<Buffer>} blob
+ * @returns {unknown}
+ */
 const blobToJson = (blob) => JSON.parse(blob.toString());
 
+/**
+ * @param {Omit<Person, "id">} person
+ * @returns {void}
+ */
 export function addPerson(person) {
   const addPersonStatement = db.prepare(`
     INSERT INTO people (
@@ -58,20 +72,24 @@ export function addPerson(person) {
   });
 }
 
+/**
+ * @returns {Person[]}
+ */
 export function readPeople() {
   const readPeopleStatement = db.prepare("SELECT * FROM people");
   return readPeopleStatement.all().map(
+    // TODO: It'd be nice to have stronger type checking here.
     /** @param {any} databasePerson */ (databasePerson) => ({
       id: databasePerson.id,
       name: databasePerson.name,
-      photo: databasePerson.photo,
-      email: databasePerson.email,
-      locationName: databasePerson.locationName,
-      locationLatitude: databasePerson.locationLatitude,
-      locationLongitude: databasePerson.locationLongitude,
-      values: blobToJson(databasePerson.valuesList),
-      vision: blobToJson(databasePerson.visionList),
-      vehicle: blobToJson(databasePerson.vehiclesList),
+      photo: databasePerson.photo || undefined,
+      email: databasePerson.email || undefined,
+      locationName: databasePerson.locationName || undefined,
+      locationLatitude: databasePerson.locationLatitude || undefined,
+      locationLongitude: databasePerson.locationLongitude || undefined,
+      values: /** @type {any} */ (blobToJson(databasePerson.valuesList)),
+      vision: /** @type {any} */ (blobToJson(databasePerson.visionList)),
+      vehicles: /** @type {any} */ (blobToJson(databasePerson.vehiclesList)),
     }),
   );
 }
