@@ -385,7 +385,6 @@ const initializeGraphData = async () => {
       label: person.name,
     };
 
-    // Only add photo data if it exists and convert to proper URL
     if (person.photo) {
       // Convert relative path to absolute URL
       const photoUrl = person.photo.startsWith("/")
@@ -393,16 +392,6 @@ const initializeGraphData = async () => {
         : `/profile-photos/${person.photo}`;
       nodeData.photo = photoUrl;
       nodeData.hasPhoto = true; // Add explicit flag
-      console.log(`Setting photo for ${person.name}:`, photoUrl);
-
-      // Test if image loads
-      const img = new Image();
-      // img.onload = () => console.log(`✅ Photo loaded for ${person.name}:`, photoUrl);
-      img.onerror = () =>
-        console.log(`❌ Photo failed to load for ${person.name}:`, photoUrl);
-      img.src = photoUrl;
-    } else {
-      console.log(`No photo for ${person.name}`);
     }
 
     return { data: nodeData, classes: person.photo ? "photo-node" : "" };
