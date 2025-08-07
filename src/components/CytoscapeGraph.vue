@@ -29,7 +29,6 @@ const containerRef = ref(null);
 const svgRef = ref(null);
 const cy = ref(null);
 const edges = ref([]);
-const peopleData = ref([]);
 const localPeople = people; // Use local people data
 
 // Get dark mode state
@@ -379,9 +378,6 @@ const initializeGraphData = async () => {
     console.error("People data is not available or not an array");
     return { nodes: [], edges: [] };
   }
-
-  // Store people data for node click functionality
-  peopleData.value = localPeople;
 
   const nodes = localPeople.map((person) => {
     const nodeData = {
