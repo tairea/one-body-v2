@@ -1,3 +1,4 @@
+// @ts-check
 import { defineStore } from "pinia";
 
 export const useAppStore = defineStore("app", {
@@ -18,6 +19,8 @@ export const useAppStore = defineStore("app", {
     cytoscapeInitialized: false,
     cytoscapeInstance: null,
     cytoscapeSvg: null, // Store SVG reference for cleanup
+    /** @type {null | (() => unknown)} */
+    concentricZoomOut: null,
 
     // Other app-wide state can be added here
     // isLoading: false,
