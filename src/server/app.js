@@ -1,3 +1,4 @@
+// @ts-check
 import express from "express";
 import cors from "cors";
 import { addPerson, readPeople } from "./database/database.js";

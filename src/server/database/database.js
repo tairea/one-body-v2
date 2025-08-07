@@ -1,3 +1,4 @@
+// @ts-check
 import Database from "better-sqlite3";
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -59,16 +60,18 @@ export function addPerson(person) {
 
 export function readPeople() {
   const readPeopleStatement = db.prepare("SELECT * FROM people");
-  return readPeopleStatement.all().map((databasePerson) => ({
-    id: databasePerson.id,
-    name: databasePerson.name,
-    photo: databasePerson.photo,
-    email: databasePerson.email,
-    locationName: databasePerson.locationName,
-    locationLatitude: databasePerson.locationLatitude,
-    locationLongitude: databasePerson.locationLongitude,
-    values: blobToJson(databasePerson.valuesList),
-    vision: blobToJson(databasePerson.visionList),
-    vehicle: blobToJson(databasePerson.vehiclesList),
-  }));
+  return readPeopleStatement.all().map(
+    /** @param {any} databasePerson */ (databasePerson) => ({
+      id: databasePerson.id,
+      name: databasePerson.name,
+      photo: databasePerson.photo,
+      email: databasePerson.email,
+      locationName: databasePerson.locationName,
+      locationLatitude: databasePerson.locationLatitude,
+      locationLongitude: databasePerson.locationLongitude,
+      values: blobToJson(databasePerson.valuesList),
+      vision: blobToJson(databasePerson.visionList),
+      vehicle: blobToJson(databasePerson.vehiclesList),
+    }),
+  );
 }

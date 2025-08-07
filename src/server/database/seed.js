@@ -1,3 +1,4 @@
+// @ts-check
 import { addPerson, readPeople } from "./database.js";
 import * as fs from "node:fs";
 import * as path from "node:path";
