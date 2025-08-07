@@ -7,12 +7,14 @@ export const useAppStore = defineStore("app", {
     isDarkMode: false,
 
     // Component state
-    activeComponent: "cytoscape", // 'globe', 'cytoscape', or null
+    /** @type {null | "globe" | "cytoscape"} */
+    activeComponent: "cytoscape",
 
     // Profile view state
     isViewingProfile: false,
     currentPersonData: null, // Store the clicked person's data
-    activeProfileSection: null, // 'values', 'vision', 'vehicles', or null
+    /** @type {null | "values" | "vision" | "vehicles"} */
+    activeProfileSection: null,
 
     // Cytoscape state
     cytoscapeData: null,
