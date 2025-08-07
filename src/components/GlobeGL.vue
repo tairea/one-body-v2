@@ -22,9 +22,8 @@ import Globe from "globe.gl";
 import { FrontSide } from "three";
 import * as THREE from "three";
 import { useAppStore } from "../stores/app";
-import { dWebColors } from "../lib/utils.js";
+import { dWebColors, getPhotoUrl } from "../lib/utils.js";
 import PersonDetailView from "./PersonDetailView.vue";
-import { uint8ArrayToDataUri } from "../lib/uint8ArrayToDataUri.js";
 /** @import { Person } from "../types.d.ts" */
 
 /**
@@ -147,7 +146,7 @@ export default {
           lat: person.locationLatitude,
           lng: person.locationLongitude,
           name: person.name,
-          photo: person.photo ? uint8ArrayToDataUri(person.photo) : undefined,
+          photo: person.hasPhoto ? getPhotoUrl(person) : undefined,
           type: "person",
         }));
 
@@ -247,7 +246,7 @@ export default {
         lat: person.locationLatitude,
         lng: person.locationLongitude,
         name: person.name,
-        photo: person.photo ? uint8ArrayToDataUri(person.photo) : undefined,
+        photo: person.hasPhoto ? getPhotoUrl(person) : undefined,
         type: "person",
       }));
 

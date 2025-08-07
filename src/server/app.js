@@ -1,10 +1,11 @@
 // @ts-check
-import express from "express";
 import cors from "cors";
-import { addPerson, readPeople } from "./database/database.js";
-import { recommendations } from "./hard-coded/recommendations.js";
+import express from "express";
 import { Buffer } from "node:buffer";
 import * as crypto from "node:crypto";
+import { sniffImageContentType } from "../lib/sniffImageContentType.js";
+import { addPerson, readPeople, readPhotoBytes } from "./database/database.js";
+import { recommendations } from "./hard-coded/recommendations.js";
 
 // TODO: This should be moved to an environment variable.
 const SIGNUP_SECRET = Buffer.from("b212a1df912ed2f6", "hex");
@@ -33,15 +34,34 @@ app.use(cors());
 
 app.get("/graph", (req, res) => {
   res.json({
-    people: readPeople().map((person) => ({
-      ...person,
-      // Don't send the photo; send a base64-encoded version.
-      photo: undefined,
-      photoBase64: person.photo?.toString("base64"),
-    })),
+    people: readPeople(),
     // TODO: use real recommendations
     recommendations,
   });
+});
+
+app.get("/photos/:personId", (req, res) => {
+  const personId = Number(req.params.personId);
+  if (!Number.isSafeInteger(personId)) {
+    res.status(404).end();
+    return;
+  }
+
+  const photoBytes = readPhotoBytes(personId);
+  if (!photoBytes) {
+    res.status(404).end();
+    return;
+  }
+
+  const contentType = sniffImageContentType(photoBytes);
+  if (!contentType) {
+    res.status(404).end();
+    return;
+  }
+
+  res.type(contentType);
+  res.setHeader("Cache-Control", "public, max-age=600");
+  res.send(photoBytes);
 });
 
 app.post("/validate_secret", (req, res) => {

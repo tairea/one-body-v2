@@ -28,8 +28,6 @@ export function useNodeClick(cy, svg, people) {
 
     // Debug: Check node data
     console.log("Clicked node data:", node.data());
-    console.log("Node has photo attribute:", node.data().hasPhoto);
-    console.log("Node photo URL:", node.data().photo);
 
     // Get people data from node.data().id
     const personData = people.find((p) => p.name === node.data().id);

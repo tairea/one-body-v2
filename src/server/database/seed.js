@@ -8,7 +8,6 @@ for (const person of people) {
 
 addPerson({
   name: "Foo",
-  photo: null,
   email: "foo@example.com",
   locationName: "Colombia",
   locationLatitude: 4.5709,

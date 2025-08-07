@@ -29,7 +29,7 @@ const jsonToBlob = (json) => Buffer.from(JSON.stringify(json));
 const blobToJson = (blob) => JSON.parse(blob.toString());
 
 /**
- * @param {Omit<Person, "id">} person
+ * @param {Omit<Person, "id" | "hasPhoto"> & { photo?: Uint8Array }} person
  * @returns {void}
  */
 export function addPerson(person) {
@@ -82,8 +82,8 @@ export function readPeople() {
     /** @param {any} databasePerson */ (databasePerson) => ({
       id: databasePerson.id,
       name: databasePerson.name,
-      photo: databasePerson.photo || undefined,
       email: databasePerson.email || undefined,
+      hasPhoto: Boolean(databasePerson.photo),
       locationName: databasePerson.locationName || undefined,
       locationLatitude: databasePerson.locationLatitude ?? undefined,
       locationLongitude: databasePerson.locationLongitude ?? undefined,
@@ -92,4 +92,19 @@ export function readPeople() {
       vehicles: /** @type {any} */ (blobToJson(databasePerson.vehiclesList)),
     }),
   );
+}
+
+/**
+ * @param {number} personId
+ * @returns {null | Uint8Array}
+ */
+export function readPhotoBytes(personId) {
+  if (!Number.isSafeInteger(personId)) {
+    return null;
+  }
+  const result = db
+    .prepare("SELECT photo FROM people WHERE id = ?")
+    .pluck()
+    .get(personId);
+  return result instanceof Uint8Array ? result : null;
 }

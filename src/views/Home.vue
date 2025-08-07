@@ -1,6 +1,5 @@
 <script setup>
 // @ts-check
-import { base64ToUint8Array } from "uint8array-extras";
 import { onMounted, ref } from "vue";
 import CytoscapeGraph from "../components/CytoscapeGraph.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
@@ -26,17 +25,7 @@ const fetchGraphData = async () => {
   if (!response.ok) {
     throw new Error(`Failed to fetch graph with status ${response.status}`);
   }
-  const json = await response.json();
-  return {
-    ...json,
-    people: json.people.map((person) => {
-      const { photoBase64 } = person;
-      return {
-        ...person,
-        photo: photoBase64 ? base64ToUint8Array(photoBase64) : undefined,
-      };
-    }),
-  };
+  return await response.json();
 };
 
 onMounted(async () => {

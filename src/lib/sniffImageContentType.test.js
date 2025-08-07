@@ -1,0 +1,47 @@
+// @ts-check
+import test from "node:test";
+import assert from "node:assert/strict";
+import { sniffImageContentType } from "./sniffImageContentType.js";
+
+test("JPEG", () => {
+  const fakeJpeg = new Uint8Array([0xff, 0xd8, 0xff, 0x12, 0x34]);
+  assert.equal(sniffImageContentType(fakeJpeg), "image/jpeg");
+});
+
+test("PNG", () => {
+  const fakePng = new Uint8Array([
+    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x12, 0x34,
+  ]);
+  assert.equal(sniffImageContentType(fakePng), "image/png");
+});
+
+test("WebP", () => {
+  const fakeWebp = new Uint8Array([
+    0x52, 0x49, 0x46, 0x46, 0x12, 0x34, 0x56, 0x78, 0x57, 0x45, 0x42, 0x50,
+    0x56, 0x50, 0x12, 0x34,
+  ]);
+  assert.equal(sniffImageContentType(fakeWebp), "image/webp");
+});
+
+test("other", () => {
+  const inputs = [
+    // Empty
+    new Uint8Array(),
+    new Uint8Array(8),
+    // GIF
+    new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x37, 0x61]),
+    new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61]),
+    // Java file
+    new Uint8Array([0xca, 0xfe, 0xba, 0xbe]),
+    // Looks sort of like another type but isn't
+    new Uint8Array([0xff, 0xd8, 0x12]),
+    new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0xff]),
+    new Uint8Array([
+      0x52, 0x49, 0x46, 0x46, 0x12, 0x34, 0x56, 0x78, 0x57, 0x45, 0x42, 0x50,
+      0x56, 0xff,
+    ]),
+  ];
+  for (const input of inputs) {
+    assert.equal(sniffImageContentType(input), null);
+  }
+});

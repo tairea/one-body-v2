@@ -12,11 +12,10 @@ import cytoscape from "cytoscape";
 import { select, selectAll } from "d3-selection";
 import cytoscapeCola from "cytoscape-cola";
 import cytoscapeQtip from "cytoscape-qtip";
-import { SERVER_BASE_URL } from "../constants.js";
 import { useAppStore } from "../stores/app";
 import { useNodeClick } from "../assets/useNodeClick.js";
 import { useNodeClickConcentric } from "../assets/useNodeClickConcentric.js";
-import { uint8ArrayToDataUri } from "../lib/uint8ArrayToDataUri.js";
+import { getPhotoUrl } from "../lib/utils";
 /** @import { Person } from "../types.d.ts" */
 
 // Register Cytoscape extensions
@@ -197,21 +196,6 @@ const restoreNodeImages = () => {
           "background-color": "transparent",
           "border-color": "transparent",
         });
-
-        // Verify image is loaded (only in development)
-        if (process.env.NODE_ENV === "development") {
-          const img = new Image();
-          img.onload = () => {
-            console.log(`✅ Image restored for ${node.data("id")}:`, photoUrl);
-          };
-          img.onerror = () => {
-            console.log(
-              `❌ Image failed to restore for ${node.data("id")}:`,
-              photoUrl,
-            );
-          };
-          img.src = photoUrl;
-        }
       }
     }
   });
@@ -363,9 +347,8 @@ const initializeGraphData = async () => {
       label: person.name,
     };
 
-    if (person.photo) {
-      const photoUrl = uint8ArrayToDataUri(person.photo);
-      nodeData.photo = photoUrl;
+    if (person.hasPhoto) {
+      nodeData.photo = getPhotoUrl(person);
       nodeData.hasPhoto = true; // Add explicit flag
     }
 

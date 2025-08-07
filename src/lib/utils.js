@@ -1,3 +1,6 @@
+// @ts-check
+import { SERVER_BASE_URL } from "../constants.js";
+
 const dWebColors = [
   "#ff4f2d", // Bright Red-Orange (large and medium dots)
   "#e06ef9", // Purple/Violet (medium dots)
@@ -17,4 +20,12 @@ export { dWebColors };
  */
 export function getDwebColor() {
   return dWebColors[Math.floor(Math.random() * dWebColors.length)];
+}
+
+/**
+ * @param {Readonly<{ id: number }>} person
+ * @returns {string}
+ */
+export function getPhotoUrl({ id }) {
+  return new URL(`/photos/${id}`, SERVER_BASE_URL).href;
 }

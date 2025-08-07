@@ -11,7 +11,8 @@
     "database:clear": "rm src/server/database/database.sqlite3",
     "format": "prettier --write .",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test"
   },
   "dependencies": {
     "@mdi/font": "^7.4.47",
@@ -26,7 +27,6 @@
     "globe.gl": "^2.42.0",
     "pinia": "^3.0.3",
     "three": "^0.178.0",
-    "uint8array-extras": "^1.4.0",
     "vue": "^3.5.13",
     "vue-router": "^4.5.1"
   },

@@ -1,7 +1,7 @@
 export type Person = Readonly<{
   id: number;
   name: string;
-  photo?: Buffer;
+  hasPhoto: boolean;
   email?: string;
   locationName?: string;
   locationLatitude?: number;
