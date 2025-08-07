@@ -1,33 +1,49 @@
 <template>
   <div :class="{ 'dark-mode': isDarkMode }">
     <!-- Add Vehicle Button -->
-     <div class="add-vehicle-btn-container">
-    <button class="add-vehicle-btn" @click="openDialog">
-      <v-icon>mdi-plus</v-icon>
-      Add a Vehicle
-    </button>
+    <div class="add-vehicle-btn-container">
+      <button class="add-vehicle-btn" @click="openDialog">
+        <v-icon>mdi-plus</v-icon>
+        Add a Vehicle
+      </button>
     </div>
 
     <!-- Vehicle Dialog -->
-    <v-dialog v-model="dialogOpen" max-width="500px" class="dialog" :class="{ 'dark-mode': isDarkMode }">
+    <v-dialog
+      v-model="dialogOpen"
+      max-width="500px"
+      class="dialog"
+      :class="{ 'dark-mode': isDarkMode }"
+    >
       <v-card class="dialog-card">
         <!-- Dialog Header -->
         <v-card-title class="dialog-header">
           🚀
-          {{ editMode ? 'Edit Vehicle' : 'Add a vehicle/organization/project/method' }}
+          {{
+            editMode
+              ? "Edit Vehicle"
+              : "Add a vehicle/organization/project/method"
+          }}
         </v-card-title>
         <p class="step-description">
-         Share with us how you contribute to the DWeb ecosystem. 
+          Share with us how you contribute to the DWeb ecosystem.
         </p>
-        <p class="step-description"
-                    ><em><small class="form-hint">The more info you provide, the better the local LLM can connect you to the right fellows.</small></em></p
-                  >
+        <p class="step-description">
+          <em
+            ><small class="form-hint"
+              >The more info you provide, the better the local LLM can connect
+              you to the right fellows.</small
+            ></em
+          >
+        </p>
 
         <!-- Dialog Content -->
         <v-card-text class="dialog-content">
           <!-- Title Input -->
           <div class="form-group">
-            <label for="vehicle-title">Title: <small class="form-hint">(required)</small></label>
+            <label for="vehicle-title"
+              >Title: <small class="form-hint">(required)</small></label
+            >
 
             <input
               id="vehicle-title"
@@ -40,7 +56,9 @@
 
           <!-- Description Input -->
           <div class="form-group">
-            <label for="vehicle-description mb-0">Description: <small class="form-hint">(optional)</small></label>
+            <label for="vehicle-description mb-0"
+              >Description: <small class="form-hint">(optional)</small></label
+            >
             <!-- <small class="form-hint">You can be as specific or as general as you want</small> -->
             <textarea
               id="vehicle-description"
@@ -53,7 +71,9 @@
 
           <!-- Related Links Input -->
           <div class="form-group">
-            <label for="vehicle-links">Related Links: <small class="form-hint">(optional)</small></label>
+            <label for="vehicle-links"
+              >Related Links: <small class="form-hint">(optional)</small></label
+            >
             <input
               id="vehicle-links"
               v-model="newLink"
@@ -69,8 +89,14 @@
           <div v-if="vehicleData.relatedLinks.length > 0" class="links-display">
             <label>Related Links:</label>
             <div class="links-list">
-              <p v-for="link in vehicleData.relatedLinks" :key="link" class="link-item">
-                <a :href="link" target="_blank" rel="noopener noreferrer">{{ link }}</a>
+              <p
+                v-for="link in vehicleData.relatedLinks"
+                :key="link"
+                class="link-item"
+              >
+                <a :href="link" target="_blank" rel="noopener noreferrer">{{
+                  link
+                }}</a>
                 <button
                   @click="removeLink(link)"
                   class="remove-link-btn"
@@ -86,12 +112,12 @@
         <!-- Dialog Actions -->
         <v-card-actions class="dialog-actions">
           <button class="btn btn-secondary" @click="closeDialog">Cancel</button>
-                    <button 
-            class="btn btn-primary" 
+          <button
+            class="btn btn-primary"
             @click="saveVehicle"
             :disabled="!canSave"
           >
-            {{ editMode ? 'Update Vehicle' : 'Save Vehicle' }}
+            {{ editMode ? "Update Vehicle" : "Save Vehicle" }}
           </button>
         </v-card-actions>
       </v-card>
@@ -108,12 +134,12 @@ export default {
   props: {
     editMode: {
       type: Boolean,
-      default: false
+      default: false,
     },
     editVehicle: {
       type: Object,
-      default: null
-    }
+      default: null,
+    },
   },
   data() {
     return {
@@ -188,7 +214,7 @@ export default {
           description: this.vehicleData.description.trim(),
           relatedLinks: [...this.vehicleData.relatedLinks],
         };
-        
+
         if (this.editMode) {
           this.$emit("vehicle-updated", vehicleData);
         } else {
@@ -247,7 +273,6 @@ export default {
   font-size: 16px;
 }
 
-
 .dialog-card {
   background-color: #fff;
   border-radius: 12px;
@@ -274,7 +299,7 @@ export default {
 }
 
 .step-description {
-  margin:0px 20px;
+  margin: 0px 20px;
   color: #666;
   line-height: 1.5;
 
@@ -310,15 +335,15 @@ export default {
   }
 
   .form-hint {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 12px;
-  color: #666;
+    display: block;
+    margin-bottom: 10px;
+    font-size: 12px;
+    color: #666;
 
-  .dialog.dark-mode & {
-    color: rgba(255, 255, 255, 0.5);
+    .dialog.dark-mode & {
+      color: rgba(255, 255, 255, 0.5);
+    }
   }
-}
 }
 
 .form-input {
@@ -599,4 +624,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

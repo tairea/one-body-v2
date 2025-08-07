@@ -19,7 +19,12 @@ const handleShowCytoscape = () => {
   <div class="left-overlay" :class="{ 'dark-mode': appStore.isDarkMode }">
     <!-- DWEB LOGO & TITLE -->
     <div id="wg">
-      <img id="logo" src="../assets/org_logo_DWeb.jpeg" width="100" class="mb-4"/>
+      <img
+        id="logo"
+        src="../assets/org_logo_DWeb.jpeg"
+        width="100"
+        class="mb-4"
+      />
       <h1>DWeb Fellows Alumni</h1>
       <h2>A collective of dWeb camp fellows</h2>
     </div>
@@ -30,25 +35,17 @@ const handleShowCytoscape = () => {
       id="global-distribution"
       class="button"
       @click="handleShowGlobe"
-            style="margin-top: 40px"
+      style="margin-top: 40px"
     >
       <v-icon icon="mdi-earth" size="20" />
       <p class="b1">Our Global Distribution</p>
     </div>
 
-
-    <div
-      id="members"
-      class="button"
-
-      @click="handleShowCytoscape"
-    >
-    <v-icon icon="mdi-account-group-outline" size="20" />
+    <div id="members" class="button" @click="handleShowCytoscape">
+      <v-icon icon="mdi-account-group-outline" size="20" />
       <p class="b1">25 Members</p>
     </div>
-    
-  
-    
+
     <div id="ai-summary" class="button">
       <v-icon icon="mdi-robot-love-outline" size="20" />
       <p class="b1">Ai collective overview</p>
@@ -157,6 +154,11 @@ h2 {
 }
 
 .left-overlay.dark-mode .button .v-icon {
-  color: rgba(255, 255, 255, 0.87) !important; /* More specific selector with !important to override Vuetify defaults */
+  color: rgba(
+    255,
+    255,
+    255,
+    0.87
+  ) !important; /* More specific selector with !important to override Vuetify defaults */
 }
 </style>

@@ -15,7 +15,7 @@ export function useNodeClick(cy, svg, people) {
     if (clickTimeout) {
       return;
     }
-    
+
     clickTimeout = setTimeout(() => {
       clickTimeout = null;
     }, 1000); // Prevent clicks for 1 second after a click
@@ -23,9 +23,9 @@ export function useNodeClick(cy, svg, people) {
       console.error("Cytoscape instance or SVG not available");
       return;
     }
-    
+
     const node = event.target;
-    
+
     // Debug: Check node data
     console.log("Clicked node data:", node.data());
     console.log("Node has photo attribute:", node.data().hasPhoto);
@@ -37,10 +37,10 @@ export function useNodeClick(cy, svg, people) {
       console.error("Person data not found for:", node.data().id);
       return;
     }
-    
+
     // Save person data to store
     appStore.setCurrentPersonData(personData);
-    
+
     const { values, vision, vehicles, name } = personData;
 
     // Hide all other nodes, edges, and labels
@@ -68,7 +68,7 @@ export function useNodeClick(cy, svg, people) {
     //     element.style.opacity = "0";
     //   }
     // });
-    
+
     // Show UI
     // const nameElement = document.getElementById("name");
     // const n1Element = document.getElementById("n1");
@@ -178,7 +178,7 @@ export function useNodeClick(cy, svg, people) {
       .on("mouseout", function () {
         // Set the fill of all circles back to none
         selectAll(".onion").attr("fill", "none");
-        
+
         // Hide UI elements using store
         appStore.clearActiveProfileSection();
       });
@@ -211,7 +211,10 @@ export function useNodeClick(cy, svg, people) {
       .style("display", "flex")
       .style("justify-content", "center")
       .style("align-items", "center")
-      .style("color", appStore.isDarkMode ? "rgba(255, 255, 255, 0.87)" : "black")
+      .style(
+        "color",
+        appStore.isDarkMode ? "rgba(255, 255, 255, 0.87)" : "black",
+      )
       .style("font-size", "13px")
       .style("text-align", "center")
       .style("white-space", "pre-wrap")
@@ -232,12 +235,13 @@ export function useNodeClick(cy, svg, people) {
       ];
 
       const t = Math.min(elapsed / duration, 1); // calculate progress (0 to 1)
-      
+
       // Use easing function for smoother animation
       const easeOut = 1 - Math.pow(1 - t, 3);
 
       // Update circle positions less frequently
-      if (t % 0.1 < 0.05) { // Only update every 10% of progress
+      if (t % 0.1 < 0.05) {
+        // Only update every 10% of progress
         svg
           .selectAll("circle")
           .attr("cx", updatedPosition.x)
@@ -292,6 +296,6 @@ export function useNodeClick(cy, svg, people) {
         clearTimeout(clickTimeout);
         clickTimeout = null;
       }
-    }
+    },
   };
 }

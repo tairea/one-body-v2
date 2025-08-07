@@ -49,11 +49,11 @@
                   />
                   <h2>DWeb Fellows Alumni</h2>
                   <p class="dialog-subtitle">
-                    This activity is designed to help us connect DWeb Fellows and grow the
-                    community. <br /><br />Tell us a bit about yourself, what
-                    excites you and what you're working on. The more we share,
-                    the easier it is to connect, collaborate and build the
-                    decentralized web together. <br /><br /><em
+                    This activity is designed to help us connect DWeb Fellows
+                    and grow the community. <br /><br />Tell us a bit about
+                    yourself, what excites you and what you're working on. The
+                    more we share, the easier it is to connect, collaborate and
+                    build the decentralized web together. <br /><br /><em
                       >Note: The info you enter to create your profile will only
                       be visible by other DWeb fellows.</em
                     >
@@ -64,7 +64,7 @@
 
             <!-- Step 2: Your Details -->
             <v-stepper-window-item :value="2">
-              <DetailsStep 
+              <DetailsStep
                 :name="name"
                 :email="email"
                 :location="location"
@@ -78,15 +78,12 @@
 
             <!-- Step 3: Your Values -->
             <v-stepper-window-item :value="3">
-              <ValuesStep 
-                :values="values"
-                @update:values="values = $event"
-              />
+              <ValuesStep :values="values" @update:values="values = $event" />
             </v-stepper-window-item>
 
             <!-- Step 4: Your Visions -->
             <v-stepper-window-item :value="4">
-              <VisionsStep 
+              <VisionsStep
                 :visions="visions"
                 @update:visions="visions = $event"
               />
@@ -94,7 +91,7 @@
 
             <!-- Step 5: Your Vehicles -->
             <v-stepper-window-item :value="5">
-              <VehiclesStep 
+              <VehiclesStep
                 :vehicles="vehicles"
                 @update:vehicles="vehicles = $event"
               />
@@ -112,10 +109,7 @@
                   <div class="summary-card">
                     <h4>Summary</h4>
                     <div v-if="profileImage" class="summary-image">
-                      <img 
-                        :src="profileImage" 
-                        alt="Profile" 
-                      />
+                      <img :src="profileImage" alt="Profile" />
                     </div>
                     <p><strong>Name:</strong> {{ name }}</p>
                     <p><strong>Email:</strong> {{ email }}</p>
@@ -123,19 +117,31 @@
                       <strong>Location:</strong> {{ location }}
                     </p>
                     <p><strong>Values:</strong> {{ values.join(", ") }}</p>
-                    <p><strong>Visions:</strong> {{ visions.map(v => v.title).join(", ") }}</p>
-                    <p><strong>Vehicles:</strong> {{ vehicles.map(v => v.title).join(", ") }}</p>
+                    <p>
+                      <strong>Visions:</strong>
+                      {{ visions.map((v) => v.title).join(", ") }}
+                    </p>
+                    <p>
+                      <strong>Vehicles:</strong>
+                      {{ vehicles.map((v) => v.title).join(", ") }}
+                    </p>
                   </div>
                 </div>
               </div>
             </v-stepper-window-item>
           </v-stepper-window>
         </v-stepper>
-        
+
         <!-- Custom buttons outside of v-stepper-actions -->
         <div class="dialog-actions">
-          <button class="btn btn-secondary" @click="handleCancel">Cancel</button>
-          <button v-if="currentStep > 1" class="btn btn-secondary" @click="prevStep">
+          <button class="btn btn-secondary" @click="handleCancel">
+            Cancel
+          </button>
+          <button
+            v-if="currentStep > 1"
+            class="btn btn-secondary"
+            @click="prevStep"
+          >
             Previous
           </button>
           <button
@@ -174,7 +180,7 @@ export default {
     DetailsStep,
     ValuesStep,
     VisionsStep,
-    VehiclesStep
+    VehiclesStep,
   },
   emits: ["close", "save"],
   data() {
@@ -192,7 +198,7 @@ export default {
   },
   mounted() {
     // Load profile image from localStorage if it exists
-    const savedImage = localStorage.getItem('profileImage');
+    const savedImage = localStorage.getItem("profileImage");
     if (savedImage) {
       this.profileImage = savedImage;
     }
@@ -245,14 +251,17 @@ export default {
       console.log("nextStep called", {
         currentStep: this.currentStep,
         totalSteps: this.totalSteps,
-        canProceed: this.canProceed
+        canProceed: this.canProceed,
       });
       if (this.currentStep < this.totalSteps && this.canProceed) {
         console.log("nextStep - proceeding to step", this.currentStep + 1);
         this.currentStep++;
       } else {
         console.log("nextStep - cannot proceed", {
-          reason: this.currentStep >= this.totalSteps ? "at last step" : "validation failed"
+          reason:
+            this.currentStep >= this.totalSteps
+              ? "at last step"
+              : "validation failed",
         });
       }
     },
@@ -569,10 +578,6 @@ export default {
   }
 }
 
-
-
-
-
 // Dialog actions
 .dialog-actions {
   display: flex;
@@ -643,9 +648,4 @@ export default {
     }
   }
 }
-
-
-
-
-
 </style>

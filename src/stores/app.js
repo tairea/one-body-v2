@@ -6,7 +6,7 @@ export const useAppStore = defineStore("app", {
     isDarkMode: false,
 
     // Component state
-    activeComponent: 'cytoscape', // 'globe', 'cytoscape', or null
+    activeComponent: "cytoscape", // 'globe', 'cytoscape', or null
 
     // Profile view state
     isViewingProfile: false,
@@ -51,12 +51,12 @@ export const useAppStore = defineStore("app", {
 
     // Component switching actions
     showGlobe() {
-      this.activeComponent = 'globe';
+      this.activeComponent = "globe";
       this.isViewingProfile = false; // Reset profile view when switching components
       this.currentPersonData = null; // Clear person data when switching components
     },
     showCytoscape() {
-      this.activeComponent = 'cytoscape';
+      this.activeComponent = "cytoscape";
       this.isViewingProfile = false; // Reset profile view when switching components
       this.currentPersonData = null; // Clear person data when switching components
     },

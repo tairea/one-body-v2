@@ -1,7 +1,11 @@
 <template>
   <div class="globe-wrapper">
-    <div ref="globeContainer" class="globe-container" :class="{ 'dark-mode': appStore.isDarkMode }"></div>
-    
+    <div
+      ref="globeContainer"
+      class="globe-container"
+      :class="{ 'dark-mode': appStore.isDarkMode }"
+    ></div>
+
     <!-- Person Detail View -->
     <PersonDetailView
       v-if="selectedPerson"
@@ -14,131 +18,137 @@
 </template>
 
 <script>
-import Globe from 'globe.gl'
-import { FrontSide } from 'three'
-import * as THREE from 'three'
-import { useAppStore } from '../stores/app'
-import { people } from '../server/hard-coded/people.js'
-import { dWebColors } from '../lib/utils.js'
-import PersonDetailView from './PersonDetailView.vue'
+import Globe from "globe.gl";
+import { FrontSide } from "three";
+import * as THREE from "three";
+import { useAppStore } from "../stores/app";
+import { people } from "../server/hard-coded/people.js";
+import { dWebColors } from "../lib/utils.js";
+import PersonDetailView from "./PersonDetailView.vue";
 
 export default {
-  name: 'GlobeGL',
+  name: "GlobeGL",
   components: {
-    PersonDetailView
+    PersonDetailView,
   },
   data() {
     return {
       globe: null,
       selectedPerson: null,
       showPersonDetail: false,
-      personMeshes: new Map() // Store references to person meshes for click detection
-    }
+      personMeshes: new Map(), // Store references to person meshes for click detection
+    };
   },
   computed: {
     appStore() {
-      return useAppStore()
-    }
+      return useAppStore();
+    },
   },
   mounted() {
-    this.initGlobe()
+    this.initGlobe();
   },
-  
+
   beforeUnmount() {
     // Clean up event listeners
     if (this.clickListener) {
-      window.removeEventListener('click', this.clickListener)
+      window.removeEventListener("click", this.clickListener);
     }
     if (this.hoverListener) {
-      window.removeEventListener('mousemove', this.hoverListener)
+      window.removeEventListener("mousemove", this.hoverListener);
     }
   },
   watch: {
-    'appStore.isDarkMode'() {
-      this.updateTheme()
+    "appStore.isDarkMode"() {
+      this.updateTheme();
     },
-    'appStore.activeComponent'(newComponent) {
+    "appStore.activeComponent"(newComponent) {
       // Pause/resume globe based on active component
       if (this.globe) {
-        if (newComponent === 'globe') {
-          this.resumeGlobe()
+        if (newComponent === "globe") {
+          this.resumeGlobe();
         } else {
-          this.pauseGlobe()
+          this.pauseGlobe();
         }
       }
-    }
+    },
   },
   methods: {
     async initGlobe() {
       // Fetch countries data
-      const countries = await fetch('https://unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson')
-        .then(res => res.json())
+      const countries = await fetch(
+        "https://unpkg.com/globe.gl/example/datasets/ne_110m_admin_0_countries.geojson",
+      ).then((res) => res.json());
 
       // Initialize globe with hex polygons
       this.globe = new Globe(this.$refs.globeContainer)
-        .backgroundColor(this.appStore.isDarkMode ? '#2d3748' : '#ffffff')
+        .backgroundColor(this.appStore.isDarkMode ? "#2d3748" : "#ffffff")
         .width(window.innerWidth)
         .height(window.innerHeight)
         .globeImageUrl(null)
         .showAtmosphere(true)
-        .atmosphereColor(this.appStore.isDarkMode ? '#4a5568' : '#e0e0e0')
+        .atmosphereColor(this.appStore.isDarkMode ? "#4a5568" : "#e0e0e0")
         .atmosphereAltitude(0.15)
         .globeMaterial({
-          color: this.appStore.isDarkMode ? '#4a5568' : '#ffffff',
+          color: this.appStore.isDarkMode ? "#4a5568" : "#ffffff",
           transparent: false,
           opacity: 1,
           side: FrontSide,
           wireframe: false,
-          flatShading: true
+          flatShading: true,
         })
         .hexPolygonsData(countries.features)
         .hexPolygonResolution(3)
         .hexPolygonMargin(0.3)
         .hexPolygonUseDots(true)
-        .hexPolygonColor(() => this.appStore.isDarkMode ? '#718096' : '#a0aec0')
-        .pointOfView({ lat: 0, lng: 0, altitude: 1.8 })
+        .hexPolygonColor(() =>
+          this.appStore.isDarkMode ? "#718096" : "#a0aec0",
+        )
+        .pointOfView({ lat: 0, lng: 0, altitude: 1.8 });
 
       // Add people locations with photos
-      this.addPeopleLocations()
+      this.addPeopleLocations();
 
       // Add arc connections to Camp Navarro
-      this.addArcConnections()
+      this.addArcConnections();
 
       // Enable auto-rotation through controls
-      this.globe.controls().autoRotate = true
-      this.globe.controls().autoRotateSpeed = 0.5
+      this.globe.controls().autoRotate = true;
+      this.globe.controls().autoRotateSpeed = 0.5;
 
       // Set up click detection for person meshes
-      this.setupPersonClickDetection()
-      
+      this.setupPersonClickDetection();
+
       // Set up hover effects for person meshes
-      this.setupHoverEffects()
+      this.setupHoverEffects();
     },
 
     addPeopleLocations() {
       // Convert people data to points format
-      const peoplePoints = people.map(person => ({
+      const peoplePoints = people.map((person) => ({
         lat: person.location.lat,
         lng: person.location.lng,
         name: person.name,
-        photo: person.photo.startsWith('/') ? person.photo : `/profile-photos/${person.photo}`,
-        type: 'person'
-      }))
+        photo: person.photo.startsWith("/")
+          ? person.photo
+          : `/profile-photos/${person.photo}`,
+        type: "person",
+      }));
 
-      console.log('People points:', peoplePoints.slice(0, 3)) // Debug first 3 people
+      console.log("People points:", peoplePoints.slice(0, 3)); // Debug first 3 people
 
       // Add separate points layer for labels and interactions
       this.globe
         .pointsData(peoplePoints)
-        .pointColor(() => 'transparent')
+        .pointColor(() => "transparent")
         .pointAltitude(0.05)
         .pointRadius(0.01)
         .pointsMerge(false)
         .pointResolution(12)
-        .onPointClick(point => {
-          console.log('Clicked on:', point.name)
+        .onPointClick((point) => {
+          console.log("Clicked on:", point.name);
         })
-        .pointLabel(point => `
+        .pointLabel(
+          (point) => `
           <div style="
             display: flex;
             flex-direction: column;
@@ -162,13 +172,14 @@ export default {
               white-space: nowrap;
             ">${point.name}</div>
           </div>
-        `)
+        `,
+        );
     },
 
     addArcConnections() {
       // Camp Navarro coordinates in California
-      const campNavarro = { lat: 39.1911, lng: -123.7647 }
-      
+      const campNavarro = { lat: 39.1911, lng: -123.7647 };
+
       // Create arc data connecting each person to Camp Navarro
       const arcData = people.map((person, index) => ({
         startLat: person.location.lat,
@@ -176,20 +187,21 @@ export default {
         endLat: campNavarro.lat,
         endLng: campNavarro.lng,
         color: dWebColors[index % dWebColors.length], // Cycle through dWebColors
-        name: person.name
-      }))
+        name: person.name,
+      }));
 
       // Add arcs layer
       this.globe
         .arcsData(arcData)
-        .arcColor('color')
+        .arcColor("color")
         .arcAltitude(0.3)
         .arcStroke(0.5)
         .arcCurveResolution(64)
-        .onArcClick(arc => {
-          console.log('Clicked on arc to:', arc.name)
+        .onArcClick((arc) => {
+          console.log("Clicked on arc to:", arc.name);
         })
-        .arcLabel(arc => `
+        .arcLabel(
+          (arc) => `
           <div style="
             background: rgba(255, 255, 255, 0.95);
             border-radius: 6px;
@@ -201,21 +213,24 @@ export default {
             color: #2d3748;
             white-space: nowrap;
           ">${arc.name} → Camp Navarro</div>
-        `)
+        `,
+        );
 
       // Add combined custom layer for people photos and Camp Navarro logo
-      this.addCombinedCustomLayer(campNavarro)
+      this.addCombinedCustomLayer(campNavarro);
     },
 
     addCombinedCustomLayer(campNavarro) {
       // Convert people data to points format
-      const peoplePoints = people.map(person => ({
+      const peoplePoints = people.map((person) => ({
         lat: person.location.lat,
         lng: person.location.lng,
         name: person.name,
-        photo: person.photo.startsWith('/') ? person.photo : `/profile-photos/${person.photo}`,
-        type: 'person'
-      }))
+        photo: person.photo.startsWith("/")
+          ? person.photo
+          : `/profile-photos/${person.photo}`,
+        type: "person",
+      }));
 
       // Add Camp Navarro to the points
       const allPoints = [
@@ -223,133 +238,150 @@ export default {
         {
           lat: campNavarro.lat,
           lng: campNavarro.lng,
-          name: 'Camp Navarro',
-          logo: '/org_logo_DWeb.jpeg',
-          type: 'camp'
-        }
-      ]
+          name: "Camp Navarro",
+          logo: "/org_logo_DWeb.jpeg",
+          type: "camp",
+        },
+      ];
 
       // Create a custom layer for all markers
-      this.globe
-        .customLayerData(allPoints)
-        .customThreeObject(point => {
-          if (point.type === 'person') {
-            // Create a plane geometry for the person photo
-            const geometry = new THREE.PlaneGeometry(10, 10)
-            
-            // Load the texture
-            const textureLoader = new THREE.TextureLoader()
-            const texture = textureLoader.load(point.photo)
-            
-            // Create a circular alpha mask
-            const canvas = document.createElement('canvas')
-            canvas.width = 256
-            canvas.height = 256
-            const ctx = canvas.getContext('2d')
-            
-            // Create circular gradient
-            const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128)
-            gradient.addColorStop(0, 'rgba(255, 255, 255, 1)')
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0)')
-            
-            // Fill with gradient
-            ctx.fillStyle = gradient
-            ctx.fillRect(0, 0, 256, 256)
-            
-            // Create alpha mask texture
-            const alphaMask = new THREE.CanvasTexture(canvas)
-            
-            // Create material with the photo texture and circular alpha mask
-            const material = new THREE.MeshBasicMaterial({
-              map: texture,
-              alphaMap: alphaMask,
-              transparent: true,
-              side: THREE.DoubleSide, // Visible from both sides
-              alphaTest: 0.1
-            })
-            
-            // Create the mesh
-            const mesh = new THREE.Mesh(geometry, material)
-            
-            // Position the mesh at the correct lat/lng coordinates
-            const coords = this.globe.getCoords(point.lat, point.lng, 0.02)
-            mesh.position.set(coords.x, coords.y, coords.z)
-            
-            // Orient the mesh to be flat against the globe surface at this location
-            const normal = new THREE.Vector3(coords.x, coords.y, coords.z).normalize()
-            const up = new THREE.Vector3(0, 1, 0)
-            const right = new THREE.Vector3().crossVectors(up, normal).normalize()
-            const correctedUp = new THREE.Vector3().crossVectors(normal, right).normalize()
-            
-            // Create a rotation matrix to orient the plane
-            const matrix = new THREE.Matrix4()
-            matrix.makeBasis(right, correctedUp, normal)
-            mesh.setRotationFromMatrix(matrix)
-            
-            // Store reference to this mesh for click detection
-            const person = people.find(p => p.name === point.name)
-            if (person) {
-              this.personMeshes.set(person, mesh)
-              
-              // Add user data to the mesh for identification
-              mesh.userData = { person: person, type: 'person' }
-            }
-            
-            return mesh
-          } else if (point.type === 'camp') {
-            // Create a plane geometry for the Camp Navarro logo (slightly larger than person photos)
-            const geometry = new THREE.PlaneGeometry(15, 15)
-            
-            // Load the DWeb logo texture
-            const textureLoader = new THREE.TextureLoader()
-            const texture = textureLoader.load(point.logo)
-            
-            // Create material with the logo texture
-            const material = new THREE.MeshBasicMaterial({
-              map: texture,
-              transparent: true,
-              side: THREE.DoubleSide,
-              alphaTest: 0.1
-            })
-            
-            // Create the mesh
-            const mesh = new THREE.Mesh(geometry, material)
-            
-            // Position the mesh at the correct lat/lng coordinates
-            const coords = this.globe.getCoords(point.lat, point.lng, 0.03) // Slightly higher than person markers
-            mesh.position.set(coords.x, coords.y, coords.z)
-            
-            // Orient the mesh to be flat against the globe surface at this location
-            const normal = new THREE.Vector3(coords.x, coords.y, coords.z).normalize()
-            const up = new THREE.Vector3(0, 1, 0)
-            const right = new THREE.Vector3().crossVectors(up, normal).normalize()
-            const correctedUp = new THREE.Vector3().crossVectors(normal, right).normalize()
-            
-            // Create a rotation matrix to orient the plane
-            const matrix = new THREE.Matrix4()
-            matrix.makeBasis(right, correctedUp, normal)
-            mesh.setRotationFromMatrix(matrix)
-            
-            return mesh
+      this.globe.customLayerData(allPoints).customThreeObject((point) => {
+        if (point.type === "person") {
+          // Create a plane geometry for the person photo
+          const geometry = new THREE.PlaneGeometry(10, 10);
+
+          // Load the texture
+          const textureLoader = new THREE.TextureLoader();
+          const texture = textureLoader.load(point.photo);
+
+          // Create a circular alpha mask
+          const canvas = document.createElement("canvas");
+          canvas.width = 256;
+          canvas.height = 256;
+          const ctx = canvas.getContext("2d");
+
+          // Create circular gradient
+          const gradient = ctx.createRadialGradient(128, 128, 0, 128, 128, 128);
+          gradient.addColorStop(0, "rgba(255, 255, 255, 1)");
+          gradient.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+          // Fill with gradient
+          ctx.fillStyle = gradient;
+          ctx.fillRect(0, 0, 256, 256);
+
+          // Create alpha mask texture
+          const alphaMask = new THREE.CanvasTexture(canvas);
+
+          // Create material with the photo texture and circular alpha mask
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            alphaMap: alphaMask,
+            transparent: true,
+            side: THREE.DoubleSide, // Visible from both sides
+            alphaTest: 0.1,
+          });
+
+          // Create the mesh
+          const mesh = new THREE.Mesh(geometry, material);
+
+          // Position the mesh at the correct lat/lng coordinates
+          const coords = this.globe.getCoords(point.lat, point.lng, 0.02);
+          mesh.position.set(coords.x, coords.y, coords.z);
+
+          // Orient the mesh to be flat against the globe surface at this location
+          const normal = new THREE.Vector3(
+            coords.x,
+            coords.y,
+            coords.z,
+          ).normalize();
+          const up = new THREE.Vector3(0, 1, 0);
+          const right = new THREE.Vector3()
+            .crossVectors(up, normal)
+            .normalize();
+          const correctedUp = new THREE.Vector3()
+            .crossVectors(normal, right)
+            .normalize();
+
+          // Create a rotation matrix to orient the plane
+          const matrix = new THREE.Matrix4();
+          matrix.makeBasis(right, correctedUp, normal);
+          mesh.setRotationFromMatrix(matrix);
+
+          // Store reference to this mesh for click detection
+          const person = people.find((p) => p.name === point.name);
+          if (person) {
+            this.personMeshes.set(person, mesh);
+
+            // Add user data to the mesh for identification
+            mesh.userData = { person: person, type: "person" };
           }
-        })
+
+          return mesh;
+        } else if (point.type === "camp") {
+          // Create a plane geometry for the Camp Navarro logo (slightly larger than person photos)
+          const geometry = new THREE.PlaneGeometry(15, 15);
+
+          // Load the DWeb logo texture
+          const textureLoader = new THREE.TextureLoader();
+          const texture = textureLoader.load(point.logo);
+
+          // Create material with the logo texture
+          const material = new THREE.MeshBasicMaterial({
+            map: texture,
+            transparent: true,
+            side: THREE.DoubleSide,
+            alphaTest: 0.1,
+          });
+
+          // Create the mesh
+          const mesh = new THREE.Mesh(geometry, material);
+
+          // Position the mesh at the correct lat/lng coordinates
+          const coords = this.globe.getCoords(point.lat, point.lng, 0.03); // Slightly higher than person markers
+          mesh.position.set(coords.x, coords.y, coords.z);
+
+          // Orient the mesh to be flat against the globe surface at this location
+          const normal = new THREE.Vector3(
+            coords.x,
+            coords.y,
+            coords.z,
+          ).normalize();
+          const up = new THREE.Vector3(0, 1, 0);
+          const right = new THREE.Vector3()
+            .crossVectors(up, normal)
+            .normalize();
+          const correctedUp = new THREE.Vector3()
+            .crossVectors(normal, right)
+            .normalize();
+
+          // Create a rotation matrix to orient the plane
+          const matrix = new THREE.Matrix4();
+          matrix.makeBasis(right, correctedUp, normal);
+          mesh.setRotationFromMatrix(matrix);
+
+          return mesh;
+        }
+      });
 
       // Add separate points layer for Camp Navarro label and interactions
       this.globe
-        .pointsData([{
-          lat: campNavarro.lat,
-          lng: campNavarro.lng,
-          name: 'Camp Navarro'
-        }])
-        .pointColor(() => 'transparent')
+        .pointsData([
+          {
+            lat: campNavarro.lat,
+            lng: campNavarro.lng,
+            name: "Camp Navarro",
+          },
+        ])
+        .pointColor(() => "transparent")
         .pointAltitude(0.08)
         .pointRadius(0.01)
         .pointsMerge(false)
         .pointResolution(12)
-        .onPointClick(point => {
-          console.log('Clicked on Camp Navarro')
+        .onPointClick((point) => {
+          console.log("Clicked on Camp Navarro");
         })
-        .pointLabel(point => `
+        .pointLabel(
+          (point) => `
           <div style="
             background: rgba(255, 255, 255, 0.95);
             border-radius: 8px;
@@ -362,242 +394,252 @@ export default {
             white-space: nowrap;
             text-align: center;
           ">🏕️ Camp Navarro<br><span style="font-size: 10px; color: #718096;">DWeb Summit</span></div>
-        `)
+        `,
+        );
     },
-    
+
     updateTheme() {
       if (this.globe) {
         this.globe
-          .backgroundColor(this.appStore.isDarkMode ? '#2d3748' : '#ffffff')
-          .atmosphereColor(this.appStore.isDarkMode ? '#4a5568' : '#e0e0e0')
+          .backgroundColor(this.appStore.isDarkMode ? "#2d3748" : "#ffffff")
+          .atmosphereColor(this.appStore.isDarkMode ? "#4a5568" : "#e0e0e0")
           .globeMaterial({
-            color: this.appStore.isDarkMode ? '#4a5568' : '#ffffff',
+            color: this.appStore.isDarkMode ? "#4a5568" : "#ffffff",
             transparent: false,
             opacity: 1,
             side: FrontSide,
             wireframe: false,
-            flatShading: true
+            flatShading: true,
           })
-          .hexPolygonColor(() => this.appStore.isDarkMode ? '#718096' : '#a0aec0')
+          .hexPolygonColor(() =>
+            this.appStore.isDarkMode ? "#718096" : "#a0aec0",
+          );
       }
     },
 
     handlePersonClick(person) {
-      console.log('Person clicked:', person.name)
-      this.selectedPerson = person
-      this.showPersonDetail = true
-      
+      console.log("Person clicked:", person.name);
+      this.selectedPerson = person;
+      this.showPersonDetail = true;
+
       // Animate camera to focus on the person's location
-      this.animateToPerson(person)
+      this.animateToPerson(person);
     },
 
     animateToPerson(person) {
       if (this.globe) {
         // Calculate the position on the globe for this person
-        const coords = this.globe.getCoords(person.location.lat, person.location.lng, 0.02)
-        
+        const coords = this.globe.getCoords(
+          person.location.lat,
+          person.location.lng,
+          0.02,
+        );
+
         // Animate camera to focus on the person
-        this.globe.pointOfView({
-          lat: person.location.lat,
-          lng: person.location.lng,
-          altitude: 0.5
-        }, 1000) // 1 second animation
+        this.globe.pointOfView(
+          {
+            lat: person.location.lat,
+            lng: person.location.lng,
+            altitude: 0.5,
+          },
+          1000,
+        ); // 1 second animation
       }
     },
 
     handleBackToGlobe() {
-      this.showPersonDetail = false
-      
+      this.showPersonDetail = false;
+
       // Animate back to default view
       setTimeout(() => {
-        this.selectedPerson = null
+        this.selectedPerson = null;
         if (this.globe) {
-          this.globe.pointOfView({ lat: 0, lng: 0, altitude: 1.8 }, 1000)
+          this.globe.pointOfView({ lat: 0, lng: 0, altitude: 1.8 }, 1000);
         }
-      }, 800) // Wait for transition to complete
+      }, 800); // Wait for transition to complete
     },
 
     onPersonImageLoaded() {
       // Optional: Add any additional animations when person image loads
-      console.log('Person image loaded')
+      console.log("Person image loaded");
     },
 
     setupPersonClickDetection() {
       // Set up raycaster for detecting clicks on person meshes
-      const raycaster = new THREE.Raycaster()
-      const mouse = new THREE.Vector2()
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
 
       const onMouseClick = (event) => {
         // Don't handle clicks if person detail is visible
         if (this.showPersonDetail) {
-          return
+          return;
         }
 
         // Calculate mouse position in normalized device coordinates
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
         // Get the Three.js scene from the globe
-        const scene = this.globe.scene()
-        if (!scene) return
+        const scene = this.globe.scene();
+        if (!scene) return;
 
         // Update the picking ray with the camera and mouse position
-        raycaster.setFromCamera(mouse, this.globe.camera())
+        raycaster.setFromCamera(mouse, this.globe.camera());
 
         // Get all person meshes
-        const personMeshes = Array.from(this.personMeshes.values())
-        
+        const personMeshes = Array.from(this.personMeshes.values());
+
         // Check for intersections
-        const intersects = raycaster.intersectObjects(personMeshes, true)
+        const intersects = raycaster.intersectObjects(personMeshes, true);
 
         if (intersects.length > 0) {
-          const clickedMesh = intersects[0].object
-          const person = this.findPersonByMesh(clickedMesh)
+          const clickedMesh = intersects[0].object;
+          const person = this.findPersonByMesh(clickedMesh);
           if (person) {
-            this.handlePersonClick(person)
+            this.handlePersonClick(person);
           }
         }
-      }
+      };
 
       // Add click event listener
-      window.addEventListener('click', onMouseClick)
+      window.addEventListener("click", onMouseClick);
 
       // Store the event listener for cleanup
-      this.clickListener = onMouseClick
+      this.clickListener = onMouseClick;
     },
 
     findPersonByMesh(mesh) {
       // Find the person data associated with this mesh
       for (const [person, personMesh] of this.personMeshes.entries()) {
         if (personMesh === mesh) {
-          return person
+          return person;
         }
       }
-      return null
+      return null;
     },
 
     setupHoverEffects() {
-      const raycaster = new THREE.Raycaster()
-      const mouse = new THREE.Vector2()
-      let hoveredMesh = null
+      const raycaster = new THREE.Raycaster();
+      const mouse = new THREE.Vector2();
+      let hoveredMesh = null;
 
       const onMouseMove = (event) => {
         // Don't handle hover if person detail is visible
         if (this.showPersonDetail) {
-          return
+          return;
         }
 
         // Calculate mouse position in normalized device coordinates
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1
+        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
 
         // Get the Three.js scene from the globe
-        const scene = this.globe.scene()
-        if (!scene) return
+        const scene = this.globe.scene();
+        if (!scene) return;
 
         // Update the picking ray with the camera and mouse position
-        raycaster.setFromCamera(mouse, this.globe.camera())
+        raycaster.setFromCamera(mouse, this.globe.camera());
 
         // Get all person meshes
-        const personMeshes = Array.from(this.personMeshes.values())
-        
+        const personMeshes = Array.from(this.personMeshes.values());
+
         // Check for intersections
-        const intersects = raycaster.intersectObjects(personMeshes, true)
+        const intersects = raycaster.intersectObjects(personMeshes, true);
 
         // Reset previous hover state
         if (hoveredMesh && hoveredMesh !== intersects[0]?.object) {
-          this.resetHoverEffect(hoveredMesh)
-          hoveredMesh = null
+          this.resetHoverEffect(hoveredMesh);
+          hoveredMesh = null;
         }
 
         // If no intersections, reset cursor
         if (intersects.length === 0) {
-          document.body.style.cursor = 'default'
+          document.body.style.cursor = "default";
         }
 
         // Set new hover state
         if (intersects.length > 0) {
-          const newHoveredMesh = intersects[0].object
+          const newHoveredMesh = intersects[0].object;
           if (newHoveredMesh !== hoveredMesh) {
-            hoveredMesh = newHoveredMesh
-            this.applyHoverEffect(hoveredMesh)
+            hoveredMesh = newHoveredMesh;
+            this.applyHoverEffect(hoveredMesh);
           }
         }
-      }
+      };
 
       // Add mouse move event listener
-      window.addEventListener('mousemove', onMouseMove)
+      window.addEventListener("mousemove", onMouseMove);
 
       // Store the event listener for cleanup
-      this.hoverListener = onMouseMove
+      this.hoverListener = onMouseMove;
     },
 
     applyHoverEffect(mesh) {
       // Scale up the mesh slightly and add a glow effect
-      mesh.scale.setScalar(1.2)
-      
+      mesh.scale.setScalar(1.2);
+
       // Add a subtle glow by scaling the material
       if (mesh.material) {
-        mesh.material.opacity = 0.9
+        mesh.material.opacity = 0.9;
       }
-      
+
       // Change cursor to pointer
-      document.body.style.cursor = 'pointer'
+      document.body.style.cursor = "pointer";
     },
 
     resetHoverEffect(mesh) {
       // Reset the mesh scale
-      mesh.scale.setScalar(1.0)
-      
+      mesh.scale.setScalar(1.0);
+
       // Reset material opacity
       if (mesh.material) {
-        mesh.material.opacity = 1.0
+        mesh.material.opacity = 1.0;
       }
-      
+
       // Reset cursor
-      document.body.style.cursor = 'default'
+      document.body.style.cursor = "default";
     },
 
     pauseGlobe() {
       if (this.globe) {
         // Disable auto-rotation
-        this.globe.controls().autoRotate = false
-        
+        this.globe.controls().autoRotate = false;
+
         // Pause rendering
-        this.globe.pauseAnimation()
-        
+        this.globe.pauseAnimation();
+
         // Remove global event listeners
         if (this.clickListener) {
-          window.removeEventListener('click', this.clickListener)
-          this.clickListener = null
+          window.removeEventListener("click", this.clickListener);
+          this.clickListener = null;
         }
         if (this.hoverListener) {
-          window.removeEventListener('mousemove', this.hoverListener)
-          this.hoverListener = null
+          window.removeEventListener("mousemove", this.hoverListener);
+          this.hoverListener = null;
         }
-        
-        console.log('Globe paused')
+
+        console.log("Globe paused");
       }
     },
 
     resumeGlobe() {
       if (this.globe) {
         // Re-enable auto-rotation
-        this.globe.controls().autoRotate = true
-        this.globe.controls().autoRotateSpeed = 0.5
-        
+        this.globe.controls().autoRotate = true;
+        this.globe.controls().autoRotateSpeed = 0.5;
+
         // Resume rendering
-        this.globe.resumeAnimation()
-        
+        this.globe.resumeAnimation();
+
         // Re-setup event listeners
-        this.setupPersonClickDetection()
-        this.setupHoverEffects()
-        
-        console.log('Globe resumed')
+        this.setupPersonClickDetection();
+        this.setupHoverEffects();
+
+        console.log("Globe resumed");
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -631,7 +673,9 @@ export default {
   min-width: 90px;
   text-align: center;
   backdrop-filter: blur(4px);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 
 :global(.person-point:hover) {

@@ -1,22 +1,34 @@
 <template>
-  <div 
-    class="person-detail-container" 
-    :class="{ 'visible': isVisible, 'dark-mode': appStore.isDarkMode }"
+  <div
+    class="person-detail-container"
+    :class="{ visible: isVisible, 'dark-mode': appStore.isDarkMode }"
     @click.self="handleBackClick"
   >
     <div class="person-detail-content">
       <!-- Back Button -->
       <button class="back-button" @click="handleBackClick">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <svg
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M19 12H5M12 19L5 12L12 5"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
         Back to Globe
       </button>
 
       <!-- Person Photo -->
       <div class="person-photo-container">
-        <img 
-          :src="person.photo" 
+        <img
+          :src="person.photo"
           :alt="person.name"
           class="person-photo"
           @load="onImageLoad"
@@ -26,7 +38,7 @@
       <!-- Person Info -->
       <div class="person-info">
         <h1 class="person-name">{{ person.name }}</h1>
-        
+
         <!-- Values Section -->
         <div class="info-section">
           <h3>Values</h3>
@@ -51,7 +63,11 @@
         <div class="info-section">
           <h3>Vehicles</h3>
           <div class="vehicles-list">
-            <div v-for="(vehicle, index) in person.vehicles" :key="index" class="vehicle-item">
+            <div
+              v-for="(vehicle, index) in person.vehicles"
+              :key="index"
+              class="vehicle-item"
+            >
               <div v-if="typeof vehicle === 'string'" class="vehicle-text">
                 {{ vehicle }}
               </div>
@@ -68,35 +84,35 @@
 </template>
 
 <script>
-import { useAppStore } from '../stores/app'
+import { useAppStore } from "../stores/app";
 
 export default {
-  name: 'PersonDetailView',
+  name: "PersonDetailView",
   props: {
     person: {
       type: Object,
-      required: true
+      required: true,
     },
     isVisible: {
       type: Boolean,
-      default: false
-    }
+      default: false,
+    },
   },
   computed: {
     appStore() {
-      return useAppStore()
-    }
+      return useAppStore();
+    },
   },
   methods: {
     handleBackClick() {
-      this.$emit('back-to-globe')
+      this.$emit("back-to-globe");
     },
     onImageLoad() {
       // Trigger any animations after image loads
-      this.$emit('image-loaded')
-    }
-  }
-}
+      this.$emit("image-loaded");
+    },
+  },
+};
 </script>
 
 <style scoped>
@@ -339,16 +355,16 @@ export default {
     padding: 20px;
     margin: 20px;
   }
-  
+
   .person-photo {
     width: 150px;
     height: 150px;
   }
-  
+
   .person-name {
     font-size: 2rem;
   }
-  
+
   .back-button {
     top: 10px;
     left: 10px;
@@ -356,4 +372,4 @@ export default {
     font-size: 12px;
   }
 }
-</style> 
+</style>

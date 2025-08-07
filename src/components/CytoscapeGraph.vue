@@ -1,5 +1,12 @@
 <script setup>
-import { onMounted, ref, defineExpose, nextTick, watch, onUnmounted } from "vue";
+import {
+  onMounted,
+  ref,
+  defineExpose,
+  nextTick,
+  watch,
+  onUnmounted,
+} from "vue";
 import cytoscape from "cytoscape";
 import { select, selectAll } from "d3-selection";
 import cytoscapeCola from "cytoscape-cola";
@@ -170,50 +177,53 @@ const graphConfig = {
 // Function to restore node images when component is activated
 const restoreNodeImages = () => {
   if (!cy.value) return;
-  
+
   // Force a refresh of nodes with photos to ensure images are properly rendered
-  cy.value.nodes('[hasPhoto]').forEach(node => {
-    const photoUrl = node.data('photo');
+  cy.value.nodes("[hasPhoto]").forEach((node) => {
+    const photoUrl = node.data("photo");
     if (photoUrl) {
       // Re-apply the background image style to ensure proper rendering
       // Use a more direct approach to prevent flickering
-      const currentStyle = node.style('background-image');
+      const currentStyle = node.style("background-image");
       if (currentStyle !== photoUrl) {
         node.style({
-          'background-image': photoUrl,
-          'background-width': '100%',
-          'background-height': '100%',
-          'background-fit': 'cover',
-          'background-color': 'transparent',
-          'border-color': 'transparent'
+          "background-image": photoUrl,
+          "background-width": "100%",
+          "background-height": "100%",
+          "background-fit": "cover",
+          "background-color": "transparent",
+          "border-color": "transparent",
         });
-        
+
         // Verify image is loaded (only in development)
-        if (process.env.NODE_ENV === 'development') {
+        if (process.env.NODE_ENV === "development") {
           const img = new Image();
           img.onload = () => {
-            console.log(`✅ Image restored for ${node.data('id')}:`, photoUrl);
+            console.log(`✅ Image restored for ${node.data("id")}:`, photoUrl);
           };
           img.onerror = () => {
-            console.log(`❌ Image failed to restore for ${node.data('id')}:`, photoUrl);
+            console.log(
+              `❌ Image failed to restore for ${node.data("id")}:`,
+              photoUrl,
+            );
           };
           img.src = photoUrl;
         }
       }
     }
   });
-  
+
   console.log("Node images restored");
 };
 
 // Function to safely activate Cytoscape component
 const activateCytoscape = () => {
   if (!cy.value) return;
-  
+
   // Preload all images to prevent flickering
   const imagePromises = [];
-  cy.value.nodes('[hasPhoto]').forEach(node => {
-    const photoUrl = node.data('photo');
+  cy.value.nodes("[hasPhoto]").forEach((node) => {
+    const photoUrl = node.data("photo");
     if (photoUrl) {
       const imgPromise = new Promise((resolve, reject) => {
         const img = new Image();
@@ -224,27 +234,27 @@ const activateCytoscape = () => {
       imagePromises.push(imgPromise);
     }
   });
-  
+
   // Wait for all images to load, then restore and make visible
   // Add a timeout to prevent hanging
   const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('Image preload timeout')), 2000);
+    setTimeout(() => reject(new Error("Image preload timeout")), 2000);
   });
-  
+
   Promise.race([Promise.all(imagePromises), timeoutPromise])
     .then(() => {
       // First, restore images while still hidden to prevent flickering
       restoreNodeImages();
-      
+
       // Add a small delay to ensure images are properly applied before making visible
       setTimeout(() => {
         // Then make visible - apply to the DOM element, not Cytoscape styles
         const cyElement = cy.value.container();
         if (cyElement) {
-          cyElement.style.visibility = 'visible';
-          cyElement.style.pointerEvents = 'auto';
+          cyElement.style.visibility = "visible";
+          cyElement.style.pointerEvents = "auto";
         }
-        
+
         // Force a style refresh to ensure everything is properly rendered
         nextTick(() => {
           updateGraphStyles();
@@ -256,40 +266,40 @@ const activateCytoscape = () => {
       }, 100);
     })
     .catch((error) => {
-      console.warn('Image preload failed or timed out:', error);
+      console.warn("Image preload failed or timed out:", error);
       // Continue with activation even if images fail to preload
       restoreNodeImages();
       setTimeout(() => {
         // Apply to the DOM element, not Cytoscape styles
         const cyElement = cy.value.container();
         if (cyElement) {
-          cyElement.style.visibility = 'visible';
-          cyElement.style.pointerEvents = 'auto';
+          cyElement.style.visibility = "visible";
+          cyElement.style.pointerEvents = "auto";
         }
         nextTick(() => {
           updateGraphStyles();
         });
       }, 100);
     });
-  
-  console.log('Cytoscape activated');
+
+  console.log("Cytoscape activated");
 };
 
 // Function to safely deactivate Cytoscape component
 const deactivateCytoscape = () => {
   if (!cy.value) return;
-  
+
   // Add a small delay to prevent image flickering during transition
   setTimeout(() => {
     // Apply to the DOM element, not Cytoscape styles
     const cyElement = cy.value.container();
     if (cyElement) {
-      cyElement.style.visibility = 'hidden';
-      cyElement.style.pointerEvents = 'none';
+      cyElement.style.visibility = "hidden";
+      cyElement.style.pointerEvents = "none";
     }
   }, 50);
-  
-  console.log('Cytoscape deactivated');
+
+  console.log("Cytoscape deactivated");
 };
 
 // Function to update graph styles based on dark mode
@@ -298,7 +308,7 @@ const updateGraphStyles = () => {
 
   const isDark = appStore.isDarkMode;
   const newStyles = isDark ? darkModeStyles : lightModeStyles;
-  
+
   // Apply styles efficiently by using the style() method with the full array
   // This is still much faster than the original because we're not recreating the graph
   cy.value.style(newStyles);
@@ -319,7 +329,7 @@ watch(
     if (themeUpdateTimeout) {
       clearTimeout(themeUpdateTimeout);
     }
-    
+
     // Debounce the theme update to prevent rapid changes
     themeUpdateTimeout = setTimeout(() => {
       console.log("Updating graph styles");
@@ -333,7 +343,7 @@ watch(
   () => appStore.activeComponent,
   (newComponent) => {
     if (cy.value) {
-      if (newComponent === 'cytoscape') {
+      if (newComponent === "cytoscape") {
         activateCytoscape();
       } else {
         deactivateCytoscape();
@@ -378,27 +388,28 @@ const initializeGraphData = async () => {
       id: person.name,
       label: person.name,
     };
-    
+
     // Only add photo data if it exists and convert to proper URL
     if (person.photo) {
       // Convert relative path to absolute URL
-      const photoUrl = person.photo.startsWith('/') 
-        ? person.photo 
+      const photoUrl = person.photo.startsWith("/")
+        ? person.photo
         : `/profile-photos/${person.photo}`;
       nodeData.photo = photoUrl;
       nodeData.hasPhoto = true; // Add explicit flag
       console.log(`Setting photo for ${person.name}:`, photoUrl);
-      
+
       // Test if image loads
       const img = new Image();
       // img.onload = () => console.log(`✅ Photo loaded for ${person.name}:`, photoUrl);
-      img.onerror = () => console.log(`❌ Photo failed to load for ${person.name}:`, photoUrl);
+      img.onerror = () =>
+        console.log(`❌ Photo failed to load for ${person.name}:`, photoUrl);
       img.src = photoUrl;
     } else {
       console.log(`No photo for ${person.name}`);
     }
-    
-    return { data: nodeData, classes: person.photo ? 'photo-node' : '' };
+
+    return { data: nodeData, classes: person.photo ? "photo-node" : "" };
   });
 
   // For now, start with no edges (members view)
@@ -460,35 +471,41 @@ const showMembersView = () => {
 // Zoom out functionality
 const handleZoomOut = () => {
   if (!cy.value || !nodeClickHandler) return;
-  
+
   // Show all elements
   cy.value.elements().style({
     display: "element",
   });
-  
+
   // Show node labels
   cy.value.nodes().style({
     "text-opacity": 1,
   });
-  
+
   // Hide UI elements (safely check if elements exist)
   const nodeViewElements = ["name", "values", "vision", "vehicles", "zoom-out"];
-  nodeViewElements.forEach(id => {
+  nodeViewElements.forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.style.opacity = "0";
     }
   });
-  
+
   // Show original UI (safely check if elements exist)
-  const uiElements = ["wg", "global-distribution","members", "ai", "ai-summary"];
-  uiElements.forEach(id => {
+  const uiElements = [
+    "wg",
+    "global-distribution",
+    "members",
+    "ai",
+    "ai-summary",
+  ];
+  uiElements.forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.style.opacity = "1";
     }
   });
-  
+
   // Remove circles and text
   if (svgRef.value) {
     const svgSelection = select(svgRef.value);
@@ -496,7 +513,7 @@ const handleZoomOut = () => {
     svgSelection.selectAll("foreignObject").remove();
     svgSelection.selectAll("mask").remove();
   }
-  
+
   // Reset view
   cy.value.animate({
     fit: {
@@ -545,39 +562,45 @@ onMounted(async () => {
       console.log("Using cached Cytoscape data from store");
       graphData = appStore.cytoscapeData;
       cy.value = appStore.cytoscapeInstance;
-      
+
       // Reattach to the new container
       if (cy.value) {
         cy.value.mount(containerRef.value);
         updateGraphStyles();
-        
+
         // Reinitialize node click functionality
         //const { handleNodeClick, cleanup } = useNodeClick(cy.value, select(svgRef.value), localPeople);
-        const { handleNodeClick, handleZoomOut, cleanup } = useNodeClickConcentric(cy.value, select(svgRef.value), localPeople);
+        const { handleNodeClick, handleZoomOut, cleanup } =
+          useNodeClickConcentric(cy.value, select(svgRef.value), localPeople);
         nodeClickHandler = handleNodeClick;
         nodeClickCleanup = cleanup;
-        
+
         // Pass the zoom out function to the store
         appStore.setConcentricZoomOut(handleZoomOut);
-        
+
         // Add node click event listener
-        cy.value.on('tap', 'node', handleNodeClick);
+        cy.value.on("tap", "node", handleNodeClick);
       }
     } else {
       console.log("Initializing new Cytoscape data");
       const { nodes } = await initializeGraphData();
       console.log("Initialized nodes:", nodes.length);
       console.log("Sample node data:", nodes[0]);
-      
+
       // Debug: Check if nodes have photo data
       nodes.forEach((node, index) => {
         if (node.data.photo) {
-          console.log(`Node ${index} (${node.data.id}) has photo:`, node.data.photo);
+          console.log(
+            `Node ${index} (${node.data.id}) has photo:`,
+            node.data.photo,
+          );
         }
       });
 
       // Set initial styles based on current dark mode state
-      graphConfig.style = appStore.isDarkMode ? darkModeStyles : lightModeStyles;
+      graphConfig.style = appStore.isDarkMode
+        ? darkModeStyles
+        : lightModeStyles;
 
       cy.value = cytoscape({
         container: containerRef.value,
@@ -596,36 +619,38 @@ onMounted(async () => {
 
       // Apply initial theme styles efficiently (for any additional updates)
       updateGraphStyles();
-      
+
       // Debug: Check if nodes have the correct attributes
-      cy.value.nodes().forEach(node => {
+      cy.value.nodes().forEach((node) => {
         console.log(`Node ${node.data().id}:`, {
           hasPhoto: node.data().hasPhoto,
           photo: node.data().photo,
-          hasStyle: node.hasClass('hasPhoto'),
-          classes: node.classes()
+          hasStyle: node.hasClass("hasPhoto"),
+          classes: node.classes(),
         });
-        
+
         // Test if photo loads
         if (node.data().photo) {
           const img = new Image();
           // img.onload = () => console.log(`✅ Node photo loaded: ${node.data().id}`);
-          img.onerror = () => console.log(`❌ Node photo failed: ${node.data().id}`);
+          img.onerror = () =>
+            console.log(`❌ Node photo failed: ${node.data().id}`);
           img.src = node.data().photo;
         }
       });
-      
+
       // Initialize node click functionality after cy is created
       // const { handleNodeClick, cleanup } = useNodeClick(cy.value, select(svgRef.value), localPeople);
-      const { handleNodeClick, handleZoomOut, cleanup } = useNodeClickConcentric(cy.value, select(svgRef.value), localPeople);
+      const { handleNodeClick, handleZoomOut, cleanup } =
+        useNodeClickConcentric(cy.value, select(svgRef.value), localPeople);
       nodeClickHandler = handleNodeClick;
       nodeClickCleanup = cleanup;
-      
+
       // Pass the zoom out function to the store
       appStore.setConcentricZoomOut(handleZoomOut);
-      
+
       // Add node click event listener
-      cy.value.on('tap', 'node', handleNodeClick);
+      cy.value.on("tap", "node", handleNodeClick);
     }
 
     console.log("Cytoscape initialized successfully");
@@ -640,12 +665,12 @@ onUnmounted(() => {
   if (themeUpdateTimeout) {
     clearTimeout(themeUpdateTimeout);
   }
-  
+
   // Remove node click event listener
   if (cy.value && nodeClickHandler) {
-    cy.value.removeListener('tap', 'node', nodeClickHandler);
+    cy.value.removeListener("tap", "node", nodeClickHandler);
   }
-  
+
   // Cleanup node click functionality
   if (nodeClickCleanup) {
     nodeClickCleanup();
@@ -659,28 +684,33 @@ onUnmounted(() => {
       <div ref="containerRef" id="cy"></div>
       <svg ref="svgRef" class="overlay"></svg>
     </div>
-    
+
     <!-- Node View UI Elements -->
-    <div id="name" class="node-view-ui" style="opacity: 0;">
+    <div id="name" class="node-view-ui" style="opacity: 0">
       <h1 id="n1"></h1>
     </div>
-    
-    <div id="values" class="node-view-ui" style="opacity: 0;">
+
+    <div id="values" class="node-view-ui" style="opacity: 0">
       <h3>Values</h3>
       <div class="values-content"></div>
     </div>
-    
-    <div id="vision" class="node-view-ui" style="opacity: 0;">
+
+    <div id="vision" class="node-view-ui" style="opacity: 0">
       <h3>Vision</h3>
       <div class="vision-content"></div>
     </div>
-    
-    <div id="vehicles" class="node-view-ui" style="opacity: 0;">
+
+    <div id="vehicles" class="node-view-ui" style="opacity: 0">
       <h3>Vehicles</h3>
       <div class="vehicles-content"></div>
     </div>
-    
-    <div id="zoom-out" class="zoom-out-button" style="opacity: 0;" @click="handleZoomOut">
+
+    <div
+      id="zoom-out"
+      class="zoom-out-button"
+      style="opacity: 0"
+      @click="handleZoomOut"
+    >
       <span>← Back to Network</span>
     </div>
   </div>

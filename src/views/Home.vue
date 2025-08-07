@@ -8,26 +8,21 @@ import GlobeGL from "../components/GlobeGL.vue";
 
 const appStore = useAppStore();
 const cytoscapeRef = ref(null);
-
 </script>
 
 <template>
   <div class="app-container">
     <DarkModeToggle />
-    <LeftPanel
-    />
-    
+    <LeftPanel />
+
     <!-- Both components always rendered, visibility controlled by CSS -->
     <div class="components-container">
-      <CytoscapeGraph 
-        ref="cytoscapeRef" 
-        :class="{ 'active': appStore.activeComponent === 'cytoscape' }"
+      <CytoscapeGraph
+        ref="cytoscapeRef"
+        :class="{ active: appStore.activeComponent === 'cytoscape' }"
       />
-      <GlobeGL 
-        :class="{ 'active': appStore.activeComponent === 'globe' }"
-      />
+      <GlobeGL :class="{ active: appStore.activeComponent === 'globe' }" />
     </div>
-     
   </div>
 </template>
 

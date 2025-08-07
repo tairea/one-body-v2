@@ -2,35 +2,53 @@
   <div class="step-content" :class="{ 'dark-mode': isDarkMode }">
     <!-- Profile Image Upload -->
     <div class="profile-image-container">
-      <div 
+      <div
         class="profile-image-placeholder"
         :class="{ 'has-image': profileImage }"
-        :style="profileImageBorderColor ? { '--border-color': profileImageBorderColor } : {}"
+        :style="
+          profileImageBorderColor
+            ? { '--border-color': profileImageBorderColor }
+            : {}
+        "
         @click="triggerFileInput"
       >
-        <img 
-          v-if="profileImage" 
-          :src="profileImage" 
-          alt="Profile" 
+        <img
+          v-if="profileImage"
+          :src="profileImage"
+          alt="Profile"
           class="profile-image"
         />
         <div v-else class="placeholder-content">
-          <svg class="plus-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg
+            class="plus-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
           <span class="upload-text">Add Photo</span>
         </div>
-        
+
         <!-- Edit icon overlay -->
         <div v-if="profileImage" class="edit-overlay">
-          <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <svg
+            class="edit-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+            ></path>
             <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
         </div>
       </div>
-      
+
       <input
         ref="fileInput"
         type="file"
@@ -69,7 +87,8 @@
         >You can be as specific or as general as you want</small
       >
       <small class="form-hint"
-        >Just enter the country or city name and our local (offline) LLM will get the coordinates</small
+        >Just enter the country or city name and our local (offline) LLM will
+        get the coordinates</small
       >
       <input
         id="location"
@@ -91,22 +110,27 @@ export default {
   props: {
     name: {
       type: String,
-      required: true
+      required: true,
     },
     email: {
       type: String,
-      required: true
+      required: true,
     },
     location: {
       type: String,
-      required: true
+      required: true,
     },
     profileImage: {
       type: String,
-      default: null
-    }
+      default: null,
+    },
   },
-  emits: ["update:name", "update:email", "update:location", "update:profileImage"],
+  emits: [
+    "update:name",
+    "update:email",
+    "update:location",
+    "update:profileImage",
+  ],
   data() {
     return {
       profileImageBorderColor: null,
@@ -122,7 +146,7 @@ export default {
       },
       set(value) {
         this.$emit("update:name", value);
-      }
+      },
     },
     emailValue: {
       get() {
@@ -130,7 +154,7 @@ export default {
       },
       set(value) {
         this.$emit("update:email", value);
-      }
+      },
     },
     locationValue: {
       get() {
@@ -138,8 +162,8 @@ export default {
       },
       set(value) {
         this.$emit("update:location", value);
-      }
-    }
+      },
+    },
   },
   mounted() {
     // Generate a random DWeb color for the profile image border
@@ -156,14 +180,13 @@ export default {
         reader.onload = (e) => {
           const imageData = e.target.result;
           // Save to localStorage
-          localStorage.setItem('profileImage', imageData);
+          localStorage.setItem("profileImage", imageData);
           this.$emit("update:profileImage", imageData);
         };
         reader.readAsDataURL(file);
       }
     },
   },
-
 };
 </script>
 
@@ -344,4 +367,4 @@ export default {
   height: 24px;
   color: white;
 }
-</style> 
+</style>

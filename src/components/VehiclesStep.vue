@@ -2,22 +2,29 @@
   <div class="step-content" :class="{ 'dark-mode': isDarkMode }">
     <h3 class="mb-2">Your Vehicles</h3>
     <p class="step-description mb-0">
-      Vehicles are the initiatives, projects and businesses we work on to achieve our visions.<br>
+      Vehicles are the initiatives, projects and businesses we work on to
+      achieve our visions.<br />
       Tell us here about all the different things you're involved in.
     </p>
-    <p class="step-description mt-2"
-        ><em><small class="form-hint">Note: Everyones values, visions and vehicles will be processed by our local (offline) LLM to help reveal shared similarities, connections and opportunities amongst the fellows.</small></em></p
+    <p class="step-description mt-2">
+      <em
+        ><small class="form-hint"
+          >Note: Everyones values, visions and vehicles will be processed by our
+          local (offline) LLM to help reveal shared similarities, connections
+          and opportunities amongst the fellows.</small
+        ></em
       >
-    
+    </p>
+
     <!-- Add Vehicle Component -->
-    <AddVehicle 
+    <AddVehicle
       ref="addVehicle"
-      @vehicle-added="addVehicle" 
+      @vehicle-added="addVehicle"
       @vehicle-updated="updateVehicle"
       :edit-mode="editMode"
       :edit-vehicle="editingVehicle"
     />
-    
+
     <!-- Display Added Vehicles -->
     <div v-if="vehicles.length > 0" class="vehicles-container">
       <div class="vehicle-cards">
@@ -43,13 +50,13 @@ export default {
   name: "VehiclesStep",
   components: {
     AddVehicle,
-    VehicleCard
+    VehicleCard,
   },
   props: {
     vehicles: {
       type: Array,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ["update:vehicles"],
   data() {
@@ -80,7 +87,7 @@ export default {
       });
     },
     updateVehicle(updatedVehicle) {
-      const index = this.vehicles.findIndex(v => v === this.editingVehicle);
+      const index = this.vehicles.findIndex((v) => v === this.editingVehicle);
       if (index !== -1) {
         const updatedVehicles = [...this.vehicles];
         updatedVehicles[index] = updatedVehicle;
@@ -143,4 +150,4 @@ export default {
     width: 100%;
   }
 }
-</style> 
+</style>

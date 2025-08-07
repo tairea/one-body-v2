@@ -11,21 +11,21 @@ const appStore = useAppStore();
 const valuesOpacity = computed(() => {
   return {
     opacity: appStore.activeProfileSection === "values" ? "1" : "0",
-    transition: "opacity 0.3s ease"
+    transition: "opacity 0.3s ease",
   };
 });
 
 const visionOpacity = computed(() => {
   return {
     opacity: appStore.activeProfileSection === "vision" ? "1" : "0",
-    transition: "opacity 0.3s ease"
+    transition: "opacity 0.3s ease",
   };
 });
 
 const vehiclesOpacity = computed(() => {
   return {
     opacity: appStore.activeProfileSection === "vehicles" ? "1" : "0",
-    transition: "opacity 0.3s ease"
+    transition: "opacity 0.3s ease",
   };
 });
 
@@ -42,26 +42,26 @@ const handleZoomOut = () => {
   appStore.setViewingProfile(false);
   appStore.clearCurrentPersonData();
   appStore.clearActiveProfileSection();
-  
+
   // Call the concentric zoom out function if it exists
   if (appStore.concentricZoomOut) {
     appStore.concentricZoomOut();
   }
-  
+
   // Get cytoscape instance from store
   const cy = appStore.cytoscapeInstance;
   if (!cy) return;
-  
+
   // Show all elements
   cy.elements().style({
     display: "element",
   });
-  
+
   // Show node labels
   cy.nodes().style({
     "text-opacity": 1,
   });
-  
+
   // Remove circles and text from SVG using stored reference
   const svg = appStore.cytoscapeSvg;
   if (svg) {
@@ -74,7 +74,7 @@ const handleZoomOut = () => {
     svg.selectAll(".passion-name").remove();
     svg.selectAll("g").remove(); // Remove any remaining groups
   }
-  
+
   // Reset view
   cy.animate({
     fit: {
@@ -93,7 +93,9 @@ const handleZoomOut = () => {
   <div class="left-overlay" :class="{ 'dark-mode': appStore.isDarkMode }">
     <!-- NAME -->
     <div id="name">
-      <h1 id="n1">{{ appStore.currentPersonData?.name?.toUpperCase() || 'NAME' }}</h1>
+      <h1 id="n1">
+        {{ appStore.currentPersonData?.name?.toUpperCase() || "NAME" }}
+      </h1>
     </div>
 
     <!-- V, V, V's -->
@@ -111,10 +113,9 @@ const handleZoomOut = () => {
     </div>
 
     <!-- BACK TO MEMBERS -->
-    <div id="zoom-out" class="zoom-out-button"  @click="handleZoomOut">
+    <div id="zoom-out" class="zoom-out-button" @click="handleZoomOut">
       <span>← Back to Network</span>
     </div>
-
   </div>
 </template>
 
@@ -210,7 +211,12 @@ h3 {
 }
 
 .left-overlay.dark-mode .button .v-icon {
-  color: rgba(255, 255, 255, 0.87) !important; /* More specific selector with !important to override Vuetify defaults */
+  color: rgba(
+    255,
+    255,
+    255,
+    0.87
+  ) !important; /* More specific selector with !important to override Vuetify defaults */
 }
 
 /* V, V, V div styles */

@@ -3,18 +3,26 @@
     <v-card-title class="vision-header">
       <h5>{{ vision.title }}</h5>
       <div class="vision-actions">
-        <button 
+        <button
           @click="$emit('edit', vision)"
           class="edit-vision-btn"
           type="button"
           title="Edit Vision"
         >
-          <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <svg
+            class="edit-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+            ></path>
             <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
         </button>
-        <button 
+        <button
           @click="$emit('remove')"
           class="remove-vision-btn"
           type="button"
@@ -24,14 +32,25 @@
         </button>
       </div>
     </v-card-title>
-    
+
     <v-card-text class="vision-content">
-      <p v-if="vision.description" class="vision-description mx-4">{{ vision.description }}</p>
-      
-      <div v-if="vision.relatedLinks && vision.relatedLinks.length > 0" class="vision-links">
+      <p v-if="vision.description" class="vision-description mx-4">
+        {{ vision.description }}
+      </p>
+
+      <div
+        v-if="vision.relatedLinks && vision.relatedLinks.length > 0"
+        class="vision-links"
+      >
         <!-- <strong>Related Links:</strong> -->
-        <p v-for="link in vision.relatedLinks" :key="link" class="vision-link mx-4">
-          <a :href="link" target="_blank" rel="noopener noreferrer">{{ link }}</a>
+        <p
+          v-for="link in vision.relatedLinks"
+          :key="link"
+          class="vision-link mx-4"
+        >
+          <a :href="link" target="_blank" rel="noopener noreferrer">{{
+            link
+          }}</a>
         </p>
       </div>
     </v-card-text>
@@ -44,10 +63,10 @@ export default {
   props: {
     vision: {
       type: Object,
-      required: true
-    }
+      required: true,
+    },
   },
-  emits: ["edit", "remove"]
+  emits: ["edit", "remove"],
 };
 </script>
 
@@ -216,4 +235,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

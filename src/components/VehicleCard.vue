@@ -3,18 +3,26 @@
     <v-card-title class="vehicle-header">
       <h5>{{ vehicle.title }}</h5>
       <div class="vehicle-actions">
-        <button 
+        <button
           @click="$emit('edit', vehicle)"
           class="edit-vehicle-btn"
           type="button"
           title="Edit Vehicle"
         >
-          <svg class="edit-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+          <svg
+            class="edit-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+          >
+            <path
+              d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+            ></path>
             <path d="m18.5 2.5 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
           </svg>
         </button>
-        <button 
+        <button
           @click="$emit('remove')"
           class="remove-vehicle-btn"
           type="button"
@@ -24,13 +32,24 @@
         </button>
       </div>
     </v-card-title>
-    
+
     <v-card-text class="vehicle-content">
-      <p v-if="vehicle.description" class="vehicle-description mx-4">{{ vehicle.description }}</p>
-      
-      <div v-if="vehicle.relatedLinks && vehicle.relatedLinks.length > 0" class="vehicle-links">
-        <p v-for="link in vehicle.relatedLinks" :key="link" class="vehicle-link mx-4">
-          <a :href="link" target="_blank" rel="noopener noreferrer">{{ link }}</a>
+      <p v-if="vehicle.description" class="vehicle-description mx-4">
+        {{ vehicle.description }}
+      </p>
+
+      <div
+        v-if="vehicle.relatedLinks && vehicle.relatedLinks.length > 0"
+        class="vehicle-links"
+      >
+        <p
+          v-for="link in vehicle.relatedLinks"
+          :key="link"
+          class="vehicle-link mx-4"
+        >
+          <a :href="link" target="_blank" rel="noopener noreferrer">{{
+            link
+          }}</a>
         </p>
       </div>
     </v-card-text>
@@ -45,8 +64,8 @@ export default {
   props: {
     vehicle: {
       type: Object,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ["edit", "remove"],
   computed: {
@@ -222,4 +241,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

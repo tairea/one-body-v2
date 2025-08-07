@@ -3,7 +3,7 @@ export const people = [
   {
     name: "Ian Tairea",
     photo: "/profile-photos/ian.jpeg",
-    location: { lat: 40.7128, lng: -74.0060 }, // New York City, USA
+    location: { lat: 40.7128, lng: -74.006 }, // New York City, USA
     values: ["smart work", "faith", "solar punk", "servig our people"],
     vision: [
       "youth",
@@ -192,7 +192,7 @@ export const people = [
   {
     name: "Nina Neubauer",
     photo: "/profile-photos/nina.png",
-    location: { lat: 52.5200, lng: 13.4050 }, // Berlin, Germany
+    location: { lat: 52.52, lng: 13.405 }, // Berlin, Germany
     values: [
       "research",
       "fairness",
@@ -360,7 +360,7 @@ export const people = [
   {
     name: "Fred Nicholas",
     photo: "/profile-photos/fred.png",
-    location: { lat: 28.6139, lng: 77.2090 }, // New Delhi, India
+    location: { lat: 28.6139, lng: 77.209 }, // New Delhi, India
     values: ["family", "love", "honesty", "determined"],
     vision: [
       "Technology",

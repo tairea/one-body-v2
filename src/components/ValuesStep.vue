@@ -2,12 +2,18 @@
   <div class="step-content" :class="{ 'dark-mode': isDarkMode }">
     <h3 class="mb-2">Your Values</h3>
     <p class="step-description mb-2">
-      What are your personal values? What do you care about?<br>
+      What are your personal values? What do you care about?<br />
       This could also include your skills, and experience.
     </p>
-    <p class="step-description"
-        ><em><small class="form-hint">Note: Your values, visions and vehicles will be processed by our local LLM to help generate connections and opportunities amongst the fellows.</small></em></p
+    <p class="step-description">
+      <em
+        ><small class="form-hint"
+          >Note: Your values, visions and vehicles will be processed by our
+          local LLM to help generate connections and opportunities amongst the
+          fellows.</small
+        ></em
       >
+    </p>
     <div class="values-input-container">
       <input
         v-model="newValue"
@@ -26,11 +32,7 @@
         :style="{ '--chip-color': getChipColor(value) }"
       >
         {{ value }}
-        <button
-          @click="removeValue(value)"
-          class="chip-remove"
-          type="button"
-        >
+        <button @click="removeValue(value)" class="chip-remove" type="button">
           ×
         </button>
       </div>
@@ -46,8 +48,8 @@ export default {
   props: {
     values: {
       type: Array,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ["update:values"],
   data() {
@@ -62,7 +64,7 @@ export default {
   },
   methods: {
     handleValueKeydown(event) {
-      if (event.key === 'Tab' || event.key === ',' || event.key === 'Enter') {
+      if (event.key === "Tab" || event.key === "," || event.key === "Enter") {
         event.preventDefault();
         this.addValue();
       }
@@ -93,7 +95,7 @@ export default {
         "#00d6c6", // Aqua Green (large dot)
         "#00b3f3", // Sky Blue (medium dots)
       ];
-      
+
       // Use the index of the value in the values array to cycle through colors
       const colorIndex = this.values.indexOf(value) % dwebColors.length;
       return dwebColors[colorIndex];
@@ -250,4 +252,4 @@ export default {
     }
   }
 }
-</style> 
+</style>

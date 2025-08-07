@@ -2,22 +2,28 @@
   <div class="step-content" :class="{ 'dark-mode': isDarkMode }">
     <h3 class="mb-2">Your Visions</h3>
     <p class="step-description mb-0">
-      What visions are you working on? or want to achieve?<br>
+      What visions are you working on? or want to achieve?<br />
       This might include your interests, passions, goals, purpose.
     </p>
-    <p class="step-description mt-2"
-        ><em><small class="form-hint">Note: Everyones values, visions and vehicles will be processed by our local (offline) LLM to help reveal shared similarities, connections and opportunities amongst the fellows.</small></em></p
+    <p class="step-description mt-2">
+      <em
+        ><small class="form-hint"
+          >Note: Everyones values, visions and vehicles will be processed by our
+          local (offline) LLM to help reveal shared similarities, connections
+          and opportunities amongst the fellows.</small
+        ></em
       >
-    
+    </p>
+
     <!-- Add Vision Component -->
-    <AddVision 
+    <AddVision
       ref="addVision"
-      @vision-added="addVision" 
+      @vision-added="addVision"
       @vision-updated="updateVision"
       :edit-mode="editMode"
       :edit-vision="editingVision"
     />
-    
+
     <!-- Display Added Visions -->
     <div v-if="visions.length > 0" class="visions-container">
       <div class="vision-cards">
@@ -43,13 +49,13 @@ export default {
   name: "VisionsStep",
   components: {
     AddVision,
-    VisionCard
+    VisionCard,
   },
   props: {
     visions: {
       type: Array,
-      required: true
-    }
+      required: true,
+    },
   },
   emits: ["update:visions"],
   data() {
@@ -80,7 +86,7 @@ export default {
       });
     },
     updateVision(updatedVision) {
-      const index = this.visions.findIndex(v => v === this.editingVision);
+      const index = this.visions.findIndex((v) => v === this.editingVision);
       if (index !== -1) {
         const updatedVisions = [...this.visions];
         updatedVisions[index] = updatedVision;
@@ -143,4 +149,4 @@ export default {
     width: 100%;
   }
 }
-</style> 
+</style>

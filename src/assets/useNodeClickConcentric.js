@@ -15,35 +15,35 @@ export function useNodeClickConcentric(cy, svg, people) {
     if (clickTimeout) {
       return;
     }
-    
+
     clickTimeout = setTimeout(() => {
       clickTimeout = null;
     }, 1000);
-    
+
     if (!cy) {
       console.error("Cytoscape instance not available");
       return;
     }
-    
+
     const node = event.target;
-    
+
     // Get people data from node.data().id
     const personData = people.find((p) => p.name === node.data().id);
     if (!personData) {
       console.error("Person data not found for:", node.data().id);
       return;
     }
-    
+
     // Save person data to store
     appStore.setCurrentPersonData(personData);
     appStore.setViewingProfile(true);
-    
+
     const { values, vision, vehicles, name } = personData;
 
     // Store original elements for restoration
     originalElements = cy.elements();
     originalPersonPosition = node.position(); // Store original position
-    personNodeId = node.data('id'); // Store person node ID
+    personNodeId = node.data("id"); // Store person node ID
 
     // Hide all other nodes except the clicked one
     cy.elements().not(node).hide();
@@ -51,7 +51,7 @@ export function useNodeClickConcentric(cy, svg, people) {
     // Create concentric data
     const nodes = [];
     const edges = [];
-    
+
     // Values layer (inner circle)
     values.forEach((value, index) => {
       const nodeId = `value-${index}`;
@@ -59,15 +59,15 @@ export function useNodeClickConcentric(cy, svg, people) {
         data: {
           id: nodeId,
           label: value,
-          layer: 'values'
-        }
+          layer: "values",
+        },
       });
       edges.push({
         data: {
           id: `edge-person-${nodeId}`,
-          source: node.data('id'),
-          target: nodeId
-        }
+          source: node.data("id"),
+          target: nodeId,
+        },
       });
     });
 
@@ -78,15 +78,15 @@ export function useNodeClickConcentric(cy, svg, people) {
         data: {
           id: nodeId,
           label: visionItem,
-          layer: 'vision'
-        }
+          layer: "vision",
+        },
       });
       edges.push({
         data: {
           id: `edge-person-${nodeId}`,
-          source: node.data('id'),
-          target: nodeId
-        }
+          source: node.data("id"),
+          target: nodeId,
+        },
       });
     });
 
@@ -98,15 +98,15 @@ export function useNodeClickConcentric(cy, svg, people) {
         data: {
           id: nodeId,
           label: vehicleName,
-          layer: 'vehicles'
-        }
+          layer: "vehicles",
+        },
       });
       edges.push({
         data: {
           id: `edge-person-${nodeId}`,
-          source: node.data('id'),
-          target: nodeId
-        }
+          source: node.data("id"),
+          target: nodeId,
+        },
       });
     });
 
@@ -116,27 +116,26 @@ export function useNodeClickConcentric(cy, svg, people) {
     concentricElements = addedNodes.union(addedEdges).union(node); // Include the person node
 
     // Apply styles to concentric elements
- 
 
     // Apply concentric layout
     cy.layout({
-      name: 'concentric',
+      name: "concentric",
       animate: true,
       fit: true,
       padding: 100,
       duration: 1000,
-      concentric: function(node) {
+      concentric: function (node) {
         // Person node gets level 0 (center), others get higher levels
-        if (node.data('layer') === 'values') return 3;  // Inner circle (closest to center)
-        if (node.data('layer') === 'vision') return 2;  // Middle circle
-        if (node.data('layer') === 'vehicles') return 1; // Outer circle (furthest from center)
+        if (node.data("layer") === "values") return 3; // Inner circle (closest to center)
+        if (node.data("layer") === "vision") return 2; // Middle circle
+        if (node.data("layer") === "vehicles") return 1; // Outer circle (furthest from center)
         return 4; // Person node stays in center
       },
-      levelWidth: function(nodes) {
+      levelWidth: function (nodes) {
         return 1;
       },
       // Apply layout to all concentric elements including person node
-      eles: concentricElements
+      eles: concentricElements,
     }).run();
 
     // Animate to center the view on the person node
@@ -157,19 +156,19 @@ export function useNodeClickConcentric(cy, svg, people) {
     appStore.setViewingProfile(false);
     appStore.clearCurrentPersonData();
     appStore.clearActiveProfileSection();
-    
+
     // Remove concentric elements
     if (concentricElements) {
       concentricElements.remove();
       concentricElements = null;
     }
-    
+
     // Show all original elements
     if (originalElements) {
       originalElements.show();
       originalElements = null;
     }
-    
+
     // Restore original person position if we have it
     if (originalPersonPosition) {
       const personNode = cy.$id(personNodeId);
@@ -178,7 +177,7 @@ export function useNodeClickConcentric(cy, svg, people) {
       }
       originalPersonPosition = null;
     }
-    
+
     // Reset view
     cy.animate({
       fit: {
@@ -202,6 +201,6 @@ export function useNodeClickConcentric(cy, svg, people) {
         clearTimeout(clickTimeout);
         clickTimeout = null;
       }
-    }
+    },
   };
-} 
+}
