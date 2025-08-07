@@ -572,16 +572,6 @@ onMounted(async () => {
       console.log("Initialized nodes:", nodes.length);
       console.log("Sample node data:", nodes[0]);
 
-      // Debug: Check if nodes have photo data
-      nodes.forEach((node, index) => {
-        if (node.data.photo) {
-          console.log(
-            `Node ${index} (${node.data.id}) has photo:`,
-            node.data.photo,
-          );
-        }
-      });
-
       // Set initial styles based on current dark mode state
       graphConfig.style = appStore.isDarkMode
         ? darkModeStyles
