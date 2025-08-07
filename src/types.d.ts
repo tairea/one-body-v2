@@ -10,3 +10,11 @@ export type Person = Readonly<{
   vision: ReadonlyArray<string>;
   vehicles: ReadonlyArray<string | { org: string; mission: string }>;
 }>;
+
+export type Recommendation = {
+  person1Id: number;
+  person2Id: number;
+  ranking: number;
+  reason: string;
+  potential: string[];
+};

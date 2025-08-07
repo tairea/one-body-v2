@@ -1,3 +1,8 @@
+<script setup>
+// @ts-check
+import { uint8ArrayToDataUri } from "../lib/uint8ArrayToDataUri.js";
+</script>
+
 <template>
   <div
     class="person-detail-container"
@@ -28,7 +33,7 @@
       <!-- Person Photo -->
       <div class="person-photo-container">
         <img
-          :src="person.photo"
+          :src="uint8ArrayToDataUri(person.photo)"
           :alt="person.name"
           class="person-photo"
           @load="onImageLoad"

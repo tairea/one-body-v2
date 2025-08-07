@@ -2,6 +2,7 @@
 import {
   onMounted,
   ref,
+  defineProps,
   defineExpose,
   nextTick,
   watch,
@@ -15,7 +16,8 @@ import { SERVER_BASE_URL } from "../constants.js";
 import { useAppStore } from "../stores/app";
 import { useNodeClick } from "../assets/useNodeClick.js";
 import { useNodeClickConcentric } from "../assets/useNodeClickConcentric.js";
-import { people } from "../server/hard-coded/people.js";
+import { uint8ArrayToDataUri } from "../lib/uint8ArrayToDataUri.js";
+/** @import { Person } from "../types.d.ts" */
 
 // Register Cytoscape extensions
 try {
@@ -25,11 +27,13 @@ try {
   console.warn("Some Cytoscape extensions failed to load:", error);
 }
 
+const props = defineProps(["people"]);
+/** @type {Person[]} */ const people = props.people;
+
 const containerRef = ref(null);
 const svgRef = ref(null);
 const cy = ref(null);
 const edges = ref([]);
-const localPeople = people; // Use local people data
 
 // Get dark mode state
 const appStore = useAppStore();
@@ -351,45 +355,16 @@ watch(
   },
 );
 
-const fetchGraphData = async () => {
-  const graphUrl = new URL("/graph", SERVER_BASE_URL);
-  const response = await fetch(graphUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch graph with status ${response.status}`);
-  }
-  const json = await response.json();
-  return {
-    ...json,
-    people: json.people.map((person) => {
-      const photoBase64 = person.photo;
-      const photoUrl = photoBase64 ? "data:;base64," + photoBase64 : null;
-      // if (photoUrl) console.log(photoUrl);
-      return {
-        ...person,
-        photo: photoUrl,
-      };
-    }),
-  };
-};
-
 // Initialize graph data
 const initializeGraphData = async () => {
-  if (!localPeople || !Array.isArray(localPeople)) {
-    console.error("People data is not available or not an array");
-    return { nodes: [], edges: [] };
-  }
-
-  const nodes = localPeople.map((person) => {
+  const nodes = people.map((person) => {
     const nodeData = {
       id: person.name,
       label: person.name,
     };
 
     if (person.photo) {
-      // Convert relative path to absolute URL
-      const photoUrl = person.photo.startsWith("/")
-        ? person.photo
-        : `/profile-photos/${person.photo}`;
+      const photoUrl = uint8ArrayToDataUri(person.photo);
       nodeData.photo = photoUrl;
       nodeData.hasPhoto = true; // Add explicit flag
     }
@@ -554,9 +529,9 @@ onMounted(async () => {
         updateGraphStyles();
 
         // Reinitialize node click functionality
-        //const { handleNodeClick, cleanup } = useNodeClick(cy.value, select(svgRef.value), localPeople);
+        //const { handleNodeClick, cleanup } = useNodeClick(cy.value, select(svgRef.value), people);
         const { handleNodeClick, handleZoomOut, cleanup } =
-          useNodeClickConcentric(cy.value, select(svgRef.value), localPeople);
+          useNodeClickConcentric(cy.value, select(svgRef.value), people);
         nodeClickHandler = handleNodeClick;
         nodeClickCleanup = cleanup;
 
@@ -615,9 +590,9 @@ onMounted(async () => {
       });
 
       // Initialize node click functionality after cy is created
-      // const { handleNodeClick, cleanup } = useNodeClick(cy.value, select(svgRef.value), localPeople);
+      // const { handleNodeClick, cleanup } = useNodeClick(cy.value, select(svgRef.value), people);
       const { handleNodeClick, handleZoomOut, cleanup } =
-        useNodeClickConcentric(cy.value, select(svgRef.value), localPeople);
+        useNodeClickConcentric(cy.value, select(svgRef.value), people);
       nodeClickHandler = handleNodeClick;
       nodeClickCleanup = cleanup;
 

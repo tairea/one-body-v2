@@ -1,5 +1,15 @@
 // @ts-check
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+/** @import { Person } from "../../types.d.ts" */
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+/**
+ * @type {ReadonlyArray<Omit<Person, "id">>}
+ */
 export const people = [
   // ian
   {
@@ -685,4 +695,13 @@ export const people = [
     ],
     vehicles: ["Pastor", "Counselling", "Teaching"],
   },
-];
+].map((person) => ({
+  // ...(person.photo ? { photo: undefined } : {}),
+  name: person.name,
+  photo: fs.readFileSync(path.join(__dirname, person.photo)),
+  locationLatitude: person.location.lat,
+  locationLongitude: person.location.lng,
+  values: person.values,
+  vision: person.vision,
+  vehicles: person.vehicles,
+}));

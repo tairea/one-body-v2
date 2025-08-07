@@ -22,18 +22,29 @@ import Globe from "globe.gl";
 import { FrontSide } from "three";
 import * as THREE from "three";
 import { useAppStore } from "../stores/app";
-import { people } from "../server/hard-coded/people.js";
 import { dWebColors } from "../lib/utils.js";
 import PersonDetailView from "./PersonDetailView.vue";
+import { uint8ArrayToDataUri } from "../lib/uint8ArrayToDataUri.js";
+/** @import { Person } from "../types.d.ts" */
+
+/**
+ * @param {Readonly<Person>} person
+ * @returns {boolean}
+ */
+const doesPersonHaveLocation = (person) =>
+  typeof person.locationLatitude === "number" &&
+  typeof person.locationLongitude === "number";
 
 export default {
   name: "GlobeGL",
   components: {
     PersonDetailView,
   },
+  props: ["people"],
   data() {
     return {
       globe: null,
+      /** @type {null | Person} */
       selectedPerson: null,
       showPersonDetail: false,
       personMeshes: new Map(), // Store references to person meshes for click detection
@@ -128,15 +139,17 @@ export default {
 
     addPeopleLocations() {
       // Convert people data to points format
-      const peoplePoints = people.map((person) => ({
-        lat: person.location.lat,
-        lng: person.location.lng,
-        name: person.name,
-        photo: person.photo.startsWith("/")
-          ? person.photo
-          : `/profile-photos/${person.photo}`,
-        type: "person",
-      }));
+      /** @type {Person[]} */ const people = this.people;
+
+      const peoplePoints = people
+        .filter(doesPersonHaveLocation)
+        .map((person) => ({
+          lat: person.locationLatitude,
+          lng: person.locationLongitude,
+          name: person.name,
+          photo: person.photo ? uint8ArrayToDataUri(person.photo) : undefined,
+          type: "person",
+        }));
 
       console.log("People points:", peoplePoints.slice(0, 3)); // Debug first 3 people
 
@@ -185,14 +198,17 @@ export default {
       const campNavarro = { lat: 39.1911, lng: -123.7647 };
 
       // Create arc data connecting each person to Camp Navarro
-      const arcData = people.map((person, index) => ({
-        startLat: person.location.lat,
-        startLng: person.location.lng,
-        endLat: campNavarro.lat,
-        endLng: campNavarro.lng,
-        color: dWebColors[index % dWebColors.length], // Cycle through dWebColors
-        name: person.name,
-      }));
+      /** @type {Person[]} */ const people = this.people;
+      const arcData = people
+        .filter(doesPersonHaveLocation)
+        .map((person, index) => ({
+          startLat: person.locationLatitude,
+          startLng: person.locationLongitude,
+          endLat: campNavarro.lat,
+          endLng: campNavarro.lng,
+          color: dWebColors[index % dWebColors.length], // Cycle through dWebColors
+          name: person.name,
+        }));
 
       // Add arcs layer
       this.globe
@@ -226,13 +242,12 @@ export default {
 
     addCombinedCustomLayer(campNavarro) {
       // Convert people data to points format
+      /** @type {Person[]} */ const people = this.people;
       const peoplePoints = people.map((person) => ({
-        lat: person.location.lat,
-        lng: person.location.lng,
+        lat: person.locationLatitude,
+        lng: person.locationLongitude,
         name: person.name,
-        photo: person.photo.startsWith("/")
-          ? person.photo
-          : `/profile-photos/${person.photo}`,
+        photo: person.photo ? uint8ArrayToDataUri(person.photo) : undefined,
         type: "person",
       }));
 
@@ -312,6 +327,7 @@ export default {
           mesh.setRotationFromMatrix(matrix);
 
           // Store reference to this mesh for click detection
+          /** @type {Person[]} */ const people = this.people;
           const person = people.find((p) => p.name === point.name);
           if (person) {
             this.personMeshes.set(person, mesh);
@@ -421,6 +437,10 @@ export default {
       }
     },
 
+    /**
+     * @param {Person} person
+     * @returns {void}
+     */
     handlePersonClick(person) {
       console.log("Person clicked:", person.name);
       this.selectedPerson = person;
@@ -430,20 +450,17 @@ export default {
       this.animateToPerson(person);
     },
 
+    /**
+     * @param {Person} person
+     * @returns {void}
+     */
     animateToPerson(person) {
-      if (this.globe) {
-        // Calculate the position on the globe for this person
-        const coords = this.globe.getCoords(
-          person.location.lat,
-          person.location.lng,
-          0.02,
-        );
-
+      if (this.globe && doesPersonHaveLocation(person)) {
         // Animate camera to focus on the person
         this.globe.pointOfView(
           {
-            lat: person.location.lat,
-            lng: person.location.lng,
+            lat: person.locationLatitude,
+            lng: person.locationLongitude,
             altitude: 0.5,
           },
           1000,

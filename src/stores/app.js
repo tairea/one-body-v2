@@ -1,8 +1,16 @@
 // @ts-check
 import { defineStore } from "pinia";
+/** @import { Person } from "../types.d.ts" */
 
 export const useAppStore = defineStore("app", {
   state: () => ({
+    // Global state
+    /**
+     * All people, or null if loading.
+     * @type {null | Readonly<Person[]>}
+     */
+    people: null,
+
     // Dark mode state
     isDarkMode: false,
 
@@ -31,6 +39,14 @@ export const useAppStore = defineStore("app", {
     // etc.
   }),
   actions: {
+    /**
+     * @param {ReadonlyArray<Person>} people
+     * @returns {void}
+     */
+    setPeople(people) {
+      this.people = people;
+    },
+
     // Dark mode actions
     checkSystemPreference() {
       this.isDarkMode = window.matchMedia(

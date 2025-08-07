@@ -35,7 +35,9 @@ app.get("/graph", (req, res) => {
   res.json({
     people: readPeople().map((person) => ({
       ...person,
-      photo: person.photo?.toString("base64"),
+      // Don't send the photo; send a base64-encoded version.
+      photo: undefined,
+      photoBase64: person.photo?.toString("base64"),
     })),
     // TODO: use real recommendations
     recommendations,

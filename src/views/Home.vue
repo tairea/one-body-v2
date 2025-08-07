@@ -1,13 +1,48 @@
 <script setup>
-import { ref } from "vue";
-import { useAppStore } from "../stores/app";
-import LeftPanel from "../components/LeftPanel.vue";
+// @ts-check
+import { base64ToUint8Array } from "uint8array-extras";
+import { onMounted, ref } from "vue";
 import CytoscapeGraph from "../components/CytoscapeGraph.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import GlobeGL from "../components/GlobeGL.vue";
+import LeftPanel from "../components/LeftPanel.vue";
+import { SERVER_BASE_URL } from "../constants.js";
+import { useAppStore } from "../stores/app";
+/** @import { Person } from "../types.d.ts" */
 
 const appStore = useAppStore();
 const cytoscapeRef = ref(null);
+
+/**
+ * @internal
+ * @typedef {object} GraphData
+ * @prop {ReadonlyArray<Person>} people
+ */
+
+/** @returns {Promise<GraphData>} */
+const fetchGraphData = async () => {
+  const graphUrl = new URL("/graph", SERVER_BASE_URL);
+  const response = await fetch(graphUrl);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch graph with status ${response.status}`);
+  }
+  const json = await response.json();
+  return {
+    ...json,
+    people: json.people.map((person) => {
+      const { photoBase64 } = person;
+      return {
+        ...person,
+        photo: photoBase64 ? base64ToUint8Array(photoBase64) : undefined,
+      };
+    }),
+  };
+};
+
+onMounted(async () => {
+  const { people } = await fetchGraphData();
+  appStore.setPeople(people);
+});
 </script>
 
 <template>
@@ -15,13 +50,16 @@ const cytoscapeRef = ref(null);
     <DarkModeToggle />
     <LeftPanel />
 
-    <!-- Both components always rendered, visibility controlled by CSS -->
-    <div class="components-container">
+    <div v-if="appStore.people" class="components-container">
       <CytoscapeGraph
         ref="cytoscapeRef"
+        :people="appStore.people"
         :class="{ active: appStore.activeComponent === 'cytoscape' }"
       />
-      <GlobeGL :class="{ active: appStore.activeComponent === 'globe' }" />
+      <GlobeGL
+        :people="appStore.people"
+        :class="{ active: appStore.activeComponent === 'globe' }"
+      />
     </div>
   </div>
 </template>
