@@ -1,4 +1,5 @@
 <script setup>
+// @ts-check
 import { defineEmits, computed } from "vue";
 import { useAppStore } from "../stores/app";
 import { select } from "d3-selection";

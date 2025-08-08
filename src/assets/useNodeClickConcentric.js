@@ -1,5 +1,6 @@
+// @ts-check
 import { ref } from "vue";
-import { useAppStore } from "../stores/app";
+import { useAppStore } from "../stores/app.js";
 
 export function useNodeClickConcentric(cy, svg, people) {
   const appStore = useAppStore();

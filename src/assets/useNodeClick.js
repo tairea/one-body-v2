@@ -1,6 +1,7 @@
+// @ts-check
 import { ref } from "vue";
 import { select, selectAll } from "d3-selection";
-import { useAppStore } from "../stores/app";
+import { useAppStore } from "../stores/app.js";
 
 export function useNodeClick(cy, svg, people) {
   const appStore = useAppStore();

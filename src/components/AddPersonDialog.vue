@@ -168,6 +168,7 @@
 </template>
 
 <script>
+// @ts-check
 import { useAppStore } from "../stores/app";
 import DetailsStep from "./DetailsStep.vue";
 import ValuesStep from "./ValuesStep.vue";

@@ -1,4 +1,5 @@
 <script setup>
+// @ts-check
 import { useAppStore } from "./stores/app";
 import { onMounted } from "vue";
 

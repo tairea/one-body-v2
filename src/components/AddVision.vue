@@ -124,6 +124,7 @@
 </template>
 
 <script>
+// @ts-check
 import { useAppStore } from "../stores/app";
 
 export default {

@@ -1,4 +1,5 @@
 <script setup>
+// @ts-check
 import { defineEmits } from "vue";
 import { useAppStore } from "../stores/app";
 

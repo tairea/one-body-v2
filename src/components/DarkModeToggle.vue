@@ -43,6 +43,7 @@
 </template>
 
 <script setup>
+// @ts-check
 import { useAppStore } from "../stores/app";
 const appStore = useAppStore();
 </script>

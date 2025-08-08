@@ -58,6 +58,7 @@
 </template>
 
 <script>
+// @ts-check
 export default {
   name: "VisionCard",
   props: {

@@ -1,4 +1,5 @@
 <script setup>
+// @ts-check
 import MainNavigationButtons from "./MainNavigationButtons.vue";
 import MemberProfileInfo from "./MemberProfileInfo.vue";
 import { defineEmits } from "vue";

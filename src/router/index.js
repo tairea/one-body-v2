@@ -1,3 +1,4 @@
+// @ts-check
 import { createRouter, createWebHistory } from "vue-router";
 import Home from "../views/Home.vue";
 import Signup from "../views/Signup.vue";

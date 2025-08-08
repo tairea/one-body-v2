@@ -1,4 +1,5 @@
 <script setup>
+// @ts-check
 import { onMounted, ref } from "vue";
 import AddPersonDialog from "../components/AddPersonDialog.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
