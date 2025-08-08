@@ -1,5 +1,5 @@
 <template>
-  <div class="dialog-overlay" @click="handleClose">
+  <div class="dialog-overlay">
     <div
       class="dialog"
       :class="{ 'dark-mode': appStore.isDarkMode }"
@@ -143,9 +143,6 @@
 
         <!-- Custom buttons outside of v-stepper-actions -->
         <div class="dialog-actions">
-          <button class="btn btn-secondary" @click="handleCancel">
-            Cancel
-          </button>
           <button
             v-if="currentStep > 1"
             class="btn btn-secondary"
@@ -170,8 +167,6 @@
           </button>
         </div>
       </div>
-
-      <!-- Dialog actions -->
     </div>
   </div>
 </template>
@@ -289,26 +284,7 @@ export default {
           visions: this.visions,
           vehicles: this.vehicles,
         });
-        this.resetForm();
       }
-    },
-    handleCancel() {
-      this.$emit("close");
-      this.resetForm();
-    },
-    handleClose() {
-      this.$emit("close");
-      this.resetForm();
-    },
-    resetForm() {
-      this.currentStep = 1;
-      this.name = "";
-      this.email = "";
-      this.location = "";
-      this.profileImage = null;
-      this.values = [];
-      this.visions = [];
-      this.vehicles = [];
     },
   },
 };
