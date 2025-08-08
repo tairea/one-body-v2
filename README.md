@@ -2,6 +2,10 @@
 
 A Vue.js version of [One Body v1 project](https://github.com/tairea/one-body)
 
+## Environment variable setup
+
+Copy `.env.sample` to `.env` and fill it with environment variables. See instructions in that file for more details.
+
 ## Database setup
 
 Run `npm run database:seed`.

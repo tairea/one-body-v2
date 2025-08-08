@@ -1,8 +1,11 @@
 // @ts-check
 import cors from "cors";
+import "dotenv/config";
 import express from "express";
+import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import * as crypto from "node:crypto";
+import * as process from "node:process";
 import { sniffImageContentType } from "../lib/sniffImageContentType.js";
 import {
   addPerson,
@@ -11,8 +14,24 @@ import {
   readRecommendations,
 } from "./database/database.js";
 
-// TODO: This should be moved to an environment variable.
-const SIGNUP_SECRET = Buffer.from("b212a1df912ed2f6", "hex");
+const SIGNUP_SECRET = parseSignupSecret(process.env.SIGNUP_SECRET);
+
+/**
+ * @param {string} rawValue
+ * @returns {Uint8Array}
+ */
+function parseSignupSecret(rawValue) {
+  if (typeof rawValue !== "string") {
+    assert.fail("Expected SIGNUP_SECRET environment variable. See README");
+  }
+  rawValue = rawValue.trim();
+  const result = Buffer.from(rawValue, "hex");
+  assert(
+    result.toString("hex").toLowerCase() === rawValue.toLowerCase(),
+    "SIGNUP_SECRET environment variable is invalid (it doesn't round-trip). See README",
+  );
+  return result;
+}
 
 /**
  * @param {unknown} rawGuess
