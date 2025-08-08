@@ -12,18 +12,21 @@ const secretValid = ref(false);
 const loading = ref(true);
 
 /**
- * @param {string} secret
+ * @param {string} signupSecret
  * @returns {Promise<"missing" | "invalid" | "network error" | "valid">}
  */
-async function validateSecret(secret) {
-  if (typeof secret !== "string") return "missing";
-  const validateSecretUrl = new URL("/validate_secret", SERVER_BASE_URL);
+async function validateSignupSecret(signupSecret) {
+  if (typeof signupSecret !== "string") return "missing";
+  const validateSignupSecretUrl = new URL(
+    "/validate_signup_secret",
+    SERVER_BASE_URL,
+  );
   let res;
   try {
-    res = await fetch(validateSecretUrl, {
+    res = await fetch(validateSignupSecretUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secret }),
+      body: JSON.stringify({ signupSecret }),
     });
   } catch (_err) {
     return "network error";
@@ -55,8 +58,8 @@ const handleSavePerson = async (personData) => {
 };
 
 onMounted(async () => {
-  const secret = location.hash.slice(1) || localStorage.getItem("secret");
-  const validity = await validateSecret(secret);
+  const signupSecret = location.hash.slice(1) || localStorage.getItem("secret");
+  const validity = await validateSignupSecret(signupSecret);
   switch (validity) {
     case "missing":
       errorMsg.value = "Missing secret code in URL.";
@@ -73,7 +76,7 @@ onMounted(async () => {
     case "valid":
       errorMsg.value = "";
       secretValid.value = true;
-      localStorage.setItem("secret", secret);
+      localStorage.setItem("secret", signupSecret);
       location.hash = "";
       break;
     default:

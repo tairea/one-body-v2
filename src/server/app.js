@@ -67,8 +67,8 @@ app.get("/photos/:personId", (req, res) => {
   res.send(photoBytes);
 });
 
-app.post("/validate_secret", (req, res) => {
-  const isValid = isSignupSecretGuessValid(req.body.secret);
+app.post("/validate_signup_secret", (req, res) => {
+  const isValid = isSignupSecretGuessValid(req.body.signupSecret);
   res.status(isValid ? 204 : 401).end();
 });
 
