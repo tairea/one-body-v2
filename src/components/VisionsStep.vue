@@ -41,6 +41,7 @@
 </template>
 
 <script>
+// @ts-check
 import { useAppStore } from "../stores/app";
 import AddVision from "./AddVision.vue";
 import VisionCard from "./VisionCard.vue";
@@ -79,7 +80,8 @@ export default {
       this.editMode = true;
       // Find the AddVision component and call its openEditDialog method
       this.$nextTick(() => {
-        const addVisionComponent = this.$refs.addVision;
+        /** @type {undefined | AddVision} */
+        const addVisionComponent = /** @type {any} */ (this.$refs.addVision);
         if (addVisionComponent) {
           addVisionComponent.openEditDialog(vision);
         }

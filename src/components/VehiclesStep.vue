@@ -42,6 +42,7 @@
 </template>
 
 <script>
+// @ts-check
 import { useAppStore } from "../stores/app";
 import AddVehicle from "./AddVehicle.vue";
 import VehicleCard from "./VehicleCard.vue";
@@ -80,7 +81,8 @@ export default {
       this.editMode = true;
       // Find the AddVehicle component and call its openEditDialog method
       this.$nextTick(() => {
-        const addVehicleComponent = this.$refs.addVehicle;
+        /** @type {undefined | AddVehicle} */
+        const addVehicleComponent = /** @type {any} */ (this.$refs.addVehicle);
         if (addVehicleComponent) {
           addVehicleComponent.openEditDialog(vehicle);
         }
