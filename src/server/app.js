@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import * as crypto from "node:crypto";
 import * as process from "node:process";
+import { getGeocodedLocation } from "../lib/getGeocodedLocation.js";
 import { sniffImageContentType } from "../lib/sniffImageContentType.js";
 import {
   addPerson,
@@ -15,6 +16,8 @@ import {
 } from "./database/database.js";
 
 const SIGNUP_SECRET = parseSignupSecret(process.env.SIGNUP_SECRET);
+const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
+assert(OPENCAGE_API_KEY?.length);
 
 /**
  * @param {string} rawValue
@@ -91,7 +94,7 @@ app.post("/validate_signup_secret", (req, res) => {
   res.status(isValid ? 204 : 401).end();
 });
 
-app.post("/addperson", (req, res) => {
+app.post("/addperson", async (req, res) => {
   if (!req.body || typeof req.body !== "object") {
     res.status(400).end();
     return;
@@ -104,8 +107,25 @@ app.post("/addperson", (req, res) => {
     return;
   }
 
+  /** @type {undefined | number} */ let locationLatitude;
+  /** @type {undefined | number} */ let locationLongitude;
+  if (typeof personData.location === "string") {
+    try {
+      const geocodedLocation = await getGeocodedLocation(
+        personData.location,
+        OPENCAGE_API_KEY,
+      );
+      if (geocodedLocation) {
+        ({ locationLatitude, locationLongitude } = geocodedLocation);
+      }
+    } catch (err) {
+      // For now, we log errors but move on.
+      console.warn("Error when geocoding", err);
+    }
+  }
+
   // TODO: This is unsafe
-  addPerson(personData);
+  addPerson({ ...personData, locationLatitude, locationLongitude });
 
   res.json({ TODO: true });
 });

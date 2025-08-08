@@ -86,10 +86,7 @@
       <small class="form-hint ma-0"
         >You can be as specific or as general as you want</small
       >
-      <small class="form-hint"
-        >Just enter the country or city name and our local (offline) LLM will
-        get the coordinates</small
-      >
+      <small class="form-hint">Just enter the country or city name</small>
       <input
         id="location"
         v-model="locationValue"
