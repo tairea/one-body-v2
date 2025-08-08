@@ -171,7 +171,9 @@ export default {
   },
   methods: {
     triggerFileInput() {
-      this.$refs.fileInput.click();
+      /** @type {undefined | HTMLInputElement} */
+      const fileInput = /** @type {any} */ (this.$refs.fileInput);
+      fileInput?.click();
     },
     handleImageUpload(event) {
       const file = event.target.files[0];
