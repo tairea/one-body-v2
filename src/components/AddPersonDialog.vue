@@ -78,14 +78,23 @@
 
             <!-- Step 3: Your Values -->
             <v-stepper-window-item :value="3">
-              <ValuesStep :values="values" @update:values="values = $event" />
+              <StringListStep
+                title="Your Values"
+                description="What are your personal values? What do you care about? This could also include your skills, and experience."
+                instruction="Type a value and press Tab or comma to add"
+                :strings="values"
+                @update="values = $event"
+              />
             </v-stepper-window-item>
 
             <!-- Step 4: Your Visions -->
             <v-stepper-window-item :value="4">
-              <VisionsStep
-                :visions="visions"
-                @update:visions="visions = $event"
+              <StringListStep
+                title="Your Visions"
+                description="What visions are you working on, or want to achieve? This might include your interests, passions, goals, purpose."
+                instruction="Type a vision and press Tab or comma to add"
+                :strings="visions"
+                @update="visions = $event"
               />
             </v-stepper-window-item>
 
@@ -171,16 +180,14 @@
 // @ts-check
 import { useAppStore } from "../stores/app";
 import DetailsStep from "./DetailsStep.vue";
-import ValuesStep from "./ValuesStep.vue";
-import VisionsStep from "./VisionsStep.vue";
+import StringListStep from "./StringListStep.vue";
 import VehiclesStep from "./VehiclesStep.vue";
 
 export default {
   name: "AddPersonDialog",
   components: {
     DetailsStep,
-    ValuesStep,
-    VisionsStep,
+    StringListStep,
     VehiclesStep,
   },
   emits: ["close", "save"],

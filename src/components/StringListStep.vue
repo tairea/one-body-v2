@@ -1,9 +1,8 @@
 <template>
   <div class="step-content" :class="{ 'dark-mode': isDarkMode }">
-    <h3 class="mb-2">Your Values</h3>
+    <h3 class="mb-2">{{ title }}</h3>
     <p class="step-description mb-2">
-      What are your personal values? What do you care about?<br />
-      This could also include your skills, and experience.
+      {{ description }}
     </p>
     <p class="step-description">
       <em
@@ -14,25 +13,25 @@
         ></em
       >
     </p>
-    <div class="values-input-container">
+    <div class="strings-input-container">
       <input
-        v-model="newValue"
-        @keydown="handleValueKeydown"
-        @blur="addValue"
+        v-model="newString"
+        @keydown="handleStringInputKeydown"
+        @blur="addString"
         type="text"
-        placeholder="Type a value and press Tab or comma to add"
-        class="values-input"
+        :placeholder="instruction"
+        class="strings-input"
       />
     </div>
     <div class="chip-container">
       <div
-        v-for="value in values"
-        :key="value"
+        v-for="string in strings"
+        :key="string"
         class="chip chip-created"
-        :style="{ '--chip-color': getChipColor(value) }"
+        :style="{ '--chip-color': getChipColor(string) }"
       >
-        {{ value }}
-        <button @click="removeValue(value)" class="chip-remove" type="button">
+        {{ string }}
+        <button @click="removeString(string)" class="chip-remove" type="button">
           ×
         </button>
       </div>
@@ -44,17 +43,20 @@
 import { useAppStore } from "../stores/app";
 
 export default {
-  name: "ValuesStep",
+  name: "StringListStep",
   props: {
-    values: {
+    title: { type: String, required: true },
+    description: { type: String, required: true },
+    instruction: { type: String, required: true },
+    strings: {
       type: Array,
       required: true,
     },
   },
-  emits: ["update:values"],
+  emits: ["update"],
   data() {
     return {
-      newValue: "",
+      newString: "",
     };
   },
   computed: {
@@ -63,29 +65,28 @@ export default {
     },
   },
   methods: {
-    handleValueKeydown(event) {
+    handleStringInputKeydown(event) {
       if (event.key === "Tab" || event.key === "," || event.key === "Enter") {
         event.preventDefault();
-        this.addValue();
+        this.addString();
       }
     },
-    addValue() {
-      const trimmedValue = this.newValue.trim();
-      if (trimmedValue && !this.values.includes(trimmedValue)) {
-        const updatedValues = [...this.values, trimmedValue];
-        this.$emit("update:values", updatedValues);
-        this.newValue = "";
+    addString() {
+      const trimmed = this.newString.trim();
+      if (trimmed && !this.strings.includes(trimmed)) {
+        this.$emit("update", [...this.strings, trimmed]);
+        this.newString = "";
       }
     },
-    removeValue(value) {
-      const index = this.values.indexOf(value);
+    removeString(string) {
+      const index = this.strings.indexOf(string);
       if (index > -1) {
-        const updatedValues = [...this.values];
-        updatedValues.splice(index, 1);
-        this.$emit("update:values", updatedValues);
+        const updatedStrings = [...this.strings];
+        updatedStrings.splice(index, 1);
+        this.$emit("update", updatedStrings);
       }
     },
-    getChipColor(value) {
+    getChipColor(string) {
       // Cycle through DWeb colors sequentially
       const dwebColors = [
         "#ff4f2d", // Bright Red-Orange (large and medium dots)
@@ -96,8 +97,8 @@ export default {
         "#00b3f3", // Sky Blue (medium dots)
       ];
 
-      // Use the index of the value in the values array to cycle through colors
-      const colorIndex = this.values.indexOf(value) % dwebColors.length;
+      // Use the index of the string in the strings array to cycle through colors
+      const colorIndex = this.strings.indexOf(string) % dwebColors.length;
       return dwebColors[colorIndex];
     },
   },
@@ -141,12 +142,11 @@ export default {
   }
 }
 
-// Values input container
-.values-input-container {
+.strings-input-container {
   margin-bottom: 16px;
 }
 
-.values-input {
+.strings-input {
   width: 100%;
   padding: 10px 12px;
   border: 1px solid #ddd;
