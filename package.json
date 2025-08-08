@@ -7,6 +7,9 @@
     "dev:express": "node --watch src/server/main.js",
     "dev:vite": "vite",
     "dev": "run-p --print-label dev:*",
+    "recommendations:people-export": "node src/recommendations/dump-people.js",
+    "recommendations:build": "node src/recommendations/build.js",
+    "recommendations:import": "node src/recommendations/import-recommendations.js",
     "database:seed": "node src/server/database/seed.js",
     "database:clear": "rm src/server/database/database.sqlite3",
     "format": "prettier --write .",
@@ -33,10 +36,13 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
     "npm-run-all2": "^8.0.4",
+    "ollama": "^0.5.17",
     "prettier": "^3.6.2",
     "sass-embedded": "^1.89.2",
     "vite": "^6.3.5",
     "vite-plugin-vuetify": "^2.1.1",
-    "vuetify": "^3.9.0"
+    "vuetify": "^3.9.0",
+    "zod": "^3.25.76",
+    "zod-to-json-schema": "^3.24.6"
   }
 }

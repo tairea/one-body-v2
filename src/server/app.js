@@ -4,8 +4,12 @@ import express from "express";
 import { Buffer } from "node:buffer";
 import * as crypto from "node:crypto";
 import { sniffImageContentType } from "../lib/sniffImageContentType.js";
-import { addPerson, readPeople, readPhotoBytes } from "./database/database.js";
-import { recommendations } from "./hard-coded/recommendations.js";
+import {
+  addPerson,
+  readPeople,
+  readPhotoBytes,
+  readRecommendations,
+} from "./database/database.js";
 
 // TODO: This should be moved to an environment variable.
 const SIGNUP_SECRET = Buffer.from("b212a1df912ed2f6", "hex");
@@ -35,8 +39,7 @@ app.use(cors());
 app.get("/graph", (req, res) => {
   res.json({
     people: readPeople(),
-    // TODO: use real recommendations
-    recommendations,
+    recommendations: readRecommendations(),
   });
 });
 

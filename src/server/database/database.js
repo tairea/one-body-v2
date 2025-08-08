@@ -4,7 +4,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
 import { fileURLToPath } from "node:url";
-/** @import { Person } from "../../types.d.ts" */
+/** @import { Person, Recommendation } from "../../types.d.ts" */
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -107,4 +107,54 @@ export function readPhotoBytes(personId) {
     .pluck()
     .get(personId);
   return result instanceof Uint8Array ? result : null;
+}
+
+/**
+ * @param {Readonly<Recommendation>} recommendation
+ * @returns {void}
+ */
+export function addRecommendation(recommendation) {
+  const addRecommendationStatement = db.prepare(`
+   INSERT INTO recommendations (
+     person1Id,
+     person2Id,
+     ranking,
+     reason,
+     potential
+   ) VALUES (
+     @person1Id,
+     @person2Id,
+     @ranking,
+     @reason,
+     @potential
+   )
+  `);
+  addRecommendationStatement.run({
+    person1Id: recommendation.person1Id,
+    person2Id: recommendation.person2Id,
+    ranking: recommendation.ranking,
+    reason: recommendation.reason,
+    potential: jsonToBlob(recommendation.potential),
+  });
+}
+
+/**
+ * @returns {Recommendation[]}
+ */
+export function readRecommendations() {
+  const readRecommendationsStatement = db.prepare(
+    "SELECT * FROM recommendations",
+  );
+  return readRecommendationsStatement.all().map(
+    // TODO: It'd be nice to have stronger type checking here.
+    /** @param {any} databaseRecommendation */ (databaseRecommendation) => ({
+      person1Id: databaseRecommendation.person1Id,
+      person2Id: databaseRecommendation.person2Id,
+      ranking: databaseRecommendation.ranking,
+      reason: databaseRecommendation.reason,
+      potential: /** @type {any} */ (
+        blobToJson(databaseRecommendation.potential)
+      ),
+    }),
+  );
 }
