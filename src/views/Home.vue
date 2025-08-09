@@ -5,7 +5,6 @@ import CytoscapeGraph from "../components/CytoscapeGraph.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import GlobeGL from "../components/GlobeGL.vue";
 import LeftPanel from "../components/LeftPanel.vue";
-import { SERVER_BASE_URL } from "../constants.js";
 import { useAppStore } from "../stores/app";
 /** @import { Person } from "../types.d.ts" */
 
@@ -20,7 +19,7 @@ const cytoscapeRef = ref(null);
 
 /** @returns {Promise<GraphData>} */
 const fetchGraphData = async () => {
-  const graphUrl = new URL("/graph", SERVER_BASE_URL);
+  const graphUrl = new URL("/api/graph", location.href);
   const response = await fetch(graphUrl);
   if (!response.ok) {
     throw new Error(`Failed to fetch graph with status ${response.status}`);

@@ -146,7 +146,9 @@ export default {
           lat: person.locationLatitude,
           lng: person.locationLongitude,
           name: person.name,
-          photo: person.hasPhoto ? getPhotoUrl(person) : undefined,
+          photo: person.hasPhoto
+            ? getPhotoUrl(person, location.href)
+            : undefined,
           type: "person",
         }));
 
@@ -246,7 +248,7 @@ export default {
         lat: person.locationLatitude,
         lng: person.locationLongitude,
         name: person.name,
-        photo: person.hasPhoto ? getPhotoUrl(person) : undefined,
+        photo: person.hasPhoto ? getPhotoUrl(person, location.href) : undefined,
         type: "person",
       }));
 

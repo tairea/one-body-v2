@@ -348,7 +348,7 @@ const initializeGraphData = async () => {
     };
 
     if (person.hasPhoto) {
-      nodeData.photo = getPhotoUrl(person);
+      nodeData.photo = getPhotoUrl(person, location.href);
       nodeData.hasPhoto = true; // Add explicit flag
     }
 

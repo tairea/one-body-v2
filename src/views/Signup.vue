@@ -2,7 +2,6 @@
 import { onMounted, ref } from "vue";
 import AddPersonDialog from "../components/AddPersonDialog.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
-import { SERVER_BASE_URL } from "../constants.js";
 import router from "../router/index.js";
 import { useAppStore } from "../stores/app";
 import { maybeJsonParse } from "../lib/maybeJsonParse.js";
@@ -19,8 +18,8 @@ const loading = ref(true);
 async function validateSignupSecret(signupSecret) {
   if (typeof signupSecret !== "string") return "missing";
   const validateSignupSecretUrl = new URL(
-    "/validate_signup_secret",
-    SERVER_BASE_URL,
+    "/api/validate_signup_secret",
+    location.href,
   );
   let res;
   try {
@@ -39,7 +38,7 @@ const handleSavePerson = async (personData) => {
   console.log("Saving person:", personData);
   loading.value = true;
 
-  const addPersonUrl = new URL("/person", SERVER_BASE_URL);
+  const addPersonUrl = new URL("/api/person", location.href);
 
   let personReference = maybeJsonParse(localStorage.getItem("personReference"));
   const isPersonReferenceValid =

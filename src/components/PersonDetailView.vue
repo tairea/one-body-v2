@@ -32,7 +32,7 @@ import { getPhotoUrl } from "../lib/utils.js";
       <!-- Person Photo -->
       <div class="person-photo-container">
         <img
-          :src="getPhotoUrl({ id: person.id })"
+          :src="getPhotoUrl({ id: person.id }, location.href)"
           :alt="person.name"
           class="person-photo"
           @load="onImageLoad"

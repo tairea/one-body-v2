@@ -7,6 +7,7 @@
     "dev:express": "node --watch src/server/main.js",
     "dev:vite": "vite",
     "dev": "run-p --print-label dev:*",
+    "prod": "npm run build && NODE_ENV=production node src/server/main.js",
     "recommendations:people-export": "node src/recommendations/dump-people.js",
     "recommendations:build": "node src/recommendations/build.js",
     "recommendations:import": "node src/recommendations/import-recommendations.js",

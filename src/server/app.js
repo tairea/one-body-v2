@@ -6,7 +6,9 @@ import morgan from "morgan";
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import * as crypto from "node:crypto";
+import * as path from "node:path";
 import * as process from "node:process";
+import { fileURLToPath } from "node:url";
 import { dataUriToUint8Array } from "../lib/dataUriToUint8Array.js";
 import { getGeocodedLocation } from "../lib/getGeocodedLocation.js";
 import * as is from "../lib/is.js";
@@ -19,6 +21,9 @@ import {
   updatePerson,
 } from "./database/database.js";
 /** @import { Person } from "../types.d.ts" */
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const SIGNUP_SECRET = parseSignupSecret(process.env.SIGNUP_SECRET);
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
@@ -63,16 +68,21 @@ app.use(express.json());
 
 app.use(cors());
 
+if (app.get("env") === "production") {
+  const staticPath = path.join(__dirname, "..", "..", "dist");
+  app.use(express.static(staticPath));
+}
+
 app.use(morgan(app.get("env") === "development" ? "dev" : "combined"));
 
-app.get("/graph", (req, res) => {
+app.get("/api/graph", (req, res) => {
   res.json({
     people: readPeople(),
     recommendations: readRecommendations(),
   });
 });
 
-app.get("/photos/:personId", (req, res) => {
+app.get("/api/photos/:personId", (req, res) => {
   const personId = Number(req.params.personId);
   if (!Number.isSafeInteger(personId)) {
     res.status(404).end();
@@ -96,12 +106,12 @@ app.get("/photos/:personId", (req, res) => {
   res.send(photoBytes);
 });
 
-app.post("/validate_signup_secret", (req, res) => {
+app.post("/api/validate_signup_secret", (req, res) => {
   const isValid = isSignupSecretGuessValid(req.body.signupSecret);
   res.status(isValid ? 204 : 401).end();
 });
 
-app.post("/person", async (req, res) => {
+app.post("/api/person", async (req, res) => {
   if (!req.body || typeof req.body !== "object") {
     res.status(400).end();
     return;

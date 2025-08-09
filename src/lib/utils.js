@@ -1,5 +1,4 @@
 // @ts-check
-import { SERVER_BASE_URL } from "../constants.js";
 
 const dWebColors = [
   "#ff4f2d", // Bright Red-Orange (large and medium dots)
@@ -24,8 +23,9 @@ export function getDwebColor() {
 
 /**
  * @param {Readonly<{ id: number }>} person
+ * @param {string} baseHref
  * @returns {string}
  */
-export function getPhotoUrl({ id }) {
-  return new URL(`/photos/${id}`, SERVER_BASE_URL).href;
+export function getPhotoUrl({ id }, baseHref) {
+  return new URL(`/api/photos/${id}`, baseHref).href;
 }

@@ -22,4 +22,18 @@ Generating recommendations are currently a manual process.
 
 This could be improved but is good enough for our demo right now.
 
+## Running the app
+
+In development:
+
+```sh
+npm run dev
+```
+
+In production:
+
+```sh
+npm run prod
+```
+
 [Ollama]: https://ollama.com/
