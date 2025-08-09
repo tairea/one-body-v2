@@ -1,4 +1,12 @@
 // @ts-check
 import { app } from "./app.js";
 
-app.listen(6173);
+const PORT = 6173;
+
+app.listen(PORT, (err) => {
+  if (err) {
+    console.error(err);
+    process.exit(1);
+  }
+  console.log(`Express server started on port ${PORT}`);
+});
