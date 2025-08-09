@@ -16,9 +16,9 @@ const valuesOpacity = computed(() => {
   };
 });
 
-const visionOpacity = computed(() => {
+const visionsOpacity = computed(() => {
   return {
-    opacity: appStore.activeProfileSection === "vision" ? "1" : "0",
+    opacity: appStore.activeProfileSection === "visions" ? "1" : "0",
     transition: "opacity 0.3s ease",
   };
 });
@@ -104,7 +104,7 @@ const handleZoomOut = () => {
       <h2 class="v1">VALUES</h2>
       <h3 class="v2">SKILLS, EXPERIENCE</h3>
     </div>
-    <div id="vision" class="v" :style="visionOpacity">
+    <div id="visions" class="v" :style="visionsOpacity">
       <h2 class="v1">VISIONS</h2>
       <h3 class="v2">INTERESTS, PASSIONS, PURPOSE</h3>
     </div>

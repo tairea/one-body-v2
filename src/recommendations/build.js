@@ -45,7 +45,7 @@ function readArguments(argv) {
         (person) =>
           person.name &&
           Array.isArray(person.values) &&
-          Array.isArray(person.vision) &&
+          Array.isArray(person.visions) &&
           Array.isArray(person.vehicles),
       ),
     "People data doesn't look right",
@@ -78,13 +78,12 @@ async function askOllama({ systemPrompt, input, schema }) {
  * @returns {string}
  */
 function formatVehicle(vehicle) {
-  if (typeof vehicle === "string") return "- " + vehicle;
-  const { org, mission } = vehicle;
-  return `- ${org}: ${mission}`;
+  const { title, description } = vehicle;
+  return description ? `- ${title}: ${description}` : `- ${title}`;
 }
 
 /**
- * @param {Readonly<Pick<Person, "name" | "values" | "vision" | "vehicles">>} person
+ * @param {Readonly<Pick<Person, "name" | "values" | "visions" | "vehicles">>} person
  * @returns {string}
  */
 function formatPerson(person) {
@@ -93,8 +92,8 @@ function formatPerson(person) {
     person.name,
     "VALUES:",
     person.values.join(", "),
-    "VISION:",
-    person.vision.join(", "),
+    "VISIONS:",
+    person.visions.join(", "),
     "VEHICLES:",
     person.vehicles.map((v) => formatVehicle(v)).join("\n"),
   ].join("\n");
@@ -117,8 +116,8 @@ PERSON 1:
 ${formatPerson({
   name: "Alice",
   values: ["cake", "candy", "respect"],
-  vision: ["The world is beautiful", "The world has lots of sweets"],
-  vehicles: ["Owns a candy company"],
+  visions: ["The world is beautiful", "The world has lots of sweets"],
+  vehicles: [{ title: "Owns a candy company" }],
 })}
 
 PERSON 2:
@@ -126,8 +125,8 @@ PERSON 2:
 ${formatPerson({
   name: "Bob",
   values: ["beauty", "headphones"],
-  vision: ["The world sounds great", "The world looks incredible"],
-  vehicles: ["Is a musician"],
+  visions: ["The world sounds great", "The world looks incredible"],
+  vehicles: [{ title: "Is a musician" }],
 })}
 ---
 

@@ -17,6 +17,8 @@ export async function getGeocodedLocation(location, opencageApiKey) {
   url.searchParams.set("q", location);
 
   const response = await fetch(url);
+  if (!response.ok) throw new Error("Response was not ok");
+
   const { results } = await response.json();
   const [result] = results;
   if (!result) return null;

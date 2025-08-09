@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS people (
     locationLongitude REAL,
     -- TODO: Consider something more robust
     valuesList BLOB NOT NULL,
-    visionList BLOB NOT NULL,
+    visionsList BLOB NOT NULL,
     vehiclesList BLOB NOT NULL
 ) STRICT;
 

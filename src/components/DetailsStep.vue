@@ -79,7 +79,7 @@
       />
     </div>
     <div class="form-group">
-      <label for="location" class="ma-0 pa-0">Location:</label>
+      <label for="locationName" class="ma-0 pa-0">Location:</label>
       <small class="form-hint ma-0"
         >Used to show where we all are on a globe</small
       >
@@ -101,6 +101,7 @@
 <script>
 import { useAppStore } from "../stores/app";
 import { getDwebColor } from "../lib/utils";
+import { imageFileToDataUrl } from "../lib/imageFileToDataUrl.js";
 
 export default {
   name: "DetailsStep",
@@ -113,7 +114,7 @@ export default {
       type: String,
       required: true,
     },
-    location: {
+    locationName: {
       type: String,
       required: true,
     },
@@ -125,7 +126,7 @@ export default {
   emits: [
     "update:name",
     "update:email",
-    "update:location",
+    "update:locationName",
     "update:profileImage",
   ],
   data() {
@@ -155,10 +156,10 @@ export default {
     },
     locationValue: {
       get() {
-        return this.location;
+        return this.locationName;
       },
       set(value) {
-        this.$emit("update:location", value);
+        this.$emit("update:locationName", value);
       },
     },
   },
@@ -172,18 +173,11 @@ export default {
       const fileInput = /** @type {any} */ (this.$refs.fileInput);
       fileInput?.click();
     },
-    handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageData = e.target.result;
-          // Save to localStorage
-          localStorage.setItem("profileImage", imageData);
-          this.$emit("update:profileImage", imageData);
-        };
-        reader.readAsDataURL(file);
-      }
+    async handleImageUpload(event) {
+      /** @type {undefined | File} */
+      const file = event.target.files?.[0];
+      if (!file) return;
+      this.$emit("update:profileImage", await imageFileToDataUrl(file));
     },
   },
 };

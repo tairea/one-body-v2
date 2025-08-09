@@ -6,14 +6,18 @@ import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import * as crypto from "node:crypto";
 import * as process from "node:process";
+import { dataUriToUint8Array } from "../lib/dataUriToUint8Array.js";
 import { getGeocodedLocation } from "../lib/getGeocodedLocation.js";
+import * as is from "../lib/is.js";
 import { sniffImageContentType } from "../lib/sniffImageContentType.js";
 import {
   addPerson,
   readPeople,
   readPhotoBytes,
   readRecommendations,
+  updatePerson,
 } from "./database/database.js";
+/** @import { Person } from "../types.d.ts" */
 
 const SIGNUP_SECRET = parseSignupSecret(process.env.SIGNUP_SECRET);
 const OPENCAGE_API_KEY = process.env.OPENCAGE_API_KEY;
@@ -94,40 +98,88 @@ app.post("/validate_signup_secret", (req, res) => {
   res.status(isValid ? 204 : 401).end();
 });
 
-app.post("/addperson", async (req, res) => {
+app.post("/person", async (req, res) => {
   if (!req.body || typeof req.body !== "object") {
     res.status(400).end();
     return;
   }
 
-  const { secret, personData } = req.body;
+  const { signupSecret, personData, id, secretKey } = req.body;
 
-  if (!isSignupSecretGuessValid(secret)) {
+  if (!isSignupSecretGuessValid(signupSecret)) {
     res.status(401).end();
+    return;
+  }
+
+  if (
+    !(
+      is.record(personData) &&
+      is.string(personData.name) &&
+      is.string(personData.email) &&
+      (is.undefined(personData.locationName) ||
+        is.string(personData.locationName)) &&
+      is.array(personData.values) &&
+      personData.values.every(is.string) &&
+      is.array(personData.visions) &&
+      personData.visions.every(is.string) &&
+      is.array(personData.vehicles) &&
+      personData.vehicles.every(
+        /**
+         * @param {unknown} vehicle
+         * @returns {vehicle is { title: string, description?: string }}
+         */
+        (vehicle) =>
+          is.record(vehicle) &&
+          is.string(vehicle.title) &&
+          (is.undefined(vehicle.description) || is.string(vehicle.description)),
+      )
+    )
+  ) {
+    res.status(400).end();
     return;
   }
 
   /** @type {undefined | number} */ let locationLatitude;
   /** @type {undefined | number} */ let locationLongitude;
-  if (typeof personData.location === "string") {
-    try {
-      const geocodedLocation = await getGeocodedLocation(
-        personData.location,
-        OPENCAGE_API_KEY,
-      );
-      if (geocodedLocation) {
-        ({ locationLatitude, locationLongitude } = geocodedLocation);
-      }
-    } catch (err) {
-      // For now, we log errors but move on.
-      console.warn("Error when geocoding", err);
+  try {
+    const geocodedLocation = await getGeocodedLocation(
+      personData.locationName || "",
+      OPENCAGE_API_KEY,
+    );
+    if (geocodedLocation) {
+      ({ locationLatitude, locationLongitude } = geocodedLocation);
     }
+  } catch (err) {
+    // For now, we log errors but move on.
+    console.warn("Error when geocoding", err);
   }
 
-  // TODO: This is unsafe
-  addPerson({ ...personData, locationLatitude, locationLongitude });
+  /** @type {undefined | Uint8Array} */ let photo;
+  if (is.string(personData.photo)) {
+    photo = dataUriToUint8Array(personData.photo) ?? undefined;
+  }
 
-  res.json({ TODO: true });
+  /** @type {Omit<Person, "id" | "hasPhoto"> & { photo?: Uint8Array }} */
+  const person = {
+    name: personData.name,
+    email: personData.email,
+    photo,
+    locationName: personData.locationName,
+    locationLatitude,
+    locationLongitude,
+    values: personData.values,
+    visions: personData.visions,
+    vehicles: personData.vehicles,
+  };
+
+  let result;
+  if (typeof id === "number" && typeof secretKey === "string") {
+    result = updatePerson({ ...person, id }, secretKey);
+  } else {
+    result = addPerson(person);
+  }
+
+  res.json(result);
 });
 
 export { app };

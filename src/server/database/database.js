@@ -1,5 +1,7 @@
 // @ts-check
 import Database from "better-sqlite3";
+import assert from "node:assert/strict";
+import timingSafeEqual from "string-timing-safe-equal";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as crypto from "node:crypto";
@@ -30,7 +32,7 @@ const blobToJson = (blob) => JSON.parse(blob.toString());
 
 /**
  * @param {Omit<Person, "id" | "hasPhoto"> & { photo?: Uint8Array }} person
- * @returns {void}
+ * @returns {{ id: number, secretKey: string }}
  */
 export function addPerson(person) {
   const addPersonStatement = db.prepare(`
@@ -43,7 +45,7 @@ export function addPerson(person) {
       locationLatitude,
       locationLongitude,
       valuesList,
-      visionList,
+      visionsList,
       vehiclesList
     ) VALUES (
       @secretKey,
@@ -54,11 +56,12 @@ export function addPerson(person) {
       @locationLatitude,
       @locationLongitude,
       @valuesList,
-      @visionList,
+      @visionsList,
       @vehiclesList
     )
+    RETURNING id, secretKey
   `);
-  addPersonStatement.run({
+  const result = addPersonStatement.get({
     secretKey: crypto.randomBytes(32).toString("base64"),
     name: person.name,
     photo: person.photo,
@@ -67,9 +70,75 @@ export function addPerson(person) {
     locationLatitude: person.locationLatitude,
     locationLongitude: person.locationLongitude,
     valuesList: jsonToBlob(person.values || []),
-    visionList: jsonToBlob(person.vision || []),
+    visionsList: jsonToBlob(person.visions || []),
     vehiclesList: jsonToBlob(person.vehicles || []),
   });
+  assert(
+    result &&
+      typeof result === "object" &&
+      "id" in result &&
+      typeof result.id === "number" &&
+      "secretKey" in result &&
+      typeof result.secretKey === "string",
+  );
+  const { id, secretKey } = result;
+  return { id, secretKey };
+}
+
+/**
+ * @param {Omit<Person, "hasPhoto"> & { photo?: Uint8Array }} person
+ * @param {string} secretKey
+ * @returns {null | { id: number, secretKey: string }}
+ */
+export function updatePerson(person, secretKey) {
+  const performUpdate = db.transaction(
+    /** @returns {null | { id: number, secretKey: string }} */ () => {
+      const row = db
+        .prepare("SELECT secretKey FROM people WHERE id = ?")
+        .get(person.id);
+      if (!row) return null;
+
+      assert(
+        typeof row === "object" &&
+          row !== null &&
+          "secretKey" in row &&
+          typeof row.secretKey === "string",
+      );
+
+      if (!timingSafeEqual(row.secretKey, secretKey)) {
+        return null;
+      }
+
+      const updatePersonStatement = db.prepare(`
+        UPDATE people SET
+          name = @name,
+          photo = @photo,
+          email = @email,
+          locationName = @locationName,
+          locationLatitude = @locationLatitude,
+          locationLongitude = @locationLongitude,
+          valuesList = @valuesList,
+          visionsList = @visionsList,
+          vehiclesList = @vehiclesList
+        WHERE id = @id
+      `);
+      updatePersonStatement.run({
+        id: person.id,
+        name: person.name,
+        photo: person.photo,
+        email: person.email,
+        locationName: person.locationName,
+        locationLatitude: person.locationLatitude,
+        locationLongitude: person.locationLongitude,
+        valuesList: jsonToBlob(person.values || []),
+        visionsList: jsonToBlob(person.visions || []),
+        vehiclesList: jsonToBlob(person.vehicles || []),
+      });
+
+      return { id: person.id, secretKey: row.secretKey };
+    },
+  );
+  return performUpdate();
 }
 
 /**
@@ -88,7 +157,7 @@ export function readPeople() {
       locationLatitude: databasePerson.locationLatitude ?? undefined,
       locationLongitude: databasePerson.locationLongitude ?? undefined,
       values: /** @type {any} */ (blobToJson(databasePerson.valuesList)),
-      vision: /** @type {any} */ (blobToJson(databasePerson.visionList)),
+      visions: /** @type {any} */ (blobToJson(databasePerson.visionsList)),
       vehicles: /** @type {any} */ (blobToJson(databasePerson.vehiclesList)),
     }),
   );

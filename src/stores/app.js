@@ -21,7 +21,7 @@ export const useAppStore = defineStore("app", {
     // Profile view state
     isViewingProfile: false,
     currentPersonData: null, // Store the clicked person's data
-    /** @type {null | "values" | "vision" | "vehicles"} */
+    /** @type {null | "values" | "visions" | "vehicles"} */
     activeProfileSection: null,
 
     // Cytoscape state
@@ -97,6 +97,10 @@ export const useAppStore = defineStore("app", {
     clearCurrentPersonData() {
       this.currentPersonData = null;
     },
+    /**
+     * @param {"values" | "visions" | "vehicles"} section
+     * @returns {void}
+     */
     setActiveProfileSection(section) {
       this.activeProfileSection = section;
     },

@@ -40,7 +40,7 @@ export function useNodeClick(cy, svg, people) {
     // Save person data to store
     appStore.setCurrentPersonData(personData);
 
-    const { values, vision, vehicles, name } = personData;
+    const { values, visions, vehicles, name } = personData;
 
     // Hide all other nodes, edges, and labels
     cy.elements().not(node).style({
@@ -97,10 +97,10 @@ export function useNodeClick(cy, svg, people) {
     const data = [
       { onion: "person", children: [] },
       { onion: "values", children: values },
-      { onion: "vision", children: vision },
+      { onion: "visions", children: visions },
       {
         onion: "vehicles",
-        children: vehicles.map((v) => (typeof v === "string" ? v : v.org)),
+        children: vehicles.map((v) => (typeof v === "string" ? v : v.title)),
       },
     ];
 
@@ -168,8 +168,8 @@ export function useNodeClick(cy, svg, people) {
         // Show UI (safely check if elements exist)
         if (d.onion === "values") {
           appStore.setActiveProfileSection("values");
-        } else if (d.onion === "vision") {
-          appStore.setActiveProfileSection("vision");
+        } else if (d.onion === "visions") {
+          appStore.setActiveProfileSection("visions");
         } else if (d.onion === "vehicles") {
           appStore.setActiveProfileSection("vehicles");
         }

@@ -67,11 +67,11 @@
               <DetailsStep
                 :name="name"
                 :email="email"
-                :location="location"
+                :locationName="locationName"
                 :profile-image="profileImage"
                 @update:name="name = $event"
                 @update:email="email = $event"
-                @update:location="location = $event"
+                @update:location-name="locationName = $event"
                 @update:profile-image="profileImage = $event"
               />
             </v-stepper-window-item>
@@ -122,13 +122,13 @@
                     </div>
                     <p><strong>Name:</strong> {{ name }}</p>
                     <p><strong>Email:</strong> {{ email }}</p>
-                    <p v-if="location">
-                      <strong>Location:</strong> {{ location }}
+                    <p v-if="locationName">
+                      <strong>Location:</strong> {{ locationName }}
                     </p>
                     <p><strong>Values:</strong> {{ values.join(", ") }}</p>
                     <p>
                       <strong>Visions:</strong>
-                      {{ visions.map((v) => v.title).join(", ") }}
+                      {{ vehicles.join(", ") }}
                     </p>
                     <p>
                       <strong>Vehicles:</strong>
@@ -177,6 +177,8 @@ import { useAppStore } from "../stores/app";
 import DetailsStep from "./DetailsStep.vue";
 import StringListStep from "./StringListStep.vue";
 import VehiclesStep from "./VehiclesStep.vue";
+import { maybeJsonParse } from "../lib/maybeJsonParse.js";
+import * as is from "../lib/is.js";
 
 export default {
   name: "AddPersonDialog",
@@ -190,21 +192,24 @@ export default {
     return {
       currentStep: 1,
       totalSteps: 6,
+      /** @type {string} */
       name: "",
+      /** @type {string} */
       email: "",
-      location: "",
+      /** @type {string} */
+      locationName: "",
+      /** @type {null | string} */
       profileImage: null,
+      /** @type {string[]} */
       values: [],
-      visions: [], // Changed from array of strings to array of objects
-      vehicles: [], // Changed from array of strings to array of objects
+      /** @type {string[]} */
+      visions: [],
+      /** @type {Array<{ title: string, description?: string }>} */
+      vehicles: [],
     };
   },
   mounted() {
-    // Load profile image from localStorage if it exists
-    const savedImage = localStorage.getItem("profileImage");
-    if (savedImage) {
-      this.profileImage = savedImage;
-    }
+    this.loadStateFromLocalStorage();
   },
   computed: {
     appStore() {
@@ -259,6 +264,7 @@ export default {
       if (this.currentStep < this.totalSteps && this.canProceed) {
         console.log("nextStep - proceeding to step", this.currentStep + 1);
         this.currentStep++;
+        this.saveStateToLocalStorage();
       } else {
         console.log("nextStep - cannot proceed", {
           reason:
@@ -272,13 +278,69 @@ export default {
       if (this.currentStep > 1) {
         this.currentStep--;
       }
+      this.saveStateToLocalStorage();
+    },
+    loadStateFromLocalStorage() {
+      const signupData = maybeJsonParse(localStorage.getItem("signupData"));
+
+      if (!signupData) return;
+      if (typeof signupData !== "object") return;
+      // This `instanceof Array` check is necessary for type checking.
+      // I didn't investigate why.
+      if (is.array(signupData) || signupData instanceof Array) return;
+
+      if (is.string(signupData.name)) {
+        this.name = signupData.name;
+      }
+      if (is.string(signupData.email)) {
+        this.email = signupData.email;
+      }
+      if (is.string(signupData.locationName)) {
+        this.locationName = signupData.locationName;
+      }
+      if (is.string(signupData.profileImage)) {
+        this.profileImage = signupData.profileImage;
+      }
+      if (is.array(signupData.values) && signupData.values.every(is.string)) {
+        this.values = signupData.values;
+      }
+      if (is.array(signupData.visions) && signupData.visions.every(is.string)) {
+        this.visions = signupData.visions;
+      }
+      if (
+        is.array(signupData.vehicles) &&
+        signupData.vehicles.every(
+          (vehicle) =>
+            is.record(vehicle) &&
+            is.string(vehicle.title) &&
+            (is.undefined(vehicle.description) ||
+              is.string(vehicle.description)),
+        )
+      ) {
+        this.vehicles =
+          /** @type {Array<{ title: string, description?: string }>} */ (
+            signupData.vehicles
+          );
+      }
+    },
+    saveStateToLocalStorage() {
+      const signupData = {
+        name: this.name,
+        email: this.email,
+        locationName: this.locationName,
+        profileImage: this.profileImage,
+        values: this.values,
+        visions: this.visions,
+        vehicles: this.vehicles,
+      };
+      localStorage.setItem("signupData", JSON.stringify(signupData));
     },
     handleSave() {
       if (this.canProceed) {
         this.$emit("save", {
           name: this.name.trim(),
           email: this.email.trim(),
-          location: this.location.trim(),
+          locationName: this.locationName.trim(),
           photo: this.profileImage,
           values: this.values,
           visions: this.visions,

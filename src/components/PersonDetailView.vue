@@ -57,7 +57,7 @@ import { getPhotoUrl } from "../lib/utils.js";
         <div class="info-section">
           <h3>Vision</h3>
           <div class="tags">
-            <span v-for="vision in person.vision" :key="vision" class="tag">
+            <span v-for="vision in person.visions" :key="vision" class="tag">
               {{ vision }}
             </span>
           </div>
@@ -72,13 +72,8 @@ import { getPhotoUrl } from "../lib/utils.js";
               :key="index"
               class="vehicle-item"
             >
-              <div v-if="typeof vehicle === 'string'" class="vehicle-text">
-                {{ vehicle }}
-              </div>
-              <div v-else class="vehicle-org">
-                <div class="vehicle-name">{{ vehicle.org }}</div>
-                <div class="vehicle-mission">{{ vehicle.mission }}</div>
-              </div>
+              <div class="vehicle-title">{{ vehicle.title }}</div>
+              <div class="vehicle-description">{{ vehicle.description }}</div>
             </div>
           </div>
         </div>
@@ -312,44 +307,35 @@ export default {
 .dark-mode .vehicle-item {
   background: #4a5568;
   border-color: #718096;
-}
-
-.dark-mode .vehicle-item:hover {
-  background: #718096;
-}
-
-.vehicle-text {
   font-size: 1rem;
   color: #2d3748;
   font-weight: 500;
 }
 
-.dark-mode .vehicle-text {
+.dark-mode .vehicle-item:hover {
+  background: #718096;
   color: #e2e8f0;
 }
 
-.vehicle-org {
+.vehicle-title {
   text-align: left;
-}
-
-.vehicle-name {
   font-size: 1.1rem;
   font-weight: 600;
   color: #2d3748;
   margin-bottom: 5px;
 }
 
-.dark-mode .vehicle-name {
+.dark-mode .vehicle-title {
   color: #e2e8f0;
 }
 
-.vehicle-mission {
+.vehicle-description {
   font-size: 0.9rem;
   color: #718096;
   line-height: 1.4;
 }
 
-.dark-mode .vehicle-mission {
+.dark-mode .vehicle-description {
   color: #a0aec0;
 }
 

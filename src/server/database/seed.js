@@ -13,6 +13,6 @@ addPerson({
   locationLatitude: 4.5709,
   locationLongitude: -74.2973,
   values: [],
-  vision: [],
+  visions: [],
   vehicles: [],
 });

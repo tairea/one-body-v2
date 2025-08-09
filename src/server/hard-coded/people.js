@@ -17,7 +17,7 @@ export const people = [
     photo: "/profile-photos/ian.jpeg",
     location: { lat: 40.7128, lng: -74.006 }, // New York City, USA
     values: ["smart work", "faith", "solar punk", "servig our people"],
-    vision: [
+    visions: [
       "youth",
       "Pa Enua",
       "Mauke",
@@ -27,29 +27,29 @@ export const people = [
     ],
     vehicles: [
       {
-        org: "MTAC",
-        mission:
+        title: "MTAC",
+        description:
           "MTAC (Mauke Tech Academy) is an academy in Mauke, Cook Islands, that delivers training in computer technology and how it can be used to benefit the island",
         logo: "mtac.jpeg",
       },
       {
-        org: "GalaxyMaps",
-        mission:
+        title: "GalaxyMaps",
+        description:
           "an e-learning platform that gamifies education and freelance work",
       },
       {
-        org: "Tai Collective",
-        mission:
+        title: "Tai Collective",
+        description:
           "Our mission is to help Māori & Pasifika youth learn the digital tools to be effective innovators in the digital space. We do this by mentoring Māori & Pasifika youth to complete real client projects",
       },
       {
-        org: "Sunrise Labs",
-        mission:
+        title: "Sunrise Labs",
+        description:
           "Sunrise Labs is a research & develop lab on the remote tropical island of Mauke in the Cook Islands. We are focused on leveraging technology and innovation for social impact in the South Pacific.",
       },
       {
-        org: "Project Sunrise",
-        mission:
+        title: "Project Sunrise",
+        description:
           "Project Sunrise is working on our physical space and aims to build a sustainable village and community, from the ground up, on the Pacific island of Ma'uke in the Cook Islands. Our goals are to achieve 'Super Abundance', build 'The House of Dreams' and share our learnings with the world as we go.",
       },
     ],
@@ -67,7 +67,7 @@ export const people = [
       "connection",
       "trust",
     ],
-    vision: [
+    visions: [
       "shared leadership",
       "faithful service",
       "akonoanga Maori - customary practices",
@@ -79,8 +79,9 @@ export const people = [
       "mentoring",
       "relevant investment",
       {
-        org: "kaveingamatutu",
-        mission: "co-creating solutions to social, business and legal issues",
+        title: "kaveingamatutu",
+        description:
+          "co-creating solutions to social, business and legal issues",
       },
       "community resilience farming",
     ],
@@ -106,7 +107,7 @@ export const people = [
       "family",
       "balance",
     ],
-    vision: [
+    visions: [
       "restore and use traditional knowledge",
       "use regenerative farming",
       "access to nuturicious healthy food",
@@ -141,7 +142,7 @@ export const people = [
       "thoughfulness",
       "discipline",
     ],
-    vision: [
+    visions: [
       "People development",
       "helping otherss",
       "youth",
@@ -173,7 +174,7 @@ export const people = [
       "kindness",
       "family",
     ],
-    vision: [
+    visions: [
       "stewardship",
       "native ideas, values and techniques",
       "global community",
@@ -184,19 +185,19 @@ export const people = [
     ],
     vehicles: [
       {
-        org: "Gallery Tavioni & Vananga",
-        mission: "Promoting Cook Islands art and culture",
+        title: "Gallery Tavioni & Vananga",
+        description: "Promoting Cook Islands art and culture",
       },
       "Consult support business start ups, HRM, policy",
       "Collaboration with arts/cultural networks",
       {
-        org: "Ngakau collective",
-        mission:
+        title: "Ngakau collective",
+        description:
           "writing, publications, design, performnce development, leadership mentoring, HRM",
       },
       {
-        org: "Te Mana o te Vaka",
-        mission: "Promoting Cook Islands art and culture",
+        title: "Te Mana o te Vaka",
+        description: "Promoting Cook Islands art and culture",
       },
     ],
   },
@@ -212,7 +213,7 @@ export const people = [
       "community centered",
       "sustainability",
     ],
-    vision: [
+    visions: [
       "youth",
       "sustainable agriculture",
       "self-sufficiency",
@@ -238,7 +239,7 @@ export const people = [
       "health",
       "trust",
     ],
-    vision: [
+    visions: [
       "faithful service",
       "faith & spiritual growth",
       "community & fellowship",
@@ -265,7 +266,7 @@ export const people = [
       "growth",
       "compassion",
     ],
-    vision: [
+    visions: [
       "kopu tangata/family",
       "mapu/youth",
       "value-based strategy",
@@ -278,18 +279,19 @@ export const people = [
     ],
     vehicles: [
       {
-        org: "Coach Bianca",
-        mission:
+        title: "Coach Bianca",
+        description:
           "Life coaching, wellness coaching, personal development coaching",
       },
       "Community garden",
       {
-        org: "Kaveingamatutu",
-        mission: "co-creating solutions to social, business and legal issues",
+        title: "Kaveingamatutu",
+        description:
+          "co-creating solutions to social, business and legal issues",
       },
       {
-        org: "Enterprising families",
-        mission: "supporting families to be enterprising and sustainable",
+        title: "Enterprising families",
+        description: "supporting families to be enterprising and sustainable",
       },
     ],
   },
@@ -308,7 +310,7 @@ export const people = [
       "export",
       "integrity",
     ],
-    vision: [
+    visions: [
       "family activities",
       "needlework",
       "gardening",
@@ -338,7 +340,7 @@ export const people = [
       "resilience",
       "whole health",
     ],
-    vision: [
+    visions: [
       "sustainability",
       "resuorceful",
       "solutions focused",
@@ -353,7 +355,7 @@ export const people = [
     photo: "/profile-photos/kevin.jpg",
     location: { lat: 39.9042, lng: 116.4074 }, // Beijing, China
     values: ["Godly principals", "Family values", "Reciprocity", "Faith"],
-    vision: [
+    visions: [
       "Traditional Knowledge",
       "Health & Fitness",
       "Business Ventures",
@@ -374,7 +376,7 @@ export const people = [
     photo: "/profile-photos/fred.png",
     location: { lat: 28.6139, lng: 77.209 }, // New Delhi, India
     values: ["family", "love", "honesty", "determined"],
-    vision: [
+    visions: [
       "Technology",
       "Enviroment",
       "Agirculture",
@@ -399,7 +401,7 @@ export const people = [
       "faith",
       "can do atitude",
     ],
-    vision: [
+    visions: [
       "Youth leader",
       "Church leader",
       "Sports coach",
@@ -411,20 +413,20 @@ export const people = [
     ],
     vehicles: [
       {
-        org: "Korero o te Orau",
-        mission:
+        title: "Korero o te Orau",
+        description:
           "To improve the well-being of the indigenous people of the Cook Islands and our environment",
       },
       {
-        org: "UNEP - United Nations Environment Programme",
-        mission:
+        title: "UNEP - United Nations Environment Programme",
+        description:
           "To provide leadership and encourage partnership in caring for the environment by inspiring, informing, and enabling nations and peoples to improve their quality of life without compromising that of future generations.",
       },
       "UoN",
       "USP",
       {
-        org: "National Environment Service",
-        mission: "To Protect, Conserve and Manage",
+        title: "National Environment Service",
+        description: "To Protect, Conserve and Manage",
       },
       "Free online courses",
       "SCOUTS",
@@ -445,7 +447,7 @@ export const people = [
       "Family",
       "Network",
     ],
-    vision: [
+    visions: [
       "Pa Enua Growth - all aspects",
       "A.I.",
       "Equality for all",
@@ -468,7 +470,7 @@ export const people = [
     photo: "/profile-photos/esther-tama.jpg",
     location: { lat: -26.2041, lng: 28.0473 }, // Johannesburg, South Africa
     values: ["Stewardship", "Diligence", "Respect", "Well-being"],
-    vision: [
+    visions: [
       "Legacy & future for children",
       "Pa Enua",
       "Innovation & Creativity",
@@ -483,7 +485,7 @@ export const people = [
     photo: "/profile-photos/jamie.jpg",
     location: { lat: 55.7558, lng: 37.6176 }, // Moscow, Russia (alternative location)
     values: ["Respect for nature", "Respect for all living things"],
-    vision: [
+    visions: [
       "Organic movement",
       "Investment in growing start from education",
       "Kinder farming",
@@ -516,7 +518,7 @@ export const people = [
       "Identity",
       "Family",
     ],
-    vision: [
+    visions: [
       "Clean island",
       "Healthy island",
       "Educator",
@@ -548,7 +550,7 @@ export const people = [
       "Service",
       "Family",
     ],
-    vision: [
+    visions: [
       "Organisational management (time & discipline)",
       "Communication",
       "Fudnraising",
@@ -578,7 +580,7 @@ export const people = [
       "Resilience",
       "Integrity (honesty)",
     ],
-    vision: [
+    visions: [
       "Big picture knowledge systems (Indigenous & Contemporary)",
       "Community & village initiatives",
       "Educator & mentor (spiritual, social, environmental & physical awareness)",
@@ -610,7 +612,7 @@ export const people = [
       "Honesty & openess",
       "Critical thinking",
     ],
-    vision: [
+    visions: [
       "Food security & sovereignty",
       "Traditional knowledge",
       "Empowering farmer youths",
@@ -633,7 +635,7 @@ export const people = [
     photo: "/profile-photos/pa.jpg",
     location: { lat: 52.3676, lng: 4.9041 }, // Amsterdam, Netherlands
     values: ["Trust", "Love", "Honesty", "Health", "Family"],
-    vision: [
+    visions: [
       "Local customs Eg. Planting with Arapo",
       "Sharing knowledge",
       "Healthy living (organic)",
@@ -656,7 +658,7 @@ export const people = [
       "Health",
       "Support",
     ],
-    vision: [
+    visions: [
       "Innovation",
       "Building relationships/collaboration",
       "Capacity building",
@@ -683,7 +685,7 @@ export const people = [
     photo: "/profile-photos/mata.jpg",
     location: { lat: 22.3193, lng: 114.1694 }, // Hong Kong, China
     values: ["God", "Family", "Church", "Friendship", "Love"],
-    vision: [
+    visions: [
       "People",
       "Team",
       "Cook Islanders",
@@ -701,6 +703,8 @@ export const people = [
   locationLatitude: person.location.lat,
   locationLongitude: person.location.lng,
   values: person.values,
-  vision: person.vision,
-  vehicles: person.vehicles,
+  visions: person.visions,
+  vehicles: person.vehicles.map((vehicle) =>
+    typeof vehicle === "string" ? { title: vehicle } : vehicle,
+  ),
 }));

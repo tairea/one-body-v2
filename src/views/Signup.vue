@@ -1,11 +1,11 @@
 <script setup>
-// @ts-check
 import { onMounted, ref } from "vue";
 import AddPersonDialog from "../components/AddPersonDialog.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { SERVER_BASE_URL } from "../constants.js";
 import router from "../router/index.js";
 import { useAppStore } from "../stores/app";
+import { maybeJsonParse } from "../lib/maybeJsonParse.js";
 
 const appStore = useAppStore();
 const errorMsg = ref("");
@@ -39,27 +39,42 @@ const handleSavePerson = async (personData) => {
   console.log("Saving person:", personData);
   loading.value = true;
 
-  const addPersonUrl = new URL("/addperson", SERVER_BASE_URL);
+  const addPersonUrl = new URL("/person", SERVER_BASE_URL);
+
+  let personReference = maybeJsonParse(localStorage.getItem("personReference"));
+  const isPersonReferenceValid =
+    personReference &&
+    typeof personReference === "object" &&
+    "id" in personReference &&
+    "secretKey" in personReference;
+  if (!isPersonReferenceValid) {
+    personReference = {};
+  }
 
   try {
     const response = await fetch(addPersonUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        secret: localStorage.getItem("secret"),
+        signupSecret: location.hash.slice(1),
         personData,
+        ...personReference,
       }),
     });
     if (!response.ok) throw new Error("Not OK response from server");
+
+    const { id, secretKey } = await response.json();
+    localStorage.setItem("personReference", JSON.stringify({ id, secretKey }));
   } catch (_err) {
     errorMsg.value = "Network error. Please try again.";
+    return;
   }
 
   router.push({ name: "Home" });
 };
 
 onMounted(async () => {
-  const signupSecret = location.hash.slice(1) || localStorage.getItem("secret");
+  const signupSecret = location.hash.slice(1);
   const validity = await validateSignupSecret(signupSecret);
   switch (validity) {
     case "missing":
@@ -77,8 +92,6 @@ onMounted(async () => {
     case "valid":
       errorMsg.value = "";
       secretValid.value = true;
-      localStorage.setItem("secret", signupSecret);
-      location.hash = "";
       break;
     default:
       throw new Error("Unexpected validation case. Code has a bug");

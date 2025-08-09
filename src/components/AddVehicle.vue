@@ -70,7 +70,8 @@
           </div>
 
           <!-- Related Links Input -->
-          <div class="form-group">
+          <!-- TODO: Disabled for now because it's not supported by the server -->
+          <!-- <div class="form-group">
             <label for="vehicle-links"
               >Related Links: <small class="form-hint">(optional)</small></label
             >
@@ -83,7 +84,7 @@
               placeholder="Type a link and press Tab or comma to add (optional)"
               class="form-input"
             />
-          </div>
+          </div> -->
 
           <!-- Links Display -->
           <div v-if="vehicleData.relatedLinks.length > 0" class="links-display">

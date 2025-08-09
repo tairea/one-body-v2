@@ -7,8 +7,8 @@ export type Person = Readonly<{
   locationLatitude?: number;
   locationLongitude?: number;
   values: ReadonlyArray<string>;
-  vision: ReadonlyArray<string>;
-  vehicles: ReadonlyArray<string | { org: string; mission: string }>;
+  visions: ReadonlyArray<string>;
+  vehicles: ReadonlyArray<{ title: string; description?: string }>;
 }>;
 
 export type Recommendation = {

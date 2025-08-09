@@ -39,7 +39,7 @@ export function useNodeClickConcentric(cy, svg, people) {
     appStore.setCurrentPersonData(personData);
     appStore.setViewingProfile(true);
 
-    const { values, vision, vehicles, name } = personData;
+    const { values, visions, vehicles, name } = personData;
 
     // Store original elements for restoration
     originalElements = cy.elements();
@@ -73,13 +73,13 @@ export function useNodeClickConcentric(cy, svg, people) {
     });
 
     // Vision layer (middle circle)
-    vision.forEach((visionItem, index) => {
+    visions.forEach((visionItem, index) => {
       const nodeId = `vision-${index}`;
       nodes.push({
         data: {
           id: nodeId,
           label: visionItem,
-          layer: "vision",
+          layer: "visions",
         },
       });
       edges.push({
@@ -128,7 +128,7 @@ export function useNodeClickConcentric(cy, svg, people) {
       concentric: function (node) {
         // Person node gets level 0 (center), others get higher levels
         if (node.data("layer") === "values") return 3; // Inner circle (closest to center)
-        if (node.data("layer") === "vision") return 2; // Middle circle
+        if (node.data("layer") === "visions") return 2; // Middle circle
         if (node.data("layer") === "vehicles") return 1; // Outer circle (furthest from center)
         return 4; // Person node stays in center
       },

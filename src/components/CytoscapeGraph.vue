@@ -426,7 +426,13 @@ const handleZoomOut = () => {
   });
 
   // Hide UI elements (safely check if elements exist)
-  const nodeViewElements = ["name", "values", "vision", "vehicles", "zoom-out"];
+  const nodeViewElements = [
+    "name",
+    "values",
+    "visions",
+    "vehicles",
+    "zoom-out",
+  ];
   nodeViewElements.forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
@@ -628,8 +634,8 @@ onUnmounted(() => {
       <div class="values-content"></div>
     </div>
 
-    <div id="vision" class="node-view-ui" style="opacity: 0">
-      <h3>Vision</h3>
+    <div id="visions" class="node-view-ui" style="opacity: 0">
+      <h3>Visions</h3>
       <div class="vision-content"></div>
     </div>
 
@@ -732,7 +738,7 @@ onUnmounted(() => {
   right: 20px;
 }
 
-#vision {
+#visions {
   bottom: 100px;
   right: 20px;
 }
