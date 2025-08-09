@@ -10,8 +10,10 @@ import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const databasePath = path.join(__dirname, "database.sqlite3");
 const createSchemasPath = path.join(__dirname, "createSchemas.sql");
+
+const databasePath =
+  process.env.DATABASE_PATH || path.join(__dirname, "database.sqlite3");
 
 const db = new Database(databasePath);
 
