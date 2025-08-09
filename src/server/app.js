@@ -2,6 +2,7 @@
 import cors from "cors";
 import "dotenv/config";
 import express from "express";
+import morgan from "morgan";
 import assert from "node:assert/strict";
 import { Buffer } from "node:buffer";
 import * as crypto from "node:crypto";
@@ -61,6 +62,8 @@ const app = express();
 app.use(express.json());
 
 app.use(cors());
+
+app.use(morgan(app.get("env") === "development" ? "dev" : "combined"));
 
 app.get("/graph", (req, res) => {
   res.json({
