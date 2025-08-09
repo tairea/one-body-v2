@@ -70,7 +70,7 @@ const handleSavePerson = async (personData) => {
     return;
   }
 
-  router.push({ name: "Home" });
+  router.push({ name: "Countdown" });
 };
 
 onMounted(async () => {
