@@ -82,6 +82,13 @@ if (app.get("env") === "production") {
   }
 }
 
+const robotsTxt = ["User-agent: *", "Disallow: /"].join("\n");
+const robotsTxtBytes = new TextEncoder().encode(robotsTxt);
+app.get("/robots.txt", (req, res) => {
+  res.type("text/plain");
+  res.send(robotsTxtBytes);
+});
+
 app.get("/api/graph", (req, res) => {
   res.json({
     people: readPeople(),
