@@ -50,6 +50,7 @@ const handleSavePerson = async (personData) => {
     personReference = {};
   }
 
+  // add person to database
   try {
     const response = await fetch(addPersonUrl, {
       method: "POST",
@@ -62,6 +63,10 @@ const handleSavePerson = async (personData) => {
     });
     if (!response.ok) throw new Error("Not OK response from server");
 
+    // add person to store
+    appStore.addPerson(personData);
+
+    // save person reference to local storage
     const { id, secretKey } = await response.json();
     localStorage.setItem("personReference", JSON.stringify({ id, secretKey }));
   } catch (_err) {
