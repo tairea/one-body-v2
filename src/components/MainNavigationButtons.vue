@@ -44,7 +44,7 @@ const handleShowCytoscape = () => {
 
     <div id="members" class="button" @click="handleShowCytoscape">
       <v-icon icon="mdi-account-group-outline" size="20" />
-      <p class="b1">25 Members</p>
+      <p class="b1">{{ appStore.people?.length || "?" }} Members</p>
     </div>
 
     <!-- TODO: Hidden for now -->
