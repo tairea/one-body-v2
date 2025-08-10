@@ -68,12 +68,19 @@ app.use(express.json());
 
 app.use(cors());
 
+app.use(morgan(app.get("env") === "development" ? "dev" : "combined"));
+
 if (app.get("env") === "production") {
   const staticPath = path.join(__dirname, "..", "..", "dist");
   app.use(express.static(staticPath));
-}
 
-app.use(morgan(app.get("env") === "development" ? "dev" : "combined"));
+  for (const indexRoute of ["/signup", "/countdown"]) {
+    app.get(indexRoute, (req, res) => {
+      const indexFile = path.join(staticPath, "index.html");
+      res.sendFile(indexFile);
+    });
+  }
+}
 
 app.get("/api/graph", (req, res) => {
   res.json({
