@@ -47,10 +47,12 @@ const handleShowCytoscape = () => {
       <p class="b1">25 Members</p>
     </div>
 
-    <div id="ai-summary" class="button">
+    <!-- TODO: Hidden for now -->
+    <!-- <div id="ai-summary" class="button">
       <v-icon icon="mdi-robot-love-outline" size="20" />
       <p class="b1">Ai collective overview</p>
-    </div>
+    </div> -->
+
     <div id="ai" class="button" @click="emit('showAiView')">
       <v-icon icon="mdi-robot-love-outline" size="20" />
       <p class="b1">Ai suggested collabs</p>
