@@ -81,7 +81,7 @@
               <StringListStep
                 title="Your Values"
                 description="What are your personal values? What do you care about? This could also include your skills, and experience."
-                instruction="Type a value and press Tab or comma to add"
+                instruction="Type a value and press Tab or Enter to add"
                 :strings="values"
                 @update="values = $event"
               />
@@ -91,8 +91,8 @@
             <v-stepper-window-item :value="4">
               <StringListStep
                 title="Your Visions"
-                description="What visions are you working on, or want to achieve? This might include your interests, passions, goals, purpose."
-                instruction="Type a vision and press Tab or comma to add"
+                description="What visions are you working on, or  are wanting to achieve? This might include your interests, passions, goals, purpose."
+                instruction="Type a vision and press Tab or Enter to add"
                 :strings="visions"
                 @update="visions = $event"
               />
@@ -125,15 +125,30 @@
                     <p v-if="locationName">
                       <strong>Location:</strong> {{ locationName }}
                     </p>
-                    <p><strong>Values:</strong> {{ values.join(", ") }}</p>
-                    <p>
+                    <div class="summary-section">
+                      <strong>Values:</strong>
+                      <div class="chips-container">
+                        <span v-for="value in values" :key="value" class="chip">
+                          {{ value }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="summary-section">
                       <strong>Visions:</strong>
-                      {{ vehicles.join(", ") }}
-                    </p>
-                    <p>
+                      <div class="chips-container">
+                        <span v-for="vision in visions" :key="vision" class="chip">
+                          {{ vision }}
+                        </span>
+                      </div>
+                    </div>
+                    <div class="summary-section">
                       <strong>Vehicles:</strong>
-                      {{ vehicles.map((v) => v.title).join(", ") }}
-                    </p>
+                      <div class="chips-container">
+                        <span v-for="vehicle in vehicles" :key="vehicle.title" class="chip">
+                          {{ vehicle.title }}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -619,6 +634,55 @@ export default {
 
       .dialog.dark-mode & {
         border-color: #4299e1;
+      }
+    }
+  }
+
+  .summary-section {
+    margin: 8px 0;
+    
+    strong {
+      display: block;
+      margin-bottom: 8px;
+      color: #333;
+      
+      .dialog.dark-mode & {
+        color: rgba(255, 255, 255, 0.87);
+      }
+    }
+  }
+
+  .chips-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .chip {
+    display: inline-block;
+    padding: 6px 12px;
+    background-color: #e3f2fd;
+    color: #1976d2;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #bbdefb;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background-color: #bbdefb;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .dialog.dark-mode & {
+      background-color: rgba(33, 150, 243, 0.2);
+      color: #64b5f6;
+      border-color: rgba(33, 150, 243, 0.4);
+
+      &:hover {
+        background-color: rgba(33, 150, 243, 0.3);
       }
     }
   }

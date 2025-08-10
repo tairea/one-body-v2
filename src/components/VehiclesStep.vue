@@ -2,8 +2,8 @@
   <div class="step-content" :class="{ 'dark-mode': isDarkMode }">
     <h3 class="mb-2">Your Vehicles</h3>
     <p class="step-description mb-0">
-      Vehicles are the initiatives, projects and businesses we work on to
-      achieve our visions.<br />
+      Vehicles are the initiatives, projects and businesses you work on to
+      achieve your visions.<br />
       Tell us here about all the different things you're involved in.
     </p>
     <p class="step-description mt-2">

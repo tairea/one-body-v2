@@ -10,6 +10,7 @@ export const useAppStore = defineStore("app", {
      * @type {null | Readonly<Person[]>}
      */
     people: null,
+    person: null,
 
     // Dark mode state
     isDarkMode: false,
