@@ -7,6 +7,7 @@ import { useAppStore } from "../stores/app";
 import InteractiveCytoscapeView from "./InteractiveCytoscapeView.vue";
 import CountdownLeftPanel from "../components/CountdownLeftPanel.vue";
 import CountdownRightPanel from "../components/CountdownRightPanel.vue";
+import AddPersonDialog from "../components/AddPersonDialog.vue";
 
 const appStore = useAppStore();
 const router = useRouter();
@@ -31,6 +32,17 @@ watch(person, (newPerson) => {
     router.push({ name: 'Signup' });
   }
 }, { immediate: true });
+
+const handleSavePerson = (personData) => {
+  // Update the person in the store
+  appStore.updateCurrentPerson(personData);
+  // Close the dialog
+  appStore.hideAddPersonDialog();
+};
+
+const handleCloseDialog = () => {
+  appStore.hideAddPersonDialog();
+};
 </script>
 
 <template>
@@ -54,6 +66,14 @@ watch(person, (newPerson) => {
         <InteractiveCytoscapeView/>
       </div>
     </div>
+
+    <!-- AddPersonDialog for editing profiles -->
+    <AddPersonDialog 
+      v-if="appStore.isAddPersonDialogOpen"
+      :editing-person="appStore.editingPerson"
+      @save="handleSavePerson"
+      @close="handleCloseDialog"
+    />
   </div>
 </template>
 

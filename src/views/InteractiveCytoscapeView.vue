@@ -54,6 +54,15 @@ const lightModeStyles = [
       "font-family": "Consolas, monospace",
       "font-size": "6px",
       label: "data(label)",
+      width: "data(nodeSize)",
+      height: "data(nodeSize)",
+      "text-wrap": "wrap",
+      "text-max-width": "calc(data(nodeSize) - 4px)",
+      "text-valign": "center",
+      "text-halign": "center",
+      "text-line-height": "1.2",
+      "text-margin-y": "0px",
+      "white-space": "pre-line",
     },
   },
   {
@@ -160,6 +169,15 @@ const darkModeStyles = [
       "font-family": "Consolas, monospace",
       "font-size": "6px",
       label: "data(label)",
+      width: "data(nodeSize)",
+      height: "data(nodeSize)",
+      "text-wrap": "wrap",
+      "text-max-width": "calc(data(nodeSize) - 4px)",
+      "text-valign": "center",
+      "text-halign": "center",
+      "text-line-height": "1.2",
+      "text-margin-y": "0px",
+      "white-space": "pre-line",
     },
   },
   {
@@ -244,6 +262,82 @@ const updateGraphStyles = () => {
   root.style.setProperty("--graph-background-color", backgroundColor);
 };
 
+// Calculate optimal node size based on text length
+const calculatePersonNodeSize = (text) => {
+  const minSize = 50; // Reduced from 60
+  const maxSize = 80; // Reduced from 120
+  
+  // Calculate size based on text length with text wrapping for longer names
+  let calculatedSize;
+  if (text.length <= 8) {
+    calculatedSize = minSize;
+  } else if (text.length <= 10) {
+    // Single line for names up to 10 characters
+    calculatedSize = minSize + (text.length - 8) * 2; // Reduced from 4
+  } else {
+    // Text wrapping for names over 10 characters
+    // Use the actual formatted text to determine line count and max line length
+    const formattedText = formatTextWithLineBreaks(text);
+    const lines = formattedText.split('\n');
+    const maxLineLength = Math.max(...lines.map(line => line.length));
+    
+    // For wrapped text, make it much tighter
+    // Width: accommodate the longest actual line
+    const width = minSize + Math.max(0, maxLineLength - 8) * 2;
+    // Height: accommodate multiple lines but much tighter
+    const height = minSize + (lines.length - 1) * 12;
+    
+    // Use the larger of width or height to maintain square/circular shape
+    calculatedSize = Math.max(width, height);
+  }
+  
+  // Ensure size is within bounds
+  const finalSize = Math.max(minSize, Math.min(maxSize, calculatedSize));
+  
+  return finalSize;
+};
+
+// Format text with line breaks for better wrapping
+const formatTextWithLineBreaks = (text) => {
+  if (text.length <= 10) {
+    return text;
+  }
+  
+  // Split text into words
+  const words = text.split(' ');
+  const lines = [];
+  let currentLine = '';
+  
+  for (let i = 0; i < words.length; i++) {
+    const word = words[i];
+    const testLine = currentLine + (currentLine ? ' ' : '') + word;
+    
+    // If adding this word would exceed 10 characters, start a new line
+    if (testLine.length > 10) {
+      if (currentLine) {
+        // Add current line to lines array
+        lines.push(currentLine);
+        // Start new line with current word
+        currentLine = word;
+      } else {
+        // If even a single word is longer than 10 chars, we have to break it
+        // This is a fallback for very long words
+        currentLine = word;
+      }
+    } else {
+      // Word fits on current line
+      currentLine = testLine;
+    }
+  }
+  
+  // Add the last line
+  if (currentLine) {
+    lines.push(currentLine);
+  }
+  
+  return lines.join('\n');
+};
+
 // Initialize graph data from person
 const initializeGraphData = () => {
   const nodes = [];
@@ -253,12 +347,14 @@ const initializeGraphData = () => {
   const personNode = {
     data: {
       id: "person",
-      label: person.value.name,
+      label: formatTextWithLineBreaks(person.value.name),
       type: "person",
       photo: person.value.hasPhoto ? getPhotoUrl(person.value, location.href) : null,
+      nodeSize: calculatePersonNodeSize(person.value.name),
     },
     position: { x: 0, y: 0 },
   };
+  
   nodes.push(personNode);
 
   // Add values nodes
@@ -362,8 +458,90 @@ watch(person, (newPerson) => {
   if (!newPerson) {
     // If no person data after initialization, redirect to signup
     router.push({ name: 'Signup' });
+  } else if (cy.value) {
+    // If person data changes and graph exists, regenerate the graph
+    regenerateGraph();
   }
 }, { immediate: true });
+
+// Watch for changes to person properties that affect the graph
+watch(
+  () => person.value?.values,
+  (newValues, oldValues) => {
+    if (cy.value && person.value) {
+      regenerateGraph();
+    }
+  },
+  { deep: true }
+);
+
+watch(
+  () => person.value?.visions,
+  (newVisions, oldVisions) => {
+    if (cy.value && person.value) {
+      regenerateGraph();
+    }
+  },
+  { deep: true }
+);
+
+watch(
+  () => person.value?.vehicles,
+  (newVehicles, oldVehicles) => {
+    if (cy.value && person.value) {
+      regenerateGraph();
+    }
+  },
+  { deep: true }
+);
+
+// Function to regenerate the graph with updated person data
+const regenerateGraph = () => {
+  if (!cy.value || !person.value) return;
+  
+  try {
+    const { nodes, edges } = initializeGraphData();
+    
+    // Clear existing elements and add new ones
+    cy.value.elements().remove();
+    cy.value.add({ nodes, edges });
+    
+    // Update layout positions
+    const positions = nodes.reduce((acc, node) => {
+      acc[node.data.id] = node.position;
+      return acc;
+    }, {});
+    
+    // Apply new positions
+    cy.value.nodes().forEach(node => {
+      const position = positions[node.id()];
+      if (position) {
+        node.position(position);
+      }
+    });
+    
+    // Force style update for person node
+    const personElement = cy.value.$('node[type="person"]');
+    if (personElement.length > 0) {
+      // Explicitly set person node size to ensure it's applied
+      const personData = personElement.data();
+      if (personData.nodeSize) {
+        personElement.style({
+          width: personData.nodeSize,
+          height: personData.nodeSize
+        });
+      }
+    }
+    
+    // Refresh the view
+    cy.value.fit();
+    cy.value.center();
+    
+    console.log('Graph regenerated with updated person data');
+  } catch (error) {
+    console.error('Error regenerating graph:', error);
+  }
+};
 
 onMounted(async () => {
   // Initialize dark mode if not already done
@@ -416,6 +594,21 @@ onMounted(async () => {
       cy.value.resize();
       cy.value.fit();
       cy.value.center();
+      
+      // Force style refresh to ensure person node size is applied
+      cy.value.style().update();
+      
+      // Explicitly set person node size to ensure it's applied
+      const personElement = cy.value.$('node[type="person"]');
+      if (personElement.length > 0) {
+        const personData = personElement.data();
+        if (personData.nodeSize) {
+          personElement.style({
+            width: personData.nodeSize,
+            height: personData.nodeSize
+          });
+        }
+      }
     }, 100);
 
     // Add some basic interactions

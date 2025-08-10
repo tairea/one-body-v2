@@ -15,7 +15,8 @@ const router = useRouter();
 const appStore = useAppStore();
 
 const handleEditProfile = () => {
-  router.push({ name: 'Signup' });
+  appStore.setEditingPerson(props.person);
+  appStore.showAddPersonDialog();
 };
 
 const handleFullscreen = () => {

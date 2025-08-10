@@ -6,7 +6,16 @@
       @click.stop
     >
       <!-- Dialog header -->
-      <div class="dialog-header"></div>
+      <div class="dialog-header">
+        <button 
+          v-if="editingPerson" 
+          class="close-btn" 
+          @click="$emit('close')"
+          aria-label="Close dialog"
+        >
+          <v-icon icon="mdi-close" size="24" />
+        </button>
+      </div>
 
       <!-- Stepper -->
       <div class="stepper-container">
@@ -24,7 +33,10 @@
                 class="custom-stepper-item"
               >
                 <template #title>
-                  <div class="step-header-content">
+                  <div 
+                    class="step-header-content"
+                    @click="goToStep(step)"
+                  >
                     <div class="step-emoji">{{ getStepEmoji(step) }}</div>
                     <div class="step-title mt-1">{{ getStepTitle(step) }}</div>
                   </div>
@@ -47,16 +59,12 @@
                     src="../assets/org_logo_DWeb.jpeg"
                     width="100"
                   />
-                  <h2>DWeb Fellows Alumni</h2>
+                  <h2>{{ editingPerson ? 'Edit Profile' : 'DWeb Fellows Alumni' }}</h2>
                   <p class="dialog-subtitle">
-                    This activity is designed to help connect us DWeb Fellows
-                    and grow the community. <br /><br />Tell us a bit about
-                    yourself, what excites you and what you're working on. The
-                    more we share, the easier it is to connect, collaborate and
-                    build the decentralized web together. <br /><br /><em
-                      >Note: The info you enter to create your profile will only
-                      be visible by other DWeb fellows.</em
-                    >
+                    {{ editingPerson 
+                      ? 'Update your profile information below. Make changes to any field and save when you\'re done.' 
+                      : 'This activity is designed to help connect us DWeb Fellows and grow the community. <br /><br />Tell us a bit about yourself, what excites you and what you\'re working on. The more we share, the easier it is to connect, collaborate and build the decentralized web together. <br /><br /><em>Note: The info you enter to create your profile will only be visible by other DWeb fellows.</em>'
+                    }}
                   </p>
                 </div>
               </div>
@@ -165,6 +173,20 @@
           >
             Previous
           </button>
+          
+          <!-- Update Profile button - show on all steps when editing -->
+          <button
+            v-if="editingPerson && currentStep > 1"
+            class="btn btn-primary"
+            :class="{ 'btn-success': updateSuccess }"
+            @click="handleSave"
+            :disabled="!canProceed || isUpdating"
+          >
+            <span v-if="isUpdating" class="loading-spinner"></span>
+            <span v-else-if="updateSuccess" class="success-icon">✓</span>
+            {{ isUpdating ? 'Updating...' : updateSuccess ? 'Updated!' : 'Update Profile' }}
+          </button>
+          
           <button
             v-if="currentStep < totalSteps"
             class="btn btn-primary"
@@ -174,7 +196,7 @@
             Next
           </button>
           <button
-            v-if="currentStep === totalSteps"
+            v-if="currentStep === totalSteps && !editingPerson"
             class="btn btn-primary"
             @click="handleSave"
           >
@@ -202,29 +224,45 @@ export default {
     StringListStep,
     VehiclesStep,
   },
+  props: {
+    editingPerson: {
+      type: Object,
+      default: null
+    }
+  },
   emits: ["close", "save"],
   data() {
     return {
       currentStep: 1,
       totalSteps: 6,
       /** @type {string} */
-      name: "",
+      name: this.editingPerson?.name || "",
       /** @type {string} */
-      email: "",
+      email: this.editingPerson?.email || "",
       /** @type {string} */
-      locationName: "",
+      locationName: this.editingPerson?.locationName || "",
       /** @type {null | string} */
-      profileImage: null,
+      profileImage: this.editingPerson?.photo || null,
       /** @type {string[]} */
-      values: [],
+      values: this.editingPerson?.values || [],
       /** @type {string[]} */
-      visions: [],
+      visions: this.editingPerson?.visions || [],
       /** @type {Array<{ title: string, description?: string }>} */
-      vehicles: [],
+      vehicles: this.editingPerson?.vehicles || [],
+      /** @type {boolean} */
+      isUpdating: false,
+      /** @type {boolean} */
+      updateSuccess: false,
     };
   },
   mounted() {
-    this.loadStateFromLocalStorage();
+    if (this.editingPerson) {
+      // If editing, populate from props and skip localStorage
+      this.populateFromPerson(this.editingPerson);
+    } else {
+      // If creating new, load from localStorage
+      this.loadStateFromLocalStorage();
+    }
   },
   computed: {
     appStore() {
@@ -271,22 +309,9 @@ export default {
       return titles[step] || `Step ${step}`;
     },
     nextStep() {
-      console.log("nextStep called", {
-        currentStep: this.currentStep,
-        totalSteps: this.totalSteps,
-        canProceed: this.canProceed,
-      });
       if (this.currentStep < this.totalSteps && this.canProceed) {
-        console.log("nextStep - proceeding to step", this.currentStep + 1);
         this.currentStep++;
         this.saveStateToLocalStorage();
-      } else {
-        console.log("nextStep - cannot proceed", {
-          reason:
-            this.currentStep >= this.totalSteps
-              ? "at last step"
-              : "validation failed",
-        });
       }
     },
     prevStep() {
@@ -338,6 +363,43 @@ export default {
           );
       }
     },
+    populateFromPerson(person) {
+      if (is.string(person.name)) {
+        this.name = person.name;
+      }
+      if (is.string(person.email)) {
+        this.email = person.email;
+      }
+      if (is.string(person.locationName)) {
+        this.locationName = person.locationName;
+      }
+      if (person.hasPhoto) {
+        // For now, we'll set a default image or leave it null
+        // since we don't store the actual photo URL in the Person type
+        this.profileImage = null;
+      }
+      if (is.array(person.values) && person.values.every(is.string)) {
+        this.values = person.values;
+      }
+      if (is.array(person.visions) && person.visions.every(is.string)) {
+        this.visions = person.visions;
+      }
+      if (
+        is.array(person.vehicles) &&
+        person.vehicles.every(
+          (vehicle) =>
+            is.record(vehicle) &&
+            is.string(vehicle.title) &&
+            (is.undefined(vehicle.description) ||
+              is.string(vehicle.description)),
+        )
+      ) {
+        this.vehicles =
+          /** @type {Array<{ title: string, description?: string }>} */ (
+            person.vehicles
+          );
+      }
+    },
     saveStateToLocalStorage() {
       const signupData = {
         name: this.name,
@@ -350,19 +412,71 @@ export default {
       };
       localStorage.setItem("signupData", JSON.stringify(signupData));
     },
-    handleSave() {
+    async handleSave() {
       if (this.canProceed) {
-        this.$emit("save", {
+        const personData = {
           name: this.name.trim(),
           email: this.email.trim(),
           locationName: this.locationName.trim(),
-          photo: this.profileImage,
+          hasPhoto: !!this.profileImage,
+          photo: this.profileImage, // Include photo data for API
           values: this.values,
           visions: this.visions,
           vehicles: this.vehicles,
-        });
+        };
+
+        if (this.editingPerson) {
+          // Set loading state
+          this.isUpdating = true;
+          
+          // If editing, preserve the ID and other fields
+          personData.id = this.editingPerson.id;
+          personData.createdAt = this.editingPerson.createdAt;
+          personData.updatedAt = new Date().toISOString();
+          
+          // Try to make API call to update the person
+          try {
+            const personReference = JSON.parse(localStorage.getItem('personReference'));
+            
+            if (personReference && personReference.id && personReference.secretKey) {
+              const updatePersonUrl = new URL("/api/person", location.href);
+              
+              const response = await fetch(updatePersonUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  personData,
+                  id: personReference.id,
+                  secretKey: personReference.secretKey,
+                }),
+              });
+              
+              if (response.ok) {
+                // Person updated successfully via API
+                this.updateSuccess = true;
+                // Hide success message after 2 seconds
+                setTimeout(() => {
+                  this.updateSuccess = false;
+                }, 2000);
+              }
+            }
+          } catch (error) {
+            // Error updating person via API, continuing with local update
+          } finally {
+            // Reset loading state
+            this.isUpdating = false;
+          }
+        }
+
+        this.$emit("save", personData);
       }
     },
+    goToStep(step) {
+      if (step >= 1 && step <= this.totalSteps) {
+        this.currentStep = step;
+        this.saveStateToLocalStorage();
+      }
+    }
   },
 };
 </script>
@@ -402,19 +516,40 @@ export default {
 
 // Dialog header
 .dialog-header {
+  position: relative;
   margin-bottom: 20px;
-  padding-right: 40px;
+  padding-top: 8px;
+  padding-right: 8px;
+}
 
-  h2 {
-    margin: 0;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #222;
-    letter-spacing: 0.01em;
+.close-btn {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 12px;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  color: #666;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
 
-    .dialog.dark-mode & {
-      color: #fff;
-    }
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+}
+
+.dark-mode .close-btn {
+  color: rgba(255, 255, 255, 0.6);
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
   }
 }
 
@@ -445,6 +580,7 @@ export default {
   border-bottom: 1px solid #eee;
   margin-bottom: 20px;
   box-shadow: none !important;
+  gap: 8px !important;
 
   .dialog.dark-mode & {
     border-bottom-color: #4a5568;
@@ -454,10 +590,23 @@ export default {
 .custom-stepper-item {
   color: #666 !important;
   background: transparent !important;
-  // min-width: 80px !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 60px !important;
+  max-width: 80px !important;
+  flex: 0 0 auto !important;
+
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    transform: translateY(-1px);
+  }
 
   .dialog.dark-mode & {
     color: #e0e6ed !important;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.05) !important;
+    }
   }
 
   &--active {
@@ -693,13 +842,13 @@ export default {
   display: flex;
   gap: 12px;
   justify-content: center;
-  margin-top: 24px;
 }
 
 // Buttons
 .btn {
   display: flex;
   align-items: center;
+  gap: 8px;
   padding: 10px 16px;
   border-radius: 8px;
   cursor: pointer;
@@ -739,6 +888,16 @@ export default {
     }
   }
 
+  &.btn-success {
+    background-color: #d4edda;
+    border-color: #c3e6cb;
+    color: #155724;
+
+    &:hover {
+      background-color: #c3e6cb;
+    }
+  }
+
   // Dark mode styles
   .dialog.dark-mode & {
     border: 1px solid rgba(255, 255, 255, 0.3);
@@ -756,6 +915,42 @@ export default {
         color: rgba(255, 255, 255, 0.4);
       }
     }
+
+    &.btn-success {
+      background-color: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #10b981;
+
+      &:hover {
+        background-color: rgba(16, 185, 129, 0.3);
+      }
+    }
+  }
+}
+
+// Loading spinner
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+// Success icon
+.success-icon {
+  font-size: 16px;
+  font-weight: bold;
+  color: #155724;
+
+  .dialog.dark-mode & {
+    color: #10b981;
   }
 }
 </style>

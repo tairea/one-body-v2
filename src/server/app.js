@@ -138,9 +138,17 @@ app.post("/api/person", async (req, res) => {
 
   const { signupSecret, personData, id, secretKey } = req.body;
 
-  if (!isSignupSecretGuessValid(signupSecret)) {
-    res.status(401).end();
-    return;
+  // For updates (when id and secretKey are provided), we don't need signupSecret
+  // For new person creation, we need valid signupSecret
+  if (typeof id === "number" && typeof secretKey === "string") {
+    // This is an update - validate using secretKey instead
+    // The secretKey validation happens in updatePerson function
+  } else {
+    // This is a new person creation - validate signupSecret
+    if (!isSignupSecretGuessValid(signupSecret)) {
+      res.status(401).end();
+      return;
+    }
   }
 
   if (

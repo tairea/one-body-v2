@@ -39,6 +39,10 @@ export const useAppStore = defineStore("app", {
     // Node label visibility state
     showNodeLabels: false,
 
+    // AddPersonDialog state
+    isAddPersonDialogOpen: false,
+    editingPerson: null, // Store the person being edited
+
     // Other app-wide state can be added here
     // isLoading: false,
     // currentView: 'members', // or 'ai'
@@ -145,6 +149,21 @@ export const useAppStore = defineStore("app", {
       this.showNodeLabels = !this.showNodeLabels;
     },
 
+    // AddPersonDialog actions
+    showAddPersonDialog() {
+      this.isAddPersonDialogOpen = true;
+    },
+    hideAddPersonDialog() {
+      this.isAddPersonDialogOpen = false;
+      this.editingPerson = null;
+    },
+    setEditingPerson(person) {
+      this.editingPerson = person;
+    },
+    clearEditingPerson() {
+      this.editingPerson = null;
+    },
+
     // Other app actions can be added here
     // setLoading(loading) {
     //   this.isLoading = loading
@@ -154,7 +173,7 @@ export const useAppStore = defineStore("app", {
     // },
     
     /**
-     * Add a new person to the store
+     * Add a new person to the store or update existing one
      * @param {Person} personData
      * @returns {void}
      */
@@ -162,10 +181,49 @@ export const useAppStore = defineStore("app", {
       if (this.people === null) {
         this.people = [personData];
       } else {
-        this.people = [...this.people, personData];
+        // Check if person already exists
+        const existingIndex = this.people.findIndex(p => p.id === personData.id);
+        if (existingIndex !== -1) {
+          // Update existing person by creating new array
+          this.people = [
+            ...this.people.slice(0, existingIndex),
+            personData,
+            ...this.people.slice(existingIndex + 1)
+          ];
+        } else {
+          // Add new person
+          this.people = [...this.people, personData];
+        }
       }
-      // Also set as current person for immediate access
+      
+      // Always set as current person for immediate access
       this.person = personData;
+      
+      // Save to localStorage for persistence
+      this.savePersonToStorage(personData);
+    },
+
+    /**
+     * Update the current person's data
+     * @param {Person} personData
+     * @returns {void}
+     */
+    updateCurrentPerson(personData) {
+      // Update the current person
+      this.person = personData;
+      
+      // Also update in people array if it exists
+      if (this.people !== null) {
+        const existingIndex = this.people.findIndex(p => p.id === personData.id);
+        if (existingIndex !== -1) {
+          // Update existing person by creating new array
+          this.people = [
+            ...this.people.slice(0, existingIndex),
+            personData,
+            ...this.people.slice(existingIndex + 1)
+          ];
+        }
+      }
       
       // Save to localStorage for persistence
       this.savePersonToStorage(personData);
