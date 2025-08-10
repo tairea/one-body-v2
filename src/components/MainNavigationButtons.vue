@@ -55,7 +55,7 @@ const handleShowCytoscape = () => {
 
     <div id="ai" class="button" @click="emit('showAiView')">
       <v-icon icon="mdi-robot-love-outline" size="20" />
-      <p class="b1">Ai suggested collabs</p>
+      <p class="b1">AI suggested collabs</p>
     </div>
   </div>
 </template>
