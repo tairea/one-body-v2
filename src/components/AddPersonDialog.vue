@@ -49,7 +49,7 @@
                   />
                   <h2>DWeb Fellows Alumni</h2>
                   <p class="dialog-subtitle">
-                    This activity is designed to help us connect DWeb Fellows
+                    This activity is designed to help connect us DWeb Fellows
                     and grow the community. <br /><br />Tell us a bit about
                     yourself, what excites you and what you're working on. The
                     more we share, the easier it is to connect, collaborate and

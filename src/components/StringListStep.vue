@@ -21,17 +21,22 @@
         type="text"
         :placeholder="instruction"
         class="strings-input"
+        :class="{ 'editing': editingChip !== null }"
+        ref="stringInput"
       />
+      <small class="edit-hint">💡 Click any chip to edit it</small>
     </div>
     <div class="chip-container">
       <div
         v-for="string in strings"
         :key="string"
         class="chip chip-created"
+        :class="{ editing: editingChip === string }"
         :style="{ '--chip-color': getChipColor(string) }"
+        @click="editString(string)"
       >
         {{ string }}
-        <button @click="removeString(string)" class="chip-remove" type="button">
+        <button @click.stop="removeString(string)" class="chip-remove" type="button">
           ×
         </button>
       </div>
@@ -57,6 +62,7 @@ export default {
   data() {
     return {
       newString: "",
+      editingChip: null,
     };
   },
   computed: {
@@ -66,7 +72,7 @@ export default {
   },
   methods: {
     handleStringInputKeydown(event) {
-      if (event.key === "Tab" || event.key === "," || event.key === "Enter") {
+      if (event.key === "Tab" || event.key === "Enter") {
         event.preventDefault();
         this.addString();
       }
@@ -85,6 +91,22 @@ export default {
         updatedStrings.splice(index, 1);
         this.$emit("update", updatedStrings);
       }
+    },
+    editString(string) {
+      this.editingChip = string;
+      this.newString = string;
+      // Find the index of the string to remove it after editing
+      const index = this.strings.indexOf(string);
+      if (index > -1) {
+        const updatedStrings = [...this.strings];
+        updatedStrings.splice(index, 1);
+        this.$emit("update", updatedStrings);
+      }
+      // Focus the input field for immediate editing
+      this.$nextTick(() => {
+        this.$refs.stringInput?.focus();
+        this.editingChip = null;
+      });
     },
     getChipColor(string) {
       // Cycle through DWeb colors sequentially
@@ -146,6 +168,18 @@ export default {
   margin-bottom: 16px;
 }
 
+.edit-hint {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+
+  .dark-mode & {
+    color: rgba(255, 255, 255, 0.5);
+  }
+}
+
 .strings-input {
   width: 100%;
   padding: 10px 12px;
@@ -161,6 +195,11 @@ export default {
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
   }
 
+  &.editing {
+    border-color: #28a745;
+    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
+  }
+
   .dark-mode & {
     background-color: #4a5568;
     border-color: #718096;
@@ -169,6 +208,11 @@ export default {
     &:focus {
       border-color: #4299e1;
       box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.25);
+    }
+
+    &.editing {
+      border-color: #48bb78;
+      box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.25);
     }
   }
 }
@@ -191,10 +235,18 @@ export default {
   cursor: pointer;
   transition: all 0.2s;
   outline: none;
+  user-select: none;
 
   &:hover {
     border-color: #007bff;
     background-color: #f8f9fa;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   }
 
   .dark-mode & {
@@ -205,6 +257,11 @@ export default {
     &:hover {
       border-color: #4299e1;
       background-color: #2d3748;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    &:active {
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
     }
   }
 
@@ -223,6 +280,25 @@ export default {
       color: #fff;
       border-color: var(--chip-color, #4299e1);
     }
+
+    &.editing {
+      animation: chipEdit 0.3s ease-in-out;
+    }
+  }
+}
+
+@keyframes chipEdit {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
   }
 }
 
