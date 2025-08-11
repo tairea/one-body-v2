@@ -34,7 +34,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-container">
+  <div class="app-container" v-if="appStore.recommendations?.length">
     <DarkModeToggle />
     <LeftPanel />
 
@@ -49,6 +49,9 @@ onMounted(async () => {
         :class="{ active: appStore.activeComponent === 'globe' }"
       />
     </div>
+  </div>
+  <div class="app-container" v-else>
+    Coming soon...
   </div>
 </template>
 
