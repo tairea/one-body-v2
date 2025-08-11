@@ -9,6 +9,22 @@ export type Person = Readonly<{
   values: ReadonlyArray<string>;
   visions: ReadonlyArray<string>;
   vehicles: ReadonlyArray<{ title: string; description?: string }>;
+  personsGraphSnapshot?: {
+    nodes: Array<{
+      id: string;
+      label: string;
+      type: string;
+      photo?: string;
+      nodeSize?: number;
+      position: { x: number; y: number };
+    }>;
+    edges: Array<{
+      id: string;
+      source: string;
+      target: string;
+      label: string;
+    }>;
+  };
 }>;
 
 export type Recommendation = {

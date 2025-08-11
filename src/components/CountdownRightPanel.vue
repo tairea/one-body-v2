@@ -8,6 +8,10 @@ const props = defineProps({
   person: {
     type: Object,
     required: true
+  },
+  hasNodePositionChanges: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -26,6 +30,14 @@ const handleFullscreen = () => {
 const handleToggleNodeLabels = () => {
   appStore.toggleNodeLabels();
 };
+
+const handleSaveNodePositions = () => {
+  // Emit event to parent to save node positions
+  emit('saveNodePositions');
+};
+
+// Define emits
+const emit = defineEmits(['saveNodePositions']);
 </script>
 
 <template>
@@ -51,6 +63,12 @@ const handleToggleNodeLabels = () => {
         <div class="button" @click="handleToggleNodeLabels">
           <v-icon :icon="appStore.showNodeLabels ? 'mdi-eye-off' : 'mdi-eye'" size="20" />
           <p class="b1">{{ appStore.showNodeLabels ? 'Hide' : 'Show' }} Node Labels</p>
+        </div>
+        
+        <!-- Save Node Positions Button - only show when there are changes -->
+        <div v-if="hasNodePositionChanges" class="button save-positions-button" @click="handleSaveNodePositions">
+          <v-icon icon="mdi-content-save" size="20" />
+          <p class="b1">Save New Node Positions</p>
         </div>
       </div>
     </div>
@@ -118,6 +136,24 @@ const handleToggleNodeLabels = () => {
       color: #333;
       transition: color 0.2s ease;
     }
+    
+    &.save-positions-button {
+      background-color: #4CAF50;
+      border-color: #4CAF50;
+      color: white;
+      
+      &:hover {
+        background-color: #45a049;
+      }
+      
+      .v-icon {
+        color: white;
+      }
+      
+      .b1 {
+        color: white;
+      }
+    }
   }
 
   .b1 {
@@ -154,6 +190,23 @@ const handleToggleNodeLabels = () => {
 
       .v-icon {
         color: rgba(255, 255, 255, 0.87) !important;
+      }
+      
+      &.save-positions-button {
+        background-color: #4CAF50;
+        border-color: #4CAF50;
+        
+        &:hover {
+          background-color: #45a049;
+        }
+        
+        .v-icon {
+          color: white !important;
+        }
+        
+        .b1 {
+          color: white;
+        }
       }
     }
   }

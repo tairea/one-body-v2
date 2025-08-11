@@ -15,8 +15,14 @@ const person = computed(() => appStore.person);
 // Watch for node label visibility changes
 const showNodeLabels = computed(() => appStore.showNodeLabels);
 
+// Emit events for parent components
+const emit = defineEmits(['nodePositionChanged', 'graphSnapshotSaved']);
+
 const containerRef = ref(null);
 const cy = ref(null);
+
+// Flag to prevent regeneration loops
+const isUpdatingSnapshot = ref(false);
 
 // Light mode styles
 const lightModeStyles = [
@@ -343,6 +349,11 @@ const initializeGraphData = () => {
   const nodes = [];
   const edges = [];
 
+  // Check if we have saved positions
+  const hasSavedPositions = person.value.personsGraphSnapshot && 
+                           person.value.personsGraphSnapshot.nodes && 
+                           person.value.personsGraphSnapshot.nodes.length > 0;
+
   // Add person node (center)
   const personNode = {
     data: {
@@ -359,18 +370,31 @@ const initializeGraphData = () => {
 
   // Add values nodes
   person.value.values.forEach((value, index) => {
-    const angle = (index / person.value.values.length) * 2 * Math.PI;
-    const radius = 120;
+    const valueId = `value-${index}`;
+    let position;
+    
+    if (hasSavedPositions) {
+      const savedNode = person.value.personsGraphSnapshot.nodes.find(n => n.id === valueId);
+      position = savedNode ? savedNode.position : null;
+    }
+    
+    if (!position) {
+      // Calculate default position if no saved position
+      const angle = (index / person.value.values.length) * 2 * Math.PI;
+      const radius = 120;
+      position = {
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+      };
+    }
+    
     const valueNode = {
       data: {
-        id: `value-${index}`,
+        id: valueId,
         label: value,
         type: "value",
       },
-      position: {
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-      },
+      position,
     };
     nodes.push(valueNode);
 
@@ -379,7 +403,7 @@ const initializeGraphData = () => {
       data: {
         id: `person-value-${index}`,
         source: "person",
-        target: `value-${index}`,
+        target: valueId,
         label: "has value",
       },
     });
@@ -387,18 +411,31 @@ const initializeGraphData = () => {
 
   // Add visions nodes
   person.value.visions.forEach((vision, index) => {
-    const angle = (index / person.value.visions.length) * 2 * Math.PI;
-    const radius = 200;
+    const visionId = `vision-${index}`;
+    let position;
+    
+    if (hasSavedPositions) {
+      const savedNode = person.value.personsGraphSnapshot.nodes.find(n => n.id === visionId);
+      position = savedNode ? savedNode.position : null;
+    }
+    
+    if (!position) {
+      // Calculate default position if no saved position
+      const angle = (index / person.value.visions.length) * 2 * Math.PI;
+      const radius = 200;
+      position = {
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+      };
+    }
+    
     const visionNode = {
       data: {
-        id: `vision-${index}`,
+        id: visionId,
         label: vision,
         type: "vision",
       },
-      position: {
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-      },
+      position,
     };
     nodes.push(visionNode);
 
@@ -407,7 +444,7 @@ const initializeGraphData = () => {
       data: {
         id: `person-vision-${index}`,
         source: "person",
-        target: `vision-${index}`,
+        target: visionId,
         label: "has vision",
       },
     });
@@ -415,19 +452,32 @@ const initializeGraphData = () => {
 
   // Add vehicles nodes
   person.value.vehicles.forEach((vehicle, index) => {
-    const angle = (index / person.value.vehicles.length) * 2 * Math.PI;
-    const radius = 280;
+    const vehicleId = `vehicle-${index}`;
+    let position;
+    
+    if (hasSavedPositions) {
+      const savedNode = person.value.personsGraphSnapshot.nodes.find(n => n.id === vehicleId);
+      position = savedNode ? savedNode.position : null;
+    }
+    
+    if (!position) {
+      // Calculate default position if no saved position
+      const angle = (index / person.value.vehicles.length) * 2 * Math.PI;
+      const radius = 280;
+      position = {
+        x: Math.cos(angle) * radius,
+        y: Math.sin(angle) * radius,
+      };
+    }
+    
     const vehicleNode = {
       data: {
-        id: `vehicle-${index}`,
+        id: vehicleId,
         label: vehicle.title,
         type: "vehicle",
         description: vehicle.description,
       },
-      position: {
-        x: Math.cos(angle) * radius,
-        y: Math.sin(angle) * radius,
-      },
+      position,
     };
     nodes.push(vehicleNode);
 
@@ -436,7 +486,7 @@ const initializeGraphData = () => {
       data: {
         id: `person-vehicle-${index}`,
         source: "person",
-        target: `vehicle-${index}`,
+        target: vehicleId,
         label: "has vehicle",
       },
     });
@@ -458,7 +508,7 @@ watch(person, (newPerson) => {
   if (!newPerson) {
     // If no person data after initialization, redirect to signup
     router.push({ name: 'Signup' });
-  } else if (cy.value) {
+  } else if (cy.value && !isUpdatingSnapshot.value) {
     // If person data changes and graph exists, regenerate the graph
     regenerateGraph();
   }
@@ -466,38 +516,35 @@ watch(person, (newPerson) => {
 
 // Watch for changes to person properties that affect the graph
 watch(
-  () => person.value?.values,
-  (newValues, oldValues) => {
-    if (cy.value && person.value) {
+  () => person.value?.values?.length,
+  (newLength, oldLength) => {
+    if (cy.value && person.value && newLength !== oldLength && !isUpdatingSnapshot.value) {
       regenerateGraph();
     }
-  },
-  { deep: true }
+  }
 );
 
 watch(
-  () => person.value?.visions,
-  (newVisions, oldVisions) => {
-    if (cy.value && person.value) {
+  () => person.value?.visions?.length,
+  (newLength, oldLength) => {
+    if (cy.value && person.value && newLength !== oldLength && !isUpdatingSnapshot.value) {
       regenerateGraph();
     }
-  },
-  { deep: true }
+  }
 );
 
 watch(
-  () => person.value?.vehicles,
-  (newVehicles, oldVehicles) => {
-    if (cy.value && person.value) {
+  () => person.value?.vehicles?.length,
+  (newLength, oldLength) => {
+    if (cy.value && person.value && newLength !== oldLength && !isUpdatingSnapshot.value) {
       regenerateGraph();
     }
-  },
-  { deep: true }
+  }
 );
 
 // Function to regenerate the graph with updated person data
 const regenerateGraph = () => {
-  if (!cy.value || !person.value) return;
+  if (!cy.value || !person.value || isUpdatingSnapshot.value) return;
   
   try {
     const { nodes, edges } = initializeGraphData();
@@ -505,20 +552,6 @@ const regenerateGraph = () => {
     // Clear existing elements and add new ones
     cy.value.elements().remove();
     cy.value.add({ nodes, edges });
-    
-    // Update layout positions
-    const positions = nodes.reduce((acc, node) => {
-      acc[node.data.id] = node.position;
-      return acc;
-    }, {});
-    
-    // Apply new positions
-    cy.value.nodes().forEach(node => {
-      const position = positions[node.id()];
-      if (position) {
-        node.position(position);
-      }
-    });
     
     // Force style update for person node
     const personElement = cy.value.$('node[type="person"]');
@@ -537,11 +570,79 @@ const regenerateGraph = () => {
     cy.value.fit();
     cy.value.center();
     
-    console.log('Graph regenerated with updated person data');
   } catch (error) {
     console.error('Error regenerating graph:', error);
   }
 };
+
+// Function to save the current graph snapshot
+const saveGraphSnapshot = () => {
+  if (!cy.value || !person.value) return;
+  
+  try {
+    isUpdatingSnapshot.value = true;
+    
+    const nodes = cy.value.nodes().map(node => ({
+      id: node.id(),
+      label: node.data('label'),
+      type: node.data('type'),
+      photo: node.data('photo'),
+      nodeSize: node.data('nodeSize'),
+      position: node.position()
+    }));
+    
+    const edges = cy.value.edges().map(edge => ({
+      id: edge.id(),
+      source: edge.source().id(),
+      target: edge.target().id(),
+      label: edge.data('label')
+    }));
+    
+    const graphSnapshot = { nodes, edges };
+    
+    // Save to the person via store
+    appStore.saveGraphSnapshot(graphSnapshot);
+    
+    // Emit event for parent components
+    emit('graphSnapshotSaved', graphSnapshot);
+    
+  } catch (error) {
+    console.error('Error saving graph snapshot:', error);
+  } finally {
+    // Reset flag after a short delay to allow store update to complete
+    setTimeout(() => {
+      isUpdatingSnapshot.value = false;
+    }, 100);
+  }
+};
+
+// Function to update a specific node's position in the snapshot
+const updateNodePosition = (nodeId, newPosition) => {
+  if (!person.value?.personsGraphSnapshot) return;
+  
+  const updatedNodes = person.value.personsGraphSnapshot.nodes.map(node => {
+    if (node.id === nodeId) {
+      return { ...node, position: newPosition };
+    }
+    return node;
+  });
+  
+  const updatedSnapshot = {
+    ...person.value.personsGraphSnapshot,
+    nodes: updatedNodes
+  };
+  
+  // Save updated snapshot
+  appStore.saveGraphSnapshot(updatedSnapshot);
+  
+};
+
+// Expose methods for parent components
+defineExpose({
+  saveGraphSnapshot,
+  updateNodePosition,
+  regenerateGraph
+});
 
 onMounted(async () => {
   // Initialize dark mode if not already done
@@ -609,12 +710,34 @@ onMounted(async () => {
           });
         }
       }
+      
+      // Save initial snapshot only if none exists
+      if (!person.value.personsGraphSnapshot) {
+        // Add a small delay to ensure the graph is fully rendered
+        setTimeout(() => {
+          if (!person.value.personsGraphSnapshot) {
+            saveGraphSnapshot();
+          }
+        }, 200);
+      }
     }, 100);
 
     // Add some basic interactions
     cy.value.on("tap", "node", (evt) => {
       const node = evt.target;
       console.log("Clicked node:", node.data());
+    });
+
+    // Add node dragging detection
+    cy.value.on("dragfreeon", "node", (evt) => {
+      const node = evt.target;
+      const newPosition = node.position();
+      
+      // Emit event for parent components to show save button
+      emit('nodePositionChanged', {
+        nodeId: node.id(),
+        position: newPosition
+      });
     });
 
     // Add hover and click functionality for non-person nodes
@@ -677,7 +800,6 @@ onMounted(async () => {
       }
     });
 
-    console.log("Interactive Cytoscape initialized successfully");
   } catch (error) {
     console.error("Error initializing Interactive Cytoscape:", error);
   }

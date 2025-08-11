@@ -274,5 +274,20 @@ export const useAppStore = defineStore("app", {
         }
       }
     },
+
+    /**
+     * Save the current graph snapshot to the person
+     * @param {Object} graphData - The cytoscape graph data
+     * @returns {void}
+     */
+    saveGraphSnapshot(graphData) {
+      if (this.person) {
+        const updatedPerson = {
+          ...this.person,
+          personsGraphSnapshot: graphData
+        };
+        this.updateCurrentPerson(updatedPerson);
+      }
+    },
   },
 });

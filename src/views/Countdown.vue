@@ -1,6 +1,6 @@
 <script setup>
 // @ts-check
-import { onMounted, computed, watch } from "vue";
+import { onMounted, computed, watch, ref } from "vue";
 import { useRouter } from "vue-router";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { useAppStore } from "../stores/app";
@@ -14,6 +14,41 @@ const router = useRouter();
 
 // Make person reactive and initialize from storage
 const person = computed(() => appStore.person);
+
+// Track node position changes
+const hasNodePositionChanges = ref(false);
+const pendingNodeChanges = ref(new Map());
+const cytoscapeRef = ref(null);
+
+// Handle node position changes from the graph
+const handleNodePositionChanged = (changeData) => {
+  // Always show the button when a node is dragged
+  hasNodePositionChanges.value = true;
+  pendingNodeChanges.value.set(changeData.nodeId, changeData.position);
+};
+
+// Handle graph snapshot saved
+const handleGraphSnapshotSaved = (snapshot) => {
+  console.log('Graph snapshot saved:', snapshot);
+};
+
+// Save pending node position changes
+const saveNodePositions = () => {
+  if (pendingNodeChanges.value.size === 0 || !cytoscapeRef.value) return;
+  
+  try {
+    // Use the exposed method from InteractiveCytoscapeView
+    cytoscapeRef.value.saveGraphSnapshot();
+    
+    // Reset tracking
+    hasNodePositionChanges.value = false;
+    pendingNodeChanges.value.clear();
+    
+    console.log('Node positions saved successfully');
+  } catch (error) {
+    console.error('Error saving node positions:', error);
+  }
+};
 
 onMounted(async () => {
   // Initialize dark mode if not already done
@@ -34,8 +69,16 @@ watch(person, (newPerson) => {
 }, { immediate: true });
 
 const handleSavePerson = (personData) => {
+  // Preserve the existing graph snapshot before updating
+  const existingSnapshot = person.value?.personsGraphSnapshot;
+  
+  // If there's an existing snapshot, merge it with the new person data
+  const updatedPersonData = existingSnapshot 
+    ? { ...personData, personsGraphSnapshot: existingSnapshot }
+    : personData;
+  
   // Update the person in the store
-  appStore.updateCurrentPerson(personData);
+  appStore.updateCurrentPerson(updatedPersonData);
   // Close the dialog
   appStore.hideAddPersonDialog();
 };
@@ -58,12 +101,21 @@ const handleCloseDialog = () => {
     <CountdownLeftPanel :class="{ 'panel-hidden': appStore.isFullscreen }" />
     
     <!-- Right Panel -->
-    <CountdownRightPanel :person="person" :class="{ 'panel-hidden': appStore.isFullscreen }" />
+    <CountdownRightPanel 
+      :person="person" 
+      :has-node-position-changes="hasNodePositionChanges"
+      @save-node-positions="saveNodePositions"
+      :class="{ 'panel-hidden': appStore.isFullscreen }" 
+    />
     
     <div class="content-container" :class="{ 'fullscreen': appStore.isFullscreen }">
       <div v-if="person" class="countdown-content">
         <!-- Interactive Cytoscape graph of individual person -->
-        <InteractiveCytoscapeView/>
+        <InteractiveCytoscapeView
+          ref="cytoscapeRef"
+          @node-position-changed="handleNodePositionChanged"
+          @graph-snapshot-saved="handleGraphSnapshotSaved"
+        />
       </div>
     </div>
 
