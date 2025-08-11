@@ -119,12 +119,12 @@ export function updatePerson(person, secretKey) {
           locationName = @locationName,
           locationLatitude = @locationLatitude,
           locationLongitude = @locationLongitude,
-        valuesList = @valuesList,
-        visionsList = @visionsList,
-        vehiclesList = @vehiclesList
-        WHERE id = @id
+          valuesList = @valuesList,
+          visionsList = @visionsList,
+          vehiclesList = @vehiclesList
+          WHERE id = @id
       `);
-      
+
       updatePersonStatement.run({
         id: person.id,
         name: person.name,
