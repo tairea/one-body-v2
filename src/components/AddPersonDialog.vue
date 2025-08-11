@@ -7,9 +7,9 @@
     >
       <!-- Dialog header -->
       <div class="dialog-header">
-        <button 
-          v-if="editingPerson" 
-          class="close-btn" 
+        <button
+          v-if="editingPerson"
+          class="close-btn"
           @click="$emit('close')"
           aria-label="Close dialog"
         >
@@ -33,10 +33,7 @@
                 class="custom-stepper-item"
               >
                 <template #title>
-                  <div 
-                    class="step-header-content"
-                    @click="goToStep(step)"
-                  >
+                  <div class="step-header-content" @click="goToStep(step)">
                     <div class="step-emoji">{{ getStepEmoji(step) }}</div>
                     <div class="step-title mt-1">{{ getStepTitle(step) }}</div>
                   </div>
@@ -59,12 +56,22 @@
                     src="../assets/org_logo_DWeb.jpeg"
                     width="100"
                   />
-                  <h2>{{ editingPerson ? 'Edit Profile' : 'DWeb Fellows Alumni' }}</h2>
-                  <p class="dialog-subtitle">
-                    {{ editingPerson 
-                      ? 'Update your profile information below. Make changes to any field and save when you\'re done.' 
-                      : 'This activity is designed to help connect us DWeb Fellows and grow the community. <br /><br />Tell us a bit about yourself, what excites you and what you\'re working on. The more we share, the easier it is to connect, collaborate and build the decentralized web together. <br /><br /><em>Note: The info you enter to create your profile will only be visible by other DWeb fellows.</em>'
-                    }}
+                  <h2>
+                    {{ editingPerson ? "Edit Profile" : "DWeb Fellows Alumni" }}
+                  </h2>
+                  <p v-if="editingPerson" class="dialog-subtitle">
+                    Update your profile information below. Make changes to any
+                    field and save when you're done.
+                  </p>
+                  <p v-else class="dialog-subtitle">
+                    This activity is designed to help connect us DWeb Fellows
+                    and grow the community. <br /><br />Tell us a bit about
+                    yourself, what excites you and what you're working on. The
+                    more we share, the easier it is to connect, collaborate and
+                    build the decentralized web together. <br /><br /><em
+                      >Note: The info you enter to create your profile will only
+                      be visible by other DWeb fellows.</em
+                    >
                   </p>
                 </div>
               </div>
@@ -144,7 +151,11 @@
                     <div class="summary-section">
                       <strong>Visions:</strong>
                       <div class="chips-container">
-                        <span v-for="vision in visions" :key="vision" class="chip">
+                        <span
+                          v-for="vision in visions"
+                          :key="vision"
+                          class="chip"
+                        >
                           {{ vision }}
                         </span>
                       </div>
@@ -152,7 +163,11 @@
                     <div class="summary-section">
                       <strong>Vehicles:</strong>
                       <div class="chips-container">
-                        <span v-for="vehicle in vehicles" :key="vehicle.title" class="chip">
+                        <span
+                          v-for="vehicle in vehicles"
+                          :key="vehicle.title"
+                          class="chip"
+                        >
                           {{ vehicle.title }}
                         </span>
                       </div>
@@ -173,7 +188,7 @@
           >
             Previous
           </button>
-          
+
           <!-- Update Profile button - show on all steps when editing -->
           <button
             v-if="editingPerson && currentStep > 1"
@@ -184,9 +199,15 @@
           >
             <span v-if="isUpdating" class="loading-spinner"></span>
             <span v-else-if="updateSuccess" class="success-icon">✓</span>
-            {{ isUpdating ? 'Updating...' : updateSuccess ? 'Updated!' : 'Update Profile' }}
+            {{
+              isUpdating
+                ? "Updating..."
+                : updateSuccess
+                  ? "Updated!"
+                  : "Update Profile"
+            }}
           </button>
-          
+
           <button
             v-if="currentStep < totalSteps"
             class="btn btn-primary"
@@ -227,8 +248,8 @@ export default {
   props: {
     editingPerson: {
       type: Object,
-      default: null
-    }
+      default: null,
+    },
   },
   emits: ["close", "save"],
   data() {
@@ -428,19 +449,25 @@ export default {
         if (this.editingPerson) {
           // Set loading state
           this.isUpdating = true;
-          
+
           // If editing, preserve the ID and other fields
           personData.id = this.editingPerson.id;
           personData.createdAt = this.editingPerson.createdAt;
           personData.updatedAt = new Date().toISOString();
-          
+
           // Try to make API call to update the person
           try {
-            const personReference = JSON.parse(localStorage.getItem('personReference'));
-            
-            if (personReference && personReference.id && personReference.secretKey) {
+            const personReference = JSON.parse(
+              localStorage.getItem("personReference"),
+            );
+
+            if (
+              personReference &&
+              personReference.id &&
+              personReference.secretKey
+            ) {
               const updatePersonUrl = new URL("/api/person", location.href);
-              
+
               const response = await fetch(updatePersonUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -450,7 +477,7 @@ export default {
                   secretKey: personReference.secretKey,
                 }),
               });
-              
+
               if (response.ok) {
                 // Person updated successfully via API
                 this.updateSuccess = true;
@@ -476,7 +503,7 @@ export default {
         this.currentStep = step;
         this.saveStateToLocalStorage();
       }
-    }
+    },
   },
 };
 </script>
@@ -789,12 +816,12 @@ export default {
 
   .summary-section {
     margin: 8px 0;
-    
+
     strong {
       display: block;
       margin-bottom: 8px;
       color: #333;
-      
+
       .dialog.dark-mode & {
         color: rgba(255, 255, 255, 0.87);
       }
@@ -939,8 +966,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 // Success icon
