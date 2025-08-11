@@ -15,9 +15,10 @@ const router = useRouter();
 // Make person reactive and initialize from storage
 const person = computed(() => appStore.person);
 
-// Track node position changes
+// Reactive variables for node position changes
 const hasNodePositionChanges = ref(false);
 const pendingNodeChanges = ref(new Map());
+const isSavingPositions = ref(false);
 const cytoscapeRef = ref(null);
 
 // Handle node position changes from the graph
@@ -32,21 +33,41 @@ const handleGraphSnapshotSaved = (snapshot) => {
   console.log('Graph snapshot saved:', snapshot);
 };
 
-// Save pending node position changes
-const saveNodePositions = () => {
-  if (pendingNodeChanges.value.size === 0 || !cytoscapeRef.value) return;
-  
+// Save node positions
+const saveNodePositions = async () => {
   try {
-    // Use the exposed method from InteractiveCytoscapeView
-    cytoscapeRef.value.saveGraphSnapshot();
+    isSavingPositions.value = true;
     
-    // Reset tracking
+    // Save to store first (updates localStorage)
+    await cytoscapeRef.value.saveGraphSnapshot();
+    
+    // Also save to server via API
+    const personReference = JSON.parse(localStorage.getItem("personReference"));
+    
+    if (personReference && personReference.id && personReference.secretKey) {
+      const updatePersonUrl = new URL("/api/person", location.href);
+      
+      const response = await fetch(updatePersonUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          personData: person.value,
+          id: personReference.id,
+          secretKey: personReference.secretKey,
+        }),
+      });
+      
+      if (!response.ok) {
+        console.warn('Failed to save node positions to server, but saved locally');
+      }
+    }
+    
     hasNodePositionChanges.value = false;
     pendingNodeChanges.value.clear();
-    
-    console.log('Node positions saved successfully');
   } catch (error) {
     console.error('Error saving node positions:', error);
+  } finally {
+    isSavingPositions.value = false;
   }
 };
 
@@ -101,10 +122,11 @@ const handleCloseDialog = () => {
     <CountdownLeftPanel :class="{ 'panel-hidden': appStore.isFullscreen }" />
     
     <!-- Right Panel -->
-    <CountdownRightPanel 
-      :person="person" 
-      :has-node-position-changes="hasNodePositionChanges"
-      @save-node-positions="saveNodePositions"
+    <CountdownRightPanel
+      :person="person"
+      :hasNodePositionChanges="hasNodePositionChanges"
+      :isSavingPositions="isSavingPositions"
+      @saveNodePositions="saveNodePositions"
       :class="{ 'panel-hidden': appStore.isFullscreen }" 
     />
     

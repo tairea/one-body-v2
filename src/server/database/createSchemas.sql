@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS people (
     -- TODO: Consider something more robust
     valuesList BLOB NOT NULL,
     visionsList BLOB NOT NULL,
-    vehiclesList BLOB NOT NULL
+    vehiclesList BLOB NOT NULL,
+    personsGraphSnapshot BLOB
 ) STRICT;
 
 CREATE TABLE IF NOT EXISTS recommendations (

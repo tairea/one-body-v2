@@ -12,6 +12,10 @@ const props = defineProps({
   hasNodePositionChanges: {
     type: Boolean,
     default: false
+  },
+  isSavingPositions: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -66,9 +70,11 @@ const emit = defineEmits(['saveNodePositions']);
         </div>
         
         <!-- Save Node Positions Button - only show when there are changes -->
-        <div v-if="hasNodePositionChanges" class="button save-positions-button" @click="handleSaveNodePositions">
-          <v-icon icon="mdi-content-save" size="20" />
-          <p class="b1">Save New Node Positions</p>
+        <div v-if="hasNodePositionChanges" class="button save-positions-button" 
+             :class="{ 'saving': isSavingPositions, 'disabled': isSavingPositions }"
+             @click="handleSaveNodePositions">
+          <v-icon :icon="isSavingPositions ? 'mdi-loading mdi-spin' : 'mdi-content-save'" size="20" />
+          <p class="b1">{{ isSavingPositions ? 'Saving...' : 'Save New Node Positions' }}</p>
         </div>
       </div>
     </div>
@@ -152,6 +158,25 @@ const emit = defineEmits(['saveNodePositions']);
       
       .b1 {
         color: white;
+      }
+      
+      &.saving {
+        background-color: #FF9800;
+        border-color: #FF9800;
+        cursor: not-allowed;
+        
+        &:hover {
+          background-color: #FF9800;
+        }
+      }
+      
+      &.disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+        
+        &:hover {
+          background-color: #4CAF50;
+        }
       }
     }
   }

@@ -576,7 +576,7 @@ const regenerateGraph = () => {
 };
 
 // Function to save the current graph snapshot
-const saveGraphSnapshot = () => {
+const saveGraphSnapshot = async () => {
   if (!cy.value || !person.value) return;
   
   try {
@@ -601,13 +601,14 @@ const saveGraphSnapshot = () => {
     const graphSnapshot = { nodes, edges };
     
     // Save to the person via store
-    appStore.saveGraphSnapshot(graphSnapshot);
+    await appStore.saveGraphSnapshot(graphSnapshot);
     
     // Emit event for parent components
     emit('graphSnapshotSaved', graphSnapshot);
     
   } catch (error) {
     console.error('Error saving graph snapshot:', error);
+    throw error; // Re-throw so parent can handle it
   } finally {
     // Reset flag after a short delay to allow store update to complete
     setTimeout(() => {
