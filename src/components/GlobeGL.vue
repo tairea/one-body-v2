@@ -34,6 +34,26 @@ const doesPersonHaveLocation = (person) =>
   typeof person.locationLatitude === "number" &&
   typeof person.locationLongitude === "number";
 
+// Helper function to safely get photo URL for a person
+const getPersonPhotoUrl = (person) => {
+  if (!person.hasPhoto) {
+    return undefined;
+  }
+  
+  // If the person has a photo field with data (data URL), use it directly
+  if (person.photo && typeof person.photo === 'string' && person.photo.startsWith('data:')) {
+    return person.photo;
+  }
+  
+  // If the person has an ID, construct the API URL
+  if (person.id && typeof person.id === 'number') {
+    return getPhotoUrl(person, location.href);
+  }
+  
+  // Fallback: no photo available
+  return undefined;
+};
+
 export default {
   name: "GlobeGL",
   components: {
@@ -146,9 +166,7 @@ export default {
           lat: person.locationLatitude,
           lng: person.locationLongitude,
           name: person.name,
-          photo: person.hasPhoto
-            ? getPhotoUrl(person, location.href)
-            : undefined,
+          photo: getPersonPhotoUrl(person),
           type: "person",
         }));
 
@@ -248,7 +266,7 @@ export default {
         lat: person.locationLatitude,
         lng: person.locationLongitude,
         name: person.name,
-        photo: person.hasPhoto ? getPhotoUrl(person, location.href) : undefined,
+        photo: getPersonPhotoUrl(person),
         type: "person",
       }));
 

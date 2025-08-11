@@ -29,13 +29,36 @@ export async function imageFileToDataUrl(file) {
     ctx.imageSmoothingEnabled = true;
     ctx.imageSmoothingQuality = "high";
 
-    // Fill background to avoid transparent areas when exporting to JPEG
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, side, side);
+    // Calculate source rectangle for cropping (object-fit: cover behavior)
+    const sourceWidth = bitmap.width;
+    const sourceHeight = bitmap.height;
+    
+    // Calculate the crop dimensions to maintain aspect ratio
+    const aspectRatio = sourceWidth / sourceHeight;
+    let sourceX = 0;
+    let sourceY = 0;
+    let cropWidth = sourceWidth;
+    let cropHeight = sourceHeight;
+    
+    if (aspectRatio > 1) {
+      // Image is wider than tall - crop the sides
+      cropHeight = sourceHeight;
+      cropWidth = sourceHeight; // Make it square
+      sourceX = (sourceWidth - cropWidth) / 2;
+    } else if (aspectRatio < 1) {
+      // Image is taller than wide - crop the top/bottom
+      cropWidth = sourceWidth;
+      cropHeight = sourceWidth; // Make it square
+      sourceY = (sourceHeight - cropHeight) / 2;
+    }
+    // If aspectRatio === 1, no cropping needed
 
-    const dx = Math.round((side - width) / 2);
-    const dy = Math.round((side - height) / 2);
-    ctx.drawImage(bitmap, dx, dy, width, height);
+    // Draw the cropped image to fill the entire canvas
+    ctx.drawImage(
+      bitmap,
+      sourceX, sourceY, cropWidth, cropHeight,  // Source rectangle
+      0, 0, side, side                          // Destination rectangle
+    );
 
     return canvas.toDataURL("image/jpeg");
   } finally {

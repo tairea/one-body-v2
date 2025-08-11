@@ -344,6 +344,27 @@ const formatTextWithLineBreaks = (text) => {
   return lines.join('\n');
 };
 
+// Get the appropriate photo URL for a person
+// Handles both local data URLs and remote API photos
+const getPersonPhotoUrl = (personData) => {
+  if (!personData.hasPhoto) {
+    return null;
+  }
+  
+  // If the person has a photo field with data (data URL), use it directly
+  if (personData.photo && typeof personData.photo === 'string' && personData.photo.startsWith('data:')) {
+    return personData.photo;
+  }
+  
+  // If the person has an ID, construct the API URL
+  if (personData.id && typeof personData.id === 'number') {
+    return getPhotoUrl(personData, location.href);
+  }
+  
+  // Fallback: no photo available
+  return null;
+};
+
 // Initialize graph data from person
 const initializeGraphData = () => {
   const nodes = [];
@@ -360,7 +381,7 @@ const initializeGraphData = () => {
       id: "person",
       label: formatTextWithLineBreaks(person.value.name),
       type: "person",
-      photo: person.value.hasPhoto ? getPhotoUrl(person.value, location.href) : null,
+      photo: getPersonPhotoUrl(person.value),
       nodeSize: calculatePersonNodeSize(person.value.name),
     },
     position: { x: 0, y: 0 },

@@ -63,11 +63,16 @@ const handleSavePerson = async (personData) => {
     });
     if (!response.ok) throw new Error("Not OK response from server");
 
-    // add person to store
-    appStore.addPerson(personData);
+    // Get the response data with id and secretKey
+    const { id, secretKey } = await response.json();
+    
+    // Create the complete person data with the id from the API
+    const completePersonData = { ...personData, id };
+    
+    // add person to store with complete data
+    appStore.addPerson(completePersonData);
 
     // save person reference to local storage
-    const { id, secretKey } = await response.json();
     localStorage.setItem("personReference", JSON.stringify({ id, secretKey }));
   } catch (_err) {
     errorMsg.value = "Network error. Please try again.";

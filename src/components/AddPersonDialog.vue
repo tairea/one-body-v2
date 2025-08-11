@@ -83,7 +83,7 @@
                 :name="name"
                 :email="email"
                 :locationName="locationName"
-                :profile-image="profileImage"
+                :profile-image="profileImageUrl"
                 @update:name="name = $event"
                 @update:email="email = $event"
                 @update:location-name="locationName = $event"
@@ -132,8 +132,8 @@
                   </p>
                   <div class="summary-card">
                     <h4>Summary</h4>
-                    <div v-if="profileImage" class="summary-image">
-                      <img :src="profileImage" alt="Profile" />
+                    <div v-if="profileImageUrl" class="summary-image">
+                      <img :src="profileImageUrl" alt="Profile" />
                     </div>
                     <p><strong>Name:</strong> {{ name }}</p>
                     <p><strong>Email:</strong> {{ email }}</p>
@@ -237,6 +237,7 @@ import StringListStep from "./StringListStep.vue";
 import VehiclesStep from "./VehiclesStep.vue";
 import { maybeJsonParse } from "../lib/maybeJsonParse.js";
 import * as is from "../lib/is.js";
+import { getPhotoUrl } from "../lib/utils.js";
 
 export default {
   name: "AddPersonDialog",
@@ -304,6 +305,15 @@ export default {
         default:
           return true;
       }
+    },
+    // Computed property to get the profile image URL when editing
+    profileImageUrl() {
+      if (this.editingPerson && this.editingPerson.hasPhoto && this.editingPerson.id) {
+        // Type assertion to ensure editingPerson has the required structure
+        const person = /** @type {{ id: number, hasPhoto: boolean }} */ (this.editingPerson);
+        return getPhotoUrl(person, location.href);
+      }
+      return this.profileImage;
     },
   },
   methods: {
@@ -394,11 +404,7 @@ export default {
       if (is.string(person.locationName)) {
         this.locationName = person.locationName;
       }
-      if (person.hasPhoto) {
-        // For now, we'll set a default image or leave it null
-        // since we don't store the actual photo URL in the Person type
-        this.profileImage = null;
-      }
+      // Note: profileImage will be handled by the computed property profileImageUrl
       if (is.array(person.values) && person.values.every(is.string)) {
         this.values = person.values;
       }

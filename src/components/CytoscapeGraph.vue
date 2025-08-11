@@ -37,6 +37,26 @@ const edges = ref([]);
 // Get dark mode state
 const appStore = useAppStore();
 
+// Helper function to safely get photo URL for a person
+const getPersonPhotoUrl = (person) => {
+  if (!person.hasPhoto) {
+    return null;
+  }
+  
+  // If the person has a photo field with data (data URL), use it directly
+  if (person.photo && typeof person.photo === 'string' && person.photo.startsWith('data:')) {
+    return person.photo;
+  }
+  
+  // If the person has an ID, construct the API URL
+  if (person.id && typeof person.id === 'number') {
+    return getPhotoUrl(person, location.href);
+  }
+  
+  // Fallback: no photo available
+  return null;
+};
+
 // Node click functionality - will be initialized after cy is created
 let nodeClickHandler = null;
 let nodeClickCleanup = null;
@@ -348,7 +368,7 @@ const initializeGraphData = async () => {
     };
 
     if (person.hasPhoto) {
-      nodeData.photo = getPhotoUrl(person, location.href);
+      nodeData.photo = getPersonPhotoUrl(person);
       nodeData.hasPhoto = true; // Add explicit flag
     }
 
