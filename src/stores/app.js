@@ -278,15 +278,68 @@ export const useAppStore = defineStore("app", {
     /**
      * Save the current graph snapshot to the person
      * @param {Object} graphData - The cytoscape graph data
-     * @returns {void}
+     * @returns {Promise<void>}
      */
-    saveGraphSnapshot(graphData) {
+    async saveGraphSnapshot(graphData) {
       if (this.person) {
         const updatedPerson = {
           ...this.person,
           personsGraphSnapshot: graphData
         };
         this.updateCurrentPerson(updatedPerson);
+        
+        // Also save to database if we have the person's ID and secretKey
+        if (this.person.id) {
+          try {
+            await this.savePersonToDatabase(updatedPerson);
+          } catch (error) {
+            console.warn('Failed to save graph snapshot to database:', error);
+          }
+        }
+      }
+    },
+
+    /**
+     * Save person data to the database
+     * @param {Person} personData
+     * @returns {Promise<void>}
+     */
+    async savePersonToDatabase(personData) {
+      if (!personData.id) {
+        throw new Error('Cannot save to database: missing ID');
+      }
+
+      // Get secretKey from localStorage
+      const personReference = JSON.parse(localStorage.getItem("personReference"));
+      if (!personReference || !personReference.secretKey) {
+        throw new Error('Cannot save to database: missing secretKey in localStorage');
+      }
+
+      const updatePersonUrl = new URL("/api/person", window.location.href);
+      const response = await fetch(updatePersonUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: personData.id,
+          secretKey: personReference.secretKey,
+          personData: {
+            name: personData.name,
+            email: personData.email,
+            locationName: personData.locationName,
+            locationLatitude: personData.locationLatitude,
+            locationLongitude: personData.locationLongitude,
+            values: personData.values,
+            visions: personData.visions,
+            vehicles: personData.vehicles,
+            personsGraphSnapshot: personData.personsGraphSnapshot,
+          },
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save person: ${response.status}`);
       }
     },
   },
