@@ -172,7 +172,11 @@ app.post("/api/person", async (req, res) => {
           is.record(vehicle) &&
           is.string(vehicle.title) &&
           (is.undefined(vehicle.description) || is.string(vehicle.description)),
-      )
+      ) &&
+      (is.undefined(personData.personsGraphSnapshot) ||
+        (is.record(personData.personsGraphSnapshot) &&
+         is.array(personData.personsGraphSnapshot.nodes) &&
+         is.array(personData.personsGraphSnapshot.edges)))
     )
   ) {
     res.status(400).end();
@@ -210,6 +214,7 @@ app.post("/api/person", async (req, res) => {
     values: personData.values,
     visions: personData.visions,
     vehicles: personData.vehicles,
+    personsGraphSnapshot: /** @type {Person["personsGraphSnapshot"]} */ (personData.personsGraphSnapshot),
   };
 
   let result;
