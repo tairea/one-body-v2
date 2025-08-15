@@ -4,7 +4,7 @@ import { onMounted, computed, watch, ref } from "vue";
 import { useRouter } from "vue-router";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { useAppStore } from "../stores/app";
-import InteractiveCytoscapeView from "./InteractiveCytoscapeView.vue";
+import InteractiveCytoscape from "../components/InteractiveCytoscape.vue";
 import CountdownLeftPanel from "../components/CountdownLeftPanel.vue";
 import CountdownRightPanel from "../components/CountdownRightPanel.vue";
 import AddPersonDialog from "../components/AddPersonDialog.vue";
@@ -45,7 +45,7 @@ const saveNodePositions = async () => {
     const personReference = JSON.parse(localStorage.getItem("personReference"));
     
     if (personReference && personReference.id && personReference.secretKey) {
-      const updatePersonUrl = new URL("/api/person", location.href);
+      const updatePersonUrl = new URL("/api/person", "https://dwebonebody.online/");
       
       const response = await fetch(updatePersonUrl, {
         method: "POST",
@@ -133,7 +133,7 @@ const handleCloseDialog = () => {
     <div class="content-container" :class="{ 'fullscreen': appStore.isFullscreen }">
       <div v-if="person" class="countdown-content">
         <!-- Interactive Cytoscape graph of individual person -->
-        <InteractiveCytoscapeView
+        <InteractiveCytoscape
           ref="cytoscapeRef"
           @node-position-changed="handleNodePositionChanged"
           @graph-snapshot-saved="handleGraphSnapshotSaved"

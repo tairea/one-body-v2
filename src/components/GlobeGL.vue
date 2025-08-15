@@ -47,7 +47,7 @@ const getPersonPhotoUrl = (person) => {
   
   // If the person has an ID, construct the API URL
   if (person.id && typeof person.id === 'number') {
-    return getPhotoUrl(person, location.href);
+    return getPhotoUrl(person, "https://dwebonebody.online/");
   }
   
   // Fallback: no photo available

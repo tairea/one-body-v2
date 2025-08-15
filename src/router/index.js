@@ -3,7 +3,6 @@ import { createRouter, createWebHistory } from "vue-router";
 import Home from "../views/Home.vue";
 import Signup from "../views/Signup.vue";
 import Countdown from "../views/Countdown.vue";
-import InteractiveCytoscapeView from "../views/InteractiveCytoscapeView.vue";
 
 // NOTE: If changing these routes, make sure to add them to server/app.js.
 const routes = [
@@ -21,11 +20,6 @@ const routes = [
     path: "/countdown",
     name: "Countdown",
     component: Countdown,
-  },
-  {
-    path: "/interactive-cytoscape",
-    name: "InteractiveCytoscape",
-    component: InteractiveCytoscapeView,
   },
 ];
 
