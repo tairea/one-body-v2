@@ -608,6 +608,12 @@ export default {
   box-shadow: none !important;
 }
 
+// Override Vuetify's pointer-events restriction for disabled stepper items
+.custom-stepper .v-stepper-item[disabled], 
+.custom-stepper .v-stepper-item--disabled {
+  pointer-events: auto !important;
+}
+
 .custom-stepper-header {
   background: transparent !important;
   border-bottom: 1px solid #eee;
@@ -628,6 +634,7 @@ export default {
   min-width: 60px !important;
   max-width: 80px !important;
   flex: 0 0 auto !important;
+  pointer-events: auto !important;
 
   &:hover {
     background-color: rgba(0, 0, 0, 0.05) !important;
