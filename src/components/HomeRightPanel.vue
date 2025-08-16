@@ -47,8 +47,8 @@ const emit = defineEmits(['saveNodePositions']);
 <template>
   <div class="right-overlay" :class="{ 'dark-mode': appStore.isDarkMode }" v-bind="$attrs">
     <div v-if="props.person">
-      <h1>Hi, {{ props.person.name.split(' ')[0] }} 👋</h1>
-      <h3>Thanks for completing your DWeb Fellow's profile</h3>
+      <!-- <h1>Hi, {{ props.person.name.split(' ')[0] }} 👋</h1>
+      <h3>Thanks for completing your DWeb Fellow's profile</h3> -->
 
       <!-- Profile Actions -->
       <div class="profile-section">

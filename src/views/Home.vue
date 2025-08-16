@@ -61,18 +61,25 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-container" v-if="true">
+  <div class="app-container" v-if="true" :class="{ 'dark-mode': appStore.isDarkMode, 'fullscreen': appStore.isFullscreen }">
     <DarkModeToggle />
-    <HomeLeftPanel />
+    
+    <!-- Close Fullscreen Button -->
+    <div v-if="appStore.isFullscreen" class="close-fullscreen-btn" @click="appStore.exitFullscreen">
+      <v-icon icon="mdi-close" size="24" />
+    </div>
+    
+    <HomeLeftPanel :class="{ 'panel-hidden': appStore.isFullscreen }" />
     <HomeRightPanel 
       v-if="appStore.people && appStore.people.length > 0"
       :person="appStore.people[0]"
       :hasNodePositionChanges="hasNodePositionChanges"
       :isSavingPositions="isSavingPositions"
       @saveNodePositions="handleSaveNodePositions"
+      :class="{ 'panel-hidden': appStore.isFullscreen }"
     />
 
-    <div v-if="appStore.people" class="components-container">
+    <div v-if="appStore.people" class="components-container" :class="{ 'fullscreen': appStore.isFullscreen }">
       <!-- <CytoscapeGraph
         ref="cytoscapeRef"
         :people="appStore.people"
@@ -96,18 +103,67 @@ onMounted(async () => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .app-container {
   width: 100vw;
   height: 100vh;
   overflow: hidden;
   position: relative;
+  transition: background 0.3s ease;
+  box-sizing: border-box;
+
+  &.dark-mode {
+    background: #0c0c0c;
+  }
+
+  &.fullscreen {
+    padding: 0;
+  }
+}
+
+// Close fullscreen button
+.close-fullscreen-btn {
+  position: fixed;
+  top: 60px;
+  right: 15px;
+  z-index: 3000;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 1);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .dark-mode & {
+    background: rgba(0, 0, 0, 0.9);
+    color: rgba(255, 255, 255, 0.87);
+
+    &:hover {
+      background: rgba(0, 0, 0, 1);
+    }
+  }
 }
 
 .components-container {
   position: relative;
   width: 100%;
   height: 100%;
+  transition: width 0.3s ease, margin 0.3s ease;
+
+  &.fullscreen {
+    width: 100%;
+    margin: 0;
+  }
 }
 
 .components-container > * {
@@ -124,5 +180,30 @@ onMounted(async () => {
 .components-container > *.active {
   opacity: 1;
   pointer-events: auto;
+}
+
+// Panel transitions for fullscreen
+:deep(.left-overlay),
+:deep(.right-overlay) {
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+:deep(.panel-hidden) {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+// Responsive design
+@media (max-width: 768px) {
+  .app-container {
+    :deep(.left-overlay),
+    :deep(.right-overlay) {
+      display: none;
+    }
+  }
 }
 </style>
