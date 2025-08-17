@@ -175,8 +175,8 @@ app.post("/api/person", async (req, res) => {
       ) &&
       (is.undefined(personData.personsGraphSnapshot) ||
         (is.record(personData.personsGraphSnapshot) &&
-         is.array(personData.personsGraphSnapshot.nodes) &&
-         is.array(personData.personsGraphSnapshot.edges)))
+          is.array(personData.personsGraphSnapshot.nodes) &&
+          is.array(personData.personsGraphSnapshot.edges)))
     )
   ) {
     res.status(400).end();
@@ -214,7 +214,9 @@ app.post("/api/person", async (req, res) => {
     values: personData.values,
     visions: personData.visions,
     vehicles: personData.vehicles,
-    personsGraphSnapshot: /** @type {Person["personsGraphSnapshot"]} */ (personData.personsGraphSnapshot),
+    personsGraphSnapshot: /** @type {Person["personsGraphSnapshot"]} */ (
+      personData.personsGraphSnapshot
+    ),
   };
 
   let result;
@@ -225,6 +227,13 @@ app.post("/api/person", async (req, res) => {
   }
 
   res.json(result);
+});
+
+app.use((err, _req, res, _next) => {
+  console.error(err);
+  res.status(500);
+  res.type("txt");
+  res.send([err.message, err.stack].join("\n\n"));
 });
 
 export { app };
