@@ -23,10 +23,15 @@ const props = defineProps({
 const showNodeLabels = computed(() => appStore.showNodeLabels);
 
 // Emit events for parent components
-const emit = defineEmits(['nodePositionChanged', 'graphSnapshotSaved']);
+const emit = defineEmits(['nodePositionChanged', 'graphSnapshotSaved', 'zoomStateChanged']);
 
 const containerRef = ref(null);
 const cyInstances = ref(new Map()); // Store multiple cytoscape instances
+
+// Add state for tracking zoom level and current person
+const isZoomedToPerson = ref(false);
+const currentZoomedPerson = ref(null);
+const isZooming = ref(false); // Flag to prevent double zooming
 
 // Flag to prevent regeneration loops
 const isUpdatingSnapshot = ref(false);
@@ -407,7 +412,7 @@ const getPersonPhotoUrl = (personData) => {
   
   // If the person has an ID, construct the API URL
   if (personData.id && typeof personData.id === 'number') {
-    return getPhotoUrl(personData, "https://dwebonebody.online/");
+    return getPhotoUrl(personData, location.href);
   }
   
   // Fallback: no photo available
@@ -426,8 +431,8 @@ const initializeGraphData = (personData, personIndex) => {
 
   // Calculate offset for this person's graph
   const graphOffset = {
-    x: (personIndex % 3) * 700, // Changed from 400 to 600 for more noticeable gaps
-    y: Math.floor(personIndex / 3) * 700 // Changed from 400 to 600 for more noticeable gaps
+    x: (personIndex % 3) * 600, // Changed from 400 to 600 for more noticeable gaps
+    y: Math.floor(personIndex / 3) * 600 // Changed from 400 to 600 for more noticeable gaps
   };
 
   // Add person node (center of this person's graph)
@@ -576,10 +581,66 @@ const initializeGraphData = (personData, personIndex) => {
 
 // Function to setup interactions for a cytoscape instance
 const setupInteractions = (cyInstance) => {
-  // Add some basic interactions
-  cyInstance.on("tap", "node", (evt) => {
+  // Add click anywhere to zoom to nearest person (background clicks only)
+  cyInstance.on("tap", (evt) => {
+    console.log("clicked", evt.target, evt.target.isNode);
+    // Only handle background clicks (not node clicks)
+    if (!evt.target.isNode) {
+      console.log("Background clicked, finding nearest person...");
+      const clickPos = evt.renderedPosition;
+      zoomToNearestPerson(clickPos);
+    }
+  });
+
+  // Add some basic interactions for person nodes
+  cyInstance.on("tap", "node[type='person']", (evt) => {
     const node = evt.target;
-    console.log("Clicked node:", node.data());
+    const nodeData = node.data();
+    
+    // Zoom to this person's graph
+    zoomToPersonGraph(nodeData.id);
+  });
+
+  // Add interactions for non-person nodes
+  cyInstance.on("tap", "node[type!='person']", (evt) => {
+    const node = evt.target;
+    const nodeData = node.data();
+    
+    // For non-person nodes, find the person they belong to and zoom to them
+    const personId = findPersonIdFromNodeId(nodeData.id);
+    if (personId) {
+      zoomToPersonGraph(personId);
+    } else {
+      console.log("Clicked node:", nodeData);
+    }
+    
+    // Handle expand/collapse for non-person nodes
+    const isExpanded = node.data("expanded");
+    const label = node.data("label");
+    
+    if (isExpanded) {
+      // Shrink back to dot (unless global labels are visible)
+      if (!showNodeLabels.value) {
+        node.style({
+          width: 20,
+          height: 20,
+          label: ""
+        });
+      }
+      node.data("expanded", false);
+    } else {
+      // Expand and show label with precise sizing
+      const { width, height } = calculateOptimalNodeSize(label);
+      
+      node.style({
+        width: width,
+        height: height,
+        label: label,
+        "text-max-width": Math.min(60, width - 10), // More restrictive text width for wrapping
+        "text-wrap": "wrap"
+      });
+      node.data("expanded", true);
+    }
   });
 
   // Add node dragging detection
@@ -623,36 +684,216 @@ const setupInteractions = (cyInstance) => {
       });
     }
   });
+};
 
-  cyInstance.on("tap", "node[type!='person']", (evt) => {
-    const node = evt.target;
-    const isExpanded = node.data("expanded");
-    const label = node.data("label");
+// Helper function to find person ID from any node ID
+const findPersonIdFromNodeId = (nodeId) => {
+  if (!nodeId) return null;
+  
+  // Extract person ID from node ID patterns
+  if (nodeId.startsWith('person-')) {
+    return nodeId;
+  } else if (nodeId.startsWith('value-')) {
+    // value-{personId}-{index}
+    const parts = nodeId.split('-');
+    if (parts.length >= 2) {
+      return `person-${parts[1]}`;
+    }
+  } else if (nodeId.startsWith('vision-')) {
+    // vision-{personId}-{index}
+    const parts = nodeId.split('-');
+    if (parts.length >= 2) {
+      return `person-${parts[1]}`;
+    }
+  } else if (nodeId.startsWith('vehicle-')) {
+    // vehicle-{personId}-{index}
+    const parts = nodeId.split('-');
+    if (parts.length >= 2) {
+      return `person-${parts[1]}`;
+    }
+  }
+  
+  return null;
+};
+
+// Helper function to fade elements in/out
+const fadeElements = (elements, opacity, duration = 300) => {
+  elements.style({
+    'opacity': opacity,
+    'transition-property': 'opacity',
+    'transition-duration': `${duration}ms`
+  });
+};
+
+// Function to find and zoom to the nearest person from a click position
+const zoomToNearestPerson = (clickPos) => {
+  if (!cyInstances.value || !cyInstances.value.has('main')) return;
+  
+  const mainCy = cyInstances.value.get('main');
+  const personNodes = mainCy.$('node[type="person"]');
+  
+  if (personNodes.length === 0) return;
+  
+  let nearestPerson = null;
+  let minDistance = Infinity;
+  
+  personNodes.forEach(personNode => {
+    const personPos = personNode.renderedPosition();
+    const distance = Math.sqrt(
+      Math.pow(clickPos.x - personPos.x, 2) + 
+      Math.pow(clickPos.y - personPos.y, 2)
+    );
     
-    if (isExpanded) {
-      // Shrink back to dot (unless global labels are visible)
-      if (!showNodeLabels.value) {
-        node.style({
-          width: 20,
-          height: 20,
-          label: ""
-        });
-      }
-      node.data("expanded", false);
-    } else {
-      // Expand and show label with precise sizing
-      const { width, height } = calculateOptimalNodeSize(label);
-      
-      node.style({
-        width: width,
-        height: height,
-        label: label,
-        "text-max-width": Math.min(60, width - 10), // More restrictive text width for wrapping
-        "text-wrap": "wrap"
-      });
-      node.data("expanded", true);
+    if (distance < minDistance) {
+      minDistance = distance;
+      nearestPerson = personNode;
     }
   });
+  
+  if (nearestPerson) {
+    zoomToPersonGraph(nearestPerson.id());
+  }
+};
+
+// Function to zoom to a specific person's graph with animation
+const zoomToPersonGraph = (personId) => {
+  if (!cyInstances.value || !cyInstances.value.has('main') || isZooming.value) return;
+  
+  isZooming.value = true; // Set flag to prevent double zooming
+  
+  const mainCy = cyInstances.value.get('main');
+  const personNode = mainCy.$(`#${personId}`);
+  
+  if (personNode.length === 0) {
+    isZooming.value = false; // Reset flag if no person found
+    return;
+  }
+  
+  console.log(`Zooming to person: ${personId}`);
+  
+  // Get all nodes and edges connected to this person
+  const personGraph = personNode.connectedNodes().add(personNode);
+  
+  console.log(`Person graph has ${personGraph.length} nodes`);
+  
+  // Hide other PEOPLE's graphs (not the person's own nodes)
+  // We need to find all nodes that belong to OTHER people
+  const allPersonNodes = mainCy.$('node[type="person"]');
+  const otherPersonNodes = allPersonNodes.difference(personNode);
+  
+  // Extract the person ID from the selected person's node ID
+  const selectedPersonId = personId.replace('person-', '');
+  
+  // For each other person, hide their entire graph (person + connected nodes + edges)
+  let allOtherElements = mainCy.collection();
+  otherPersonNodes.forEach(otherPerson => {
+    // Get the other person's ID
+    const otherPersonId = otherPerson.id().replace('person-', '');
+    
+    // Find all nodes that belong to this other person using ID patterns
+    const otherPersonValues = mainCy.$(`node[id^="value-${otherPersonId}-"]`);
+    const otherPersonVisions = mainCy.$(`node[id^="vision-${otherPersonId}-"]`);
+    const otherPersonVehicles = mainCy.$(`node[id^="vehicle-${otherPersonId}-"]`);
+    
+    // Get all edges connected to this other person
+    const otherPersonEdges = otherPerson.connectedEdges();
+    
+    // Add all elements from this other person's graph
+    allOtherElements = allOtherElements
+      .union(otherPerson)
+      .union(otherPersonValues)
+      .union(otherPersonVisions)
+      .union(otherPersonVehicles)
+      .union(otherPersonEdges);
+  });
+  
+  console.log(`Hiding ${allOtherElements.length} elements from other people's graphs`);
+  console.log(`Selected person ID: ${selectedPersonId}`);
+  
+  // Hide other people's graphs with fade out effect
+  fadeElements(allOtherElements, 0.1, 300);
+  
+  // Calculate the bounding box of the person's graph
+  const bbox = personGraph.boundingBox();
+  
+  console.log('Bounding box:', bbox);
+  
+  // Add some padding around the graph
+  const padding = 100; // Increased padding for better view
+  bbox.x1 -= padding;
+  bbox.y1 -= padding;
+  bbox.x2 += padding;
+  bbox.y2 += padding;
+  
+  console.log('Bounding box with padding:', bbox);
+  
+  // Fit the view to this person's graph with animation
+  mainCy.animate({
+    fit: {
+      eles: personGraph,
+      padding: padding
+    },
+    duration: 800,
+    easing: 'ease-in-out'
+  });
+  
+  // Update state
+  isZoomedToPerson.value = true;
+  currentZoomedPerson.value = personId;
+  
+  // Emit event to notify parent components about zoom state change
+  emit('zoomStateChanged', {
+    isZoomed: true,
+    personId: personId
+  });
+  
+  // Reset flag after animation completes
+  setTimeout(() => {
+    isZooming.value = false;
+  }, 900); // Slightly longer than animation duration
+};
+
+// Function to zoom back to full view with animation
+const zoomToFullView = () => {
+  if (!cyInstances.value || !cyInstances.value.has('main') || isZooming.value) return;
+  
+  isZooming.value = true; // Set flag to prevent double zooming
+  
+  const mainCy = cyInstances.value.get('main');
+  
+  // First show all elements again with fade in effect
+  const allElements = mainCy.elements();
+  fadeElements(allElements, 1, 300);
+  
+  // Fit to all elements with animation and custom padding
+  mainCy.animate({
+    fit: {
+      padding: {
+        left: 300,
+        right: 300,
+        top: 100,
+        bottom: 100
+      }
+    },
+    center: true,
+    duration: 800,
+    easing: 'ease-in-out'
+  });
+  
+  // Update state
+  isZoomedToPerson.value = false;
+  currentZoomedPerson.value = null;
+  
+  // Emit event to notify parent components about zoom state change
+  emit('zoomStateChanged', {
+    isZoomed: false,
+    personId: null
+  });
+  
+  // Reset flag after animation completes
+  setTimeout(() => {
+    isZooming.value = false;
+  }, 900); // Slightly longer than animation duration
 };
 
 // Function to regenerate the graph with updated person data
@@ -712,7 +953,6 @@ const initializeAllGraphs = () => {
         return acc;
       }, {}),
       fit: true,
-      padding: 100,
       animate: false,
     },
     minZoom: 0.1, // Allow more zoom out to see all graphs
@@ -724,14 +964,28 @@ const initializeAllGraphs = () => {
   
   const mainCy = cyInstances.value.get('main');
   
-  // Center the view and ensure proper fit
-  mainCy.fit();
+  // Center the view and ensure proper fit with custom padding
+  mainCy.fit({
+    padding: {
+      left: 300,
+      right: 300,
+      top: 100,
+      bottom: 100
+    }
+  });
   mainCy.center();
   
   // Force a resize to ensure proper rendering
   setTimeout(() => {
     mainCy.resize();
-    mainCy.fit();
+    mainCy.fit({
+      padding: {
+        left: 300,
+        right: 300,
+        top: 100,
+        bottom: 100
+      }
+    });
     mainCy.center();
     
     // Force style refresh to ensure person node sizes are applied
@@ -866,7 +1120,9 @@ const updateNodePosition = (nodeId, newPosition) => {
 defineExpose({
   saveGraphSnapshot,
   updateNodePosition,
-  regenerateGraph
+  regenerateGraph,
+  zoomToPersonGraph,
+  zoomToFullView
 });
 
 onMounted(async () => {

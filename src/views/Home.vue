@@ -6,12 +6,14 @@ import DarkModeToggle from "../components/DarkModeToggle.vue";
 import GlobeGL from "../components/GlobeGL.vue";
 import HomeLeftPanel from "../components/HomeLeftPanel.vue";
 import HomeRightPanel from "../components/HomeRightPanel.vue";
+import AddPersonDialog from "../components/AddPersonDialog.vue";
 import { useAppStore } from "../stores/app";
 import InteractiveCytoscapeMany from "../components/InteractiveCytoscapeMany.vue";
 /** @import { Person } from "../types.d.ts" */
 
 const appStore = useAppStore();
 const cytoscapeRef = ref(null);
+const homeLeftPanelRef = ref(null);
 
 // State for handling node position changes
 const hasNodePositionChanges = ref(false);
@@ -26,7 +28,7 @@ const isSavingPositions = ref(false);
 /** @returns {Promise<GraphData>} */
 const fetchGraphData = async () => {
   // const graphUrl = new URL("/api/graph", location.href);
-  const graphUrl = new URL("/api/graph", "https://dwebonebody.online/");
+  const graphUrl = new URL("/api/graph", location.href);
   const response = await fetch(graphUrl);
   if (!response.ok) {
     throw new Error(`Failed to fetch graph with status ${response.status}`);
@@ -54,6 +56,39 @@ const handleSaveNodePositions = async () => {
   }
 };
 
+// State for clicked person data
+const clickedPersonName = ref('');
+const clickedPersonEmail = ref('');
+
+// Handle zoom state changes from cytoscape
+const handleZoomStateChanged = (zoomState) => {
+  if (homeLeftPanelRef.value) {
+    homeLeftPanelRef.value.handleZoomStateChange(zoomState);
+  }
+  
+  // Update clicked person data
+  if (zoomState.isZoomed && zoomState.personId && appStore.people) {
+    // Extract numeric ID from personId (e.g., "person-123" -> 123)
+    const numericId = parseInt(zoomState.personId.replace('person-', ''));
+    const person = appStore.people.find(p => p.id === numericId);
+    if (person) {
+      clickedPersonName.value = person.name || '';
+      clickedPersonEmail.value = person.email || '';
+    }
+  } else {
+    // Reset when zooming back
+    clickedPersonName.value = '';
+    clickedPersonEmail.value = '';
+  }
+};
+
+// Handle zoom back request from left panel
+const handleZoomBack = () => {
+  if (cytoscapeRef.value) {
+    cytoscapeRef.value.zoomToFullView();
+  }
+};
+
 onMounted(async () => {
   const { people } = await fetchGraphData();
   appStore.setPeople(people);
@@ -69,9 +104,15 @@ onMounted(async () => {
       <v-icon icon="mdi-close" size="24" />
     </div>
     
-    <HomeLeftPanel :class="{ 'panel-hidden': appStore.isFullscreen }" />
+    <HomeLeftPanel 
+      ref="homeLeftPanelRef"
+      :clickedPersonName="clickedPersonName"
+      :clickedPersonEmail="clickedPersonEmail"
+      :class="{ 'panel-hidden': appStore.isFullscreen }" 
+      @zoomBack="handleZoomBack"
+    />
     <HomeRightPanel 
-      v-if="appStore.people && appStore.people.length > 0"
+      v-if="appStore.people && appStore.people.length > 0 && appStore.activeComponent === 'cytoscape'"
       :person="appStore.people[0]"
       :hasNodePositionChanges="hasNodePositionChanges"
       :isSavingPositions="isSavingPositions"
@@ -91,12 +132,24 @@ onMounted(async () => {
         :class="{ active: appStore.activeComponent === 'cytoscape' }"
         @nodePositionChanged="handleNodePositionChanged"
         @graphSnapshotSaved="handleSaveNodePositions"
+        @zoomStateChanged="handleZoomStateChanged"
       />
       <GlobeGL
         :people="appStore.people"
         :class="{ active: appStore.activeComponent === 'globe' }"
       />
+      <!-- Add Person Dialog -->
+       
+      
     </div>
+    
+    <!-- AddPersonDialog - positioned outside components-container for proper overlay -->
+    <AddPersonDialog 
+      v-if="appStore.isAddPersonDialogOpen"
+      :editing-person="appStore.editingPerson"
+      @close="appStore.hideAddPersonDialog()"
+      @save="appStore.hideAddPersonDialog()"
+    />
   </div>
   <div class="app-container" v-else>
     Coming soon...

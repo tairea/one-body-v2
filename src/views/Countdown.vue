@@ -45,7 +45,7 @@ const saveNodePositions = async () => {
     const personReference = JSON.parse(localStorage.getItem("personReference"));
     
     if (personReference && personReference.id && personReference.secretKey) {
-      const updatePersonUrl = new URL("/api/person", "https://dwebonebody.online/");
+      const updatePersonUrl = new URL("/api/person", location.href);
       
       const response = await fetch(updatePersonUrl, {
         method: "POST",
