@@ -1,16 +1,16 @@
 <script setup>
+// @ts-check
 import { onMounted, ref, computed, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { useAppStore } from "../stores/app";
 import cytoscape from "cytoscape";
 import { getPhotoUrl } from "../lib/utils";
+/** @import { Person, Recommendation } from "../types.d.ts" */
 
 const appStore = useAppStore();
 const router = useRouter();
 
-// Props for multiple people
-/** @type {import('vue').PropType<import('../types').Person[]>} */
 const props = defineProps({
   people: {
     type: Array,
@@ -46,7 +46,7 @@ const isZooming = ref(false); // Flag to prevent double zooming
 const isUpdatingSnapshot = ref(false);
 
 // Light mode styles
-const lightModeStyles = [
+const lightModeStyles = /** @type {const} */ ([
   {
     selector: "node",
     style: {
@@ -176,10 +176,10 @@ const lightModeStyles = [
       "background-color": "#ffffff",
     },
   },
-];
+]);
 
 // Dark mode styles
-const darkModeStyles = [
+const darkModeStyles = /** @type {const} */ ([
   {
     selector: "node",
     style: {
@@ -309,7 +309,7 @@ const darkModeStyles = [
       "background-color": "#0c0c0c",
     },
   },
-];
+]);
 
 // Function to update graph styles based on dark mode
 const updateGraphStyles = () => {
@@ -601,17 +601,6 @@ const initializeGraphData = (personData, personIndex) => {
 
 // Function to setup interactions for a cytoscape instance
 const setupInteractions = (cyInstance) => {
-  // Add click anywhere to zoom to nearest person (background clicks only)
-  cyInstance.on("tap", (evt) => {
-    console.log("clicked", evt.target, evt.target.isNode);
-    // Only handle background clicks (not node clicks)
-    if (!evt.target.isNode) {
-      console.log("Background clicked, finding nearest person...");
-      const clickPos = evt.renderedPosition;
-      zoomToNearestPerson(clickPos);
-    }
-  });
-
   // Add some basic interactions for person nodes
   cyInstance.on("tap", "node[type='person']", (evt) => {
     const node = evt.target;
@@ -743,36 +732,6 @@ const fadeElements = (elements, opacity, duration = 300) => {
     "transition-property": "opacity",
     "transition-duration": `${duration}ms`,
   });
-};
-
-// Function to find and zoom to the nearest person from a click position
-const zoomToNearestPerson = (clickPos) => {
-  if (!cyInstances.value || !cyInstances.value.has("main")) return;
-
-  const mainCy = cyInstances.value.get("main");
-  const personNodes = mainCy.$('node[type="person"]');
-
-  if (personNodes.length === 0) return;
-
-  let nearestPerson = null;
-  let minDistance = Infinity;
-
-  personNodes.forEach((personNode) => {
-    const personPos = personNode.renderedPosition();
-    const distance = Math.sqrt(
-      Math.pow(clickPos.x - personPos.x, 2) +
-        Math.pow(clickPos.y - personPos.y, 2),
-    );
-
-    if (distance < minDistance) {
-      minDistance = distance;
-      nearestPerson = personNode;
-    }
-  });
-
-  if (nearestPerson) {
-    zoomToPersonGraph(nearestPerson.id());
-  }
 };
 
 // Function to zoom to a specific person's graph with animation
@@ -949,10 +908,17 @@ const regenerateGraph = () => {
 
 // Function to initialize all graphs for all people
 const initializeAllGraphs = () => {
-  if (!props.people || props.people.length === 0) return;
+  if (!props.people || props.people.length === 0) {
+    return;
+  }
   if (!props.recommendations || props.recommendations.length === 0) {
     return;
   }
+
+  /** @type {ReadonlyArray<Person>} */
+  const people = /** @type {any} */ (props.people);
+  /** @type {ReadonlyArray<Recommendation>} */
+  const recommendations = /** @type {any} */ (props.recommendations);
 
   // Clear existing instances
   cyInstances.value.forEach((cy) => {
@@ -962,15 +928,36 @@ const initializeAllGraphs = () => {
   });
   cyInstances.value.clear();
 
-  // Create a single cytoscape instance for all people
-  const allNodes = [];
-  const allEdges = [];
-
-  props.people.forEach((personData, index) => {
-    const { nodes, edges } = initializeGraphData(personData, index);
-    allNodes.push(...nodes);
-    allEdges.push(...edges);
+  const nodes = people.map((personData) => {
+    return {
+      data: {
+        id: `person-${personData.id}`,
+        label: formatTextWithLineBreaks(personData.name),
+        type: "person",
+        photo: getPersonPhotoUrl(personData),
+        nodeSize: calculatePersonNodeSize(personData.name),
+      },
+      //   position: {
+      //     x: graphOffset.x + 0,
+      //     y: graphOffset.y + 0,
+      //   },
+    };
   });
+
+  /*
+  const edges = recommendations
+    .filter((match) => match && match.person1 && match.person2)
+    .map((match, index) => ({
+      data: {
+        id: `edge${index}`,
+        source: match.person1,
+        target: match.person2,
+        ranking: match.ranking,
+        reason: match.reason,
+        potential: match.potential,
+      },
+    }));
+    */
 
   // Initialize single cytoscape instance with all data
   cyInstances.value.set(
@@ -978,16 +965,14 @@ const initializeAllGraphs = () => {
     cytoscape({
       container: containerRef.value,
       elements: {
-        nodes: allNodes,
-        edges: allEdges,
+        nodes: nodes,
+        // TODO
+        edges: [],
       },
+      // TODO fix
       style: appStore.isDarkMode ? darkModeStyles : lightModeStyles,
       layout: {
-        name: "preset", // Use preset positions
-        positions: allNodes.reduce((acc, node) => {
-          acc[node.data.id] = node.position;
-          return acc;
-        }, {}),
+        name: "circle",
         fit: true,
         animate: false,
       },
@@ -1065,107 +1050,8 @@ watch(
   { immediate: true, deep: true },
 );
 
-// Watch for changes to people properties that affect the graphs
-watch(
-  () => props.people?.map((p) => p.values?.length),
-  (newLengths, oldLengths) => {
-    if (
-      cyInstances.value.size > 0 &&
-      props.people &&
-      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
-      !isUpdatingSnapshot.value
-    ) {
-      regenerateGraph();
-    }
-  },
-  { deep: true },
-);
-
-watch(
-  () => props.people?.map((p) => p.visions?.length),
-  (newLengths, oldLengths) => {
-    if (
-      cyInstances.value.size > 0 &&
-      props.people &&
-      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
-      !isUpdatingSnapshot.value
-    ) {
-      regenerateGraph();
-    }
-  },
-  { deep: true },
-);
-
-watch(
-  () => props.people?.map((p) => p.vehicles?.length),
-  (newLengths, oldLengths) => {
-    if (
-      cyInstances.value.size > 0 &&
-      props.people &&
-      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
-      !isUpdatingSnapshot.value
-    ) {
-      regenerateGraph();
-    }
-  },
-  { deep: true },
-);
-
-// Function to save the current graph snapshot to the person
-const saveGraphSnapshot = async () => {
-  if (!cyInstances.value || cyInstances.value.size === 0 || !props.people)
-    return;
-
-  try {
-    isUpdatingSnapshot.value = true;
-
-    const mainCy = cyInstances.value.get("main");
-    if (!mainCy) return;
-
-    // For now, we'll save the entire graph state
-    // In the future, you might want to save individual person snapshots
-    const nodes = mainCy.nodes().map((node) => ({
-      id: node.id(),
-      label: node.data("label"),
-      type: node.data("type"),
-      photo: node.data("photo"),
-      nodeSize: node.data("nodeSize"),
-      position: node.position(),
-    }));
-
-    const edges = mainCy.edges().map((edge) => ({
-      id: edge.id(),
-      source: edge.source().id(),
-      target: edge.target().id(),
-      label: edge.data("label"),
-    }));
-
-    const graphSnapshot = { nodes, edges };
-
-    // Emit event for parent components
-    emit("graphSnapshotSaved", graphSnapshot);
-  } catch (error) {
-    console.error("Error saving graph snapshot:", error);
-    throw error; // Re-throw so parent can handle it
-  } finally {
-    // Reset flag after a short delay to allow store update to complete
-    setTimeout(() => {
-      isUpdatingSnapshot.value = false;
-    }, 100);
-  }
-};
-
-// Function to update a specific node's position in the snapshot
-const updateNodePosition = (nodeId, newPosition) => {
-  // This function would need to be updated based on how you want to handle
-  // position updates for multiple people's graphs
-  console.log("Update node position:", nodeId, newPosition);
-};
-
 // Expose methods for parent components
 defineExpose({
-  saveGraphSnapshot,
-  updateNodePosition,
   regenerateGraph,
   zoomToPersonGraph,
   zoomToFullView,
