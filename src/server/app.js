@@ -75,11 +75,7 @@ if (app.get("env") === "production") {
   app.use(express.static(staticPath));
 
   // NOTE: If changing these routes, make sure to add them to router/index.js.
-  for (const indexRoute of [
-    "/signup",
-    "/countdown",
-    "/interactive-cytoscape",
-  ]) {
+  for (const indexRoute of ["/signup", "/countdown"]) {
     app.get(indexRoute, (req, res) => {
       const indexFile = path.join(staticPath, "index.html");
       res.sendFile(indexFile);
