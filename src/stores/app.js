@@ -1,6 +1,6 @@
 // @ts-check
 import { defineStore } from "pinia";
-/** @import { Person } from "../types.d.ts" */
+/** @import { Person, Recommendation } from "../types.d.ts" */
 
 export const useAppStore = defineStore("app", {
   state: () => ({
@@ -10,6 +10,11 @@ export const useAppStore = defineStore("app", {
      * @type {null | Readonly<Person[]>}
      */
     people: null,
+    /**
+     * Recommendations, or null if loading.
+     * @type {null | Readonly<Recommendation[]>}
+     */
+    recommendations: null,
     person: null,
 
     // Dark mode state
@@ -52,10 +57,12 @@ export const useAppStore = defineStore("app", {
   actions: {
     /**
      * @param {ReadonlyArray<Person>} people
+     * @param {ReadonlyArray<Recommendation>} recommendations
      * @returns {void}
      */
-    setPeople(people) {
+    setGraph(people, recommendations) {
       this.people = people;
+      this.recommendations = recommendations;
     },
 
     // Dark mode actions

@@ -9,7 +9,7 @@ import AddPersonDialog from "../components/AddPersonDialog.vue";
 import { useAppStore } from "../stores/app";
 import AiRecommendations from "../components/AiRecommendations.vue";
 import InteractiveCytoscapeMany from "../components/InteractiveCytoscapeMany.vue";
-/** @import { Person } from "../types.d.ts" */
+/** @import { Person, Recommendation } from "../types.d.ts" */
 
 const appStore = useAppStore();
 const cytoscapeRef = ref(null);
@@ -23,6 +23,7 @@ const isSavingPositions = ref(false);
  * @internal
  * @typedef {object} GraphData
  * @prop {ReadonlyArray<Person>} people
+ * @prop {ReadonlyArray<Recommendation>} recommendations
  */
 
 /** @returns {Promise<GraphData>} */
@@ -90,8 +91,8 @@ const handleZoomBack = () => {
 };
 
 onMounted(async () => {
-  const { people } = await fetchGraphData();
-  appStore.setPeople(people);
+  const { people, recommendations } = await fetchGraphData();
+  appStore.setGraph(people, recommendations);
 });
 </script>
 
@@ -155,6 +156,8 @@ onMounted(async () => {
       <AiRecommendations
         ref="aiRecommendationsRef"
         :class="{ active: appStore.activeComponent === 'airecommendations' }"
+        :people="appStore.people"
+        :recommendations="appStore.recommendations"
       />
     </div>
 
