@@ -14,7 +14,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["showMembersView", "zoomBack"]);
+const emit = defineEmits(["showMembersView", "zoomBack", "edgeViewBack"]);
 const appStore = useAppStore();
 
 // Add state for zoom
@@ -47,6 +47,10 @@ const handleShowAiRecommendations = () => {
 const handleZoomBack = () => {
   emit("zoomBack");
 };
+
+const handleEdgeViewBack = () => {
+  emit("edgeViewBack");
+};
 </script>
 
 <template>
@@ -56,7 +60,7 @@ const handleZoomBack = () => {
     v-bind="$attrs"
   >
     <!-- DWEB LOGO & TITLE -->
-    <div id="wg" v-if="!isZoomed">
+    <div id="wg" v-if="!isZoomed && !appStore.isEdgeView">
       <img
         id="logo"
         src="../assets/org_logo_DWeb.jpeg"
@@ -79,8 +83,16 @@ const handleZoomBack = () => {
       </div>
     </div>
 
-    <!-- BUTTONS - Only show when not zoomed -->
-    <div v-if="!isZoomed">
+    <!-- EDGE VIEW - Show back button for edge collaborations -->
+    <div v-if="appStore.isEdgeView" class="edge-view">
+      <div class="back-button" @click="handleEdgeViewBack">
+        <v-icon icon="mdi-arrow-left" size="20" />
+        <span>Back</span>
+      </div>
+    </div>
+
+    <!-- BUTTONS - Only show when not zoomed and not in edge view -->
+    <div v-if="!isZoomed && !appStore.isEdgeView">
       <div
         id="global-distribution"
         class="button"
@@ -235,6 +247,38 @@ const handleZoomBack = () => {
     }
   }
 
+  // Edge view styles
+  .edge-view {
+    text-align: center;
+    margin-top: 20px;
+
+    .back-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      margin: 8px 0;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid rgba(0, 0, 0, 0.3);
+      background-color: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.2);
+        transform: translateX(-2px);
+      }
+
+      span {
+        margin-left: 8px;
+        font-size: 0.9rem;
+        color: #333;
+        font-weight: 500;
+      }
+    }
+  }
+
   // Dark mode styles
   &.dark-mode {
     h1 {
@@ -289,6 +333,25 @@ const handleZoomBack = () => {
 
         p {
           color: rgba(255, 255, 255, 0.6);
+        }
+      }
+    }
+
+    .edge-view {
+      .back-button {
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        background-color: rgba(255, 255, 255, 0.05);
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        span {
+          color: rgba(255, 255, 255, 0.87);
+        }
+
+        .v-icon {
+          color: rgba(255, 255, 255, 0.87) !important;
         }
       }
     }

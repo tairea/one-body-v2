@@ -5,8 +5,12 @@ import { useRouter } from "vue-router";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { useAppStore } from "../stores/app";
 import cytoscape from "cytoscape";
+import cola from "cytoscape-cola";
 import { getPhotoUrl } from "../lib/utils";
 /** @import { Person, Recommendation } from "../types.d.ts" */
+
+// Register the cola layout plugin
+cytoscape.use(cola);
 
 const appStore = useAppStore();
 const router = useRouter();
@@ -45,8 +49,15 @@ const isZooming = ref(false); // Flag to prevent double zooming
 // Flag to prevent regeneration loops
 const isUpdatingSnapshot = ref(false);
 
+// Edge interaction state
+const isEdgeView = ref(false);
+const currentHoveredEdge = ref(null);
+const currentHoveredSourceNode = ref(null);
+const currentHoveredTargetNode = ref(null);
+const edgeLabelContainer = ref(null);
+
 // Light mode styles
-const lightModeStyles = /** @type {const} */ ([
+const lightModeStyles = [
   {
     selector: "node",
     style: {
@@ -176,10 +187,10 @@ const lightModeStyles = /** @type {const} */ ([
       "background-color": "#ffffff",
     },
   },
-]);
+];
 
 // Dark mode styles
-const darkModeStyles = /** @type {const} */ ([
+const darkModeStyles = [
   {
     selector: "node",
     style: {
@@ -309,7 +320,7 @@ const darkModeStyles = /** @type {const} */ ([
       "background-color": "#0c0c0c",
     },
   },
-]);
+];
 
 // Function to update graph styles based on dark mode
 const updateGraphStyles = () => {
@@ -599,6 +610,364 @@ const initializeGraphData = (personData, personIndex) => {
   return { nodes, edges };
 };
 
+// Helper function to find person ID from any node ID
+const findPersonIdFromNodeId = (nodeId) => {
+  if (!nodeId) return null;
+
+  // Extract person ID from node ID patterns
+  if (nodeId.startsWith("person-")) {
+    return nodeId;
+  } else if (nodeId.startsWith("value-")) {
+    // value-{personId}-{index}
+    const parts = nodeId.split("-");
+    if (parts.length >= 2) {
+      return `person-${parts[1]}`;
+    }
+  } else if (nodeId.startsWith("vision-")) {
+    // vision-{personId}-{index}
+    const parts = nodeId.split("-");
+    if (parts.length >= 2) {
+      return `person-${parts[1]}`;
+    }
+  } else if (nodeId.startsWith("vehicle-")) {
+    // vehicle-{personId}-{index}
+    const parts = nodeId.split("-");
+    if (parts.length >= 2) {
+      return `person-${parts[1]}`;
+    }
+  }
+
+  return null;
+};
+
+// Helper function to fade elements in/out
+const fadeElements = (elements, opacity, duration = 300) => {
+  elements.style({
+    opacity: opacity,
+    "transition-property": "opacity",
+    "transition-duration": `${duration}ms`,
+  });
+};
+
+// Edge interaction functions
+const handleEdgeClick = async (event) => {
+  console.log("Edge clicked!", event.target.data());
+  
+  if (!cyInstances.value.has("main")) {
+    console.log("No main cytoscape instance found");
+    return;
+  }
+  
+  isEdgeView.value = true;
+  console.log("isEdgeView set to:", isEdgeView.value);
+  
+  // Update app store instead of emitting event
+  appStore.setEdgeView(true);
+  console.log("Updated app store edge view state");
+  
+  const mainCy = cyInstances.value.get("main");
+
+  // Remove any existing edge percentage labels
+  const existingLabels = document.querySelectorAll(".edge-percentage-label");
+  existingLabels.forEach(el => el.remove());
+
+  // Get the clicked edge
+  const edge = event.target;
+
+  // Reset any currently hovered edge
+  if (currentHoveredEdge.value) {
+    const hoveredEdge = currentHoveredEdge.value;
+    const sourceNode = currentHoveredSourceNode.value;
+    const targetNode = currentHoveredTargetNode.value;
+
+    // Reset edge size and color
+    hoveredEdge.animate({
+      style: {
+        width: 1,
+        "line-color": appStore.isDarkMode ? "#718096" : "#a0aec0",
+      },
+    }, {
+      duration: 50,
+    });
+
+    // Reset connected nodes
+    sourceNode.animate({
+      style: {
+        width: sourceNode.data("nodeSize") || 60,
+        height: sourceNode.data("nodeSize") || 60,
+        "background-color": appStore.isDarkMode ? "#000000" : "#ffffff",
+        "font-size": "6px",
+      },
+    }, {
+      duration: 50,
+    });
+
+    targetNode.animate({
+      style: {
+        width: targetNode.data("nodeSize") || 60,
+        height: targetNode.data("nodeSize") || 60,
+        "background-color": appStore.isDarkMode ? "#000000" : "#ffffff",
+        "font-size": "6px",
+      },
+    }, {
+      duration: 50,
+    });
+
+    // Clear current hovered edge
+    currentHoveredEdge.value = null;
+    currentHoveredSourceNode.value = null;
+    currentHoveredTargetNode.value = null;
+  }
+
+  const sourceNode = edge.source();
+  const targetNode = edge.target();
+
+  // Hide all elements except the selected edge and its nodes
+  mainCy.elements().style({
+    display: "none",
+  });
+
+  sourceNode.style({
+    display: "element",
+    "text-opacity": 1,
+  });
+  targetNode.style({
+    display: "element",
+    "text-opacity": 1,
+  });
+  edge.style({
+    display: "element",
+  });
+
+  const elements = mainCy.collection([sourceNode, targetNode, edge]);
+
+  // Apply layout to focus on the selected elements
+  const layout = elements.layout({
+    name: "cola",
+    animate: true,
+    fit: true,
+    duration: 1000,
+    padding: 50, // Padding around the canvas
+    nodeSpacing: 150, // Minimum distance between nodes
+    edgeLength: 150, // Preferred edge length
+    maxSimulationTime: 2000, // Allow more time for layout to settle
+  });
+
+  layout.run();
+
+  // Create collaboration suggestion container
+  const labelContainer = document.createElement("div");
+  labelContainer.className = "edge-label";
+  labelContainer.style.position = "absolute";
+  labelContainer.style.background = appStore.isDarkMode ? "#1a1a1a" : "white";
+  labelContainer.style.border = `1px solid ${appStore.isDarkMode ? "#333" : "#ccc"}`;
+  labelContainer.style.borderRadius = "15px";
+  labelContainer.style.padding = "15px";
+  labelContainer.style.zIndex = "9999";
+  labelContainer.style.width = "500px";
+  labelContainer.style.fontSize = "0.9rem";
+  labelContainer.style.color = appStore.isDarkMode ? "#ffffff" : "#000000";
+  
+  const ranking = edge.data("ranking");
+  const percentage = (ranking * 100).toFixed(0) + "%";
+  
+  labelContainer.innerHTML = `
+    <div style="display: flex; justify-content: space-between; align-items: center;">  
+      <strong>AI Suggestions <span style="font-weight:600;font-size:10px;color:#ccc">(ChatGPT-4o)</span></strong>
+      <strong style="color:#04DC45">${percentage} Collab Rank</strong>
+    </div>
+    <p style="margin: 10px 0px">${edge.data("reason")}</p>
+    <strong>Potential Collabs:</strong> 
+    <ul style="margin-top: 5px;margin-bottom:0px">
+      <li style="padding:5px 0px">${edge.data("potential")[0]}</li>
+      <li style="padding:5px 0px">${edge.data("potential")[1]}</li>
+    </ul>
+  `;
+  
+  document.body.appendChild(labelContainer);
+  edgeLabelContainer.value = labelContainer;
+
+  // Update label position continuously
+  function updateLabelPosition() {
+    if (!labelContainer.parentNode) return; // Stop if container was removed
+    
+    const updatedSourcePosition = sourceNode.renderedPosition();
+    const updatedTargetPosition = targetNode.renderedPosition();
+    const updatedCenterX = (updatedSourcePosition.x + updatedTargetPosition.x) / 2;
+    const updatedCenterY = (updatedSourcePosition.y + updatedTargetPosition.y) / 2;
+
+    // Center the label container by offsetting by half its dimensions
+    const labelWidth = 500; // Width of the label container
+    const labelHeight = 150; // Approximate height of the label container
+    labelContainer.style.left = `${updatedCenterX - labelWidth / 2}px`;
+    labelContainer.style.top = `${updatedCenterY - labelHeight / 2}px`;
+
+    requestAnimationFrame(updateLabelPosition);
+  }
+
+  updateLabelPosition();
+};
+
+const handleEdgeHover = (event) => {
+  if (isEdgeView.value) return;
+
+  const edge = event.target;
+  const sourceNode = edge.source();
+  const targetNode = edge.target();
+
+  // Store current hovered edge for programmatic mouseout
+  currentHoveredEdge.value = edge;
+  currentHoveredSourceNode.value = sourceNode;
+  currentHoveredTargetNode.value = targetNode;
+
+  // Enlarge the edge
+  edge.animate({
+    style: {
+      width: 5,
+      "line-color": "#ff00ff",
+    },
+  }, {
+    duration: 50,
+  });
+
+  // Enlarge the connected nodes
+  sourceNode.animate({
+    style: {
+      width: 100,
+      height: 100,
+      "background-color": "#0066ff",
+      "font-size": "16px",
+    },
+  }, {
+    duration: 50,
+  });
+
+  targetNode.animate({
+    style: {
+      width: 100,
+      height: 100,
+      "background-color": "#0066ff",
+      "font-size": "16px",
+    },
+  }, {
+    duration: 50,
+  });
+
+  // Show ranking percentage label
+  const ranking = edge.data("ranking");
+  const percentage = (ranking * 100).toFixed(0) + "%";
+
+  const midpoint = {
+    x: (sourceNode.position("x") + targetNode.position("x")) / 2,
+    y: (sourceNode.position("y") + targetNode.position("y")) / 2,
+  };
+
+  // Create percentage label
+  const percentageLabel = document.createElement("div");
+  percentageLabel.className = "edge-percentage-label";
+  percentageLabel.style.position = "absolute";
+  percentageLabel.style.left = `${midpoint.x - 25}px`;
+  percentageLabel.style.top = `${midpoint.y - 10}px`;
+  percentageLabel.style.width = "100px";
+  percentageLabel.style.height = "100px";
+  percentageLabel.style.display = "flex";
+  percentageLabel.style.justifyContent = "center";
+  percentageLabel.style.alignItems = "center";
+  percentageLabel.style.fontFamily = "Montserrat, sans-serif";
+  percentageLabel.style.fontSize = "30px";
+  percentageLabel.style.fontWeight = "600";
+  percentageLabel.style.zIndex = "9998";
+  percentageLabel.style.color = appStore.isDarkMode ? "#ffffff" : "#000000";
+  percentageLabel.textContent = percentage;
+
+  document.body.appendChild(percentageLabel);
+};
+
+const handleEdgeMouseOut = (event) => {
+  const edge = event.target;
+  const sourceNode = edge.source();
+  const targetNode = edge.target();
+
+  // Reset edge size and color
+  edge.animate({
+    style: {
+      width: 1,
+      "line-color": appStore.isDarkMode ? "#718096" : "#a0aec0",
+    },
+  }, {
+    duration: 50,
+  });
+
+  // Reset connected nodes
+  sourceNode.animate({
+    style: {
+      width: sourceNode.data("nodeSize") || 60,
+      height: sourceNode.data("nodeSize") || 60,
+      "background-color": appStore.isDarkMode ? "#000000" : "#ffffff",
+      "font-size": "6px",
+    },
+  }, {
+    duration: 50,
+  });
+
+  targetNode.animate({
+    style: {
+      width: targetNode.data("nodeSize") || 60,
+      height: targetNode.data("nodeSize") || 60,
+      "background-color": appStore.isDarkMode ? "#000000" : "#ffffff",
+      "font-size": "6px",
+    },
+  }, {
+    duration: 50,
+  });
+
+  // Remove percentage label
+  const existingLabels = document.querySelectorAll(".edge-percentage-label");
+  existingLabels.forEach(el => el.remove());
+};
+
+const resetEdgeView = () => {
+  if (!cyInstances.value.has("main")) return;
+  
+  isEdgeView.value = false;
+  
+  // Update app store instead of emitting event
+  appStore.setEdgeView(false);
+
+  // Remove collaboration label
+  if (edgeLabelContainer.value && edgeLabelContainer.value.parentNode) {
+    edgeLabelContainer.value.parentNode.removeChild(edgeLabelContainer.value);
+    edgeLabelContainer.value = null;
+  }
+
+  // Remove percentage labels
+  const existingLabels = document.querySelectorAll(".edge-percentage-label");
+  existingLabels.forEach(el => el.remove());
+
+  const mainCy = cyInstances.value.get("main");
+
+  // Show all elements again
+  mainCy.elements().style({
+    display: "element",
+    "text-opacity": 1,
+  });
+
+  // Restore original circle layout
+  const layout = mainCy.elements().layout({
+    name: "circle",
+    animate: true,
+    fit: true, // Restored to true for smooth automatic fitting
+    duration: 1000,
+  });
+
+  layout.run();
+
+  // Clear current hovered edge
+  currentHoveredEdge.value = null;
+  currentHoveredSourceNode.value = null;
+  currentHoveredTargetNode.value = null;
+};
+
 // Function to setup interactions for a cytoscape instance
 const setupInteractions = (cyInstance) => {
   // Add some basic interactions for person nodes
@@ -693,45 +1062,13 @@ const setupInteractions = (cyInstance) => {
       });
     }
   });
-};
 
-// Helper function to find person ID from any node ID
-const findPersonIdFromNodeId = (nodeId) => {
-  if (!nodeId) return null;
-
-  // Extract person ID from node ID patterns
-  if (nodeId.startsWith("person-")) {
-    return nodeId;
-  } else if (nodeId.startsWith("value-")) {
-    // value-{personId}-{index}
-    const parts = nodeId.split("-");
-    if (parts.length >= 2) {
-      return `person-${parts[1]}`;
-    }
-  } else if (nodeId.startsWith("vision-")) {
-    // vision-{personId}-{index}
-    const parts = nodeId.split("-");
-    if (parts.length >= 2) {
-      return `person-${parts[1]}`;
-    }
-  } else if (nodeId.startsWith("vehicle-")) {
-    // vehicle-{personId}-{index}
-    const parts = nodeId.split("-");
-    if (parts.length >= 2) {
-      return `person-${parts[1]}`;
-    }
-  }
-
-  return null;
-};
-
-// Helper function to fade elements in/out
-const fadeElements = (elements, opacity, duration = 300) => {
-  elements.style({
-    opacity: opacity,
-    "transition-property": "opacity",
-    "transition-duration": `${duration}ms`,
-  });
+  // Add edge interactions
+  cyInstance.on("tap", "edge", handleEdgeClick);
+  cyInstance.on("mouseover", "edge", handleEdgeHover);
+  cyInstance.on("mouseout", "edge", handleEdgeMouseOut);
+  
+  console.log("Edge interactions bound to cytoscape instance");
 };
 
 // Function to zoom to a specific person's graph with animation
@@ -951,6 +1288,9 @@ const initializeAllGraphs = () => {
     },
   }));
 
+  console.log("Created edges:", edges);
+  console.log("Sample edge data:", edges[0]?.data);
+
   // Initialize single cytoscape instance with all data
   cyInstances.value.set(
     "main",
@@ -960,7 +1300,6 @@ const initializeAllGraphs = () => {
         nodes,
         edges,
       },
-      // TODO fix
       style: appStore.isDarkMode ? darkModeStyles : lightModeStyles,
       layout: {
         name: "circle",
@@ -1046,6 +1385,7 @@ defineExpose({
   regenerateGraph,
   zoomToPersonGraph,
   zoomToFullView,
+  resetEdgeView,
 });
 
 onMounted(async () => {
@@ -1215,6 +1555,16 @@ onUnmounted(() => {
 
 .ai-recommendations-view.dark-mode .cy-container {
   background-color: var(--graph-background-color);
+}
+
+/* Edge label styles */
+.edge-label {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.edge-percentage-label {
+  /* Removed box-shadow since we no longer have a background */
 }
 </style>
 

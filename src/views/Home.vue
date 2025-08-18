@@ -14,10 +14,15 @@ import InteractiveCytoscapeMany from "../components/InteractiveCytoscapeMany.vue
 const appStore = useAppStore();
 const cytoscapeRef = ref(null);
 const homeLeftPanelRef = ref(null);
+const aiRecommendationsRef = ref(null);
 
 // State for handling node position changes
 const hasNodePositionChanges = ref(false);
 const isSavingPositions = ref(false);
+
+// State for clicked person data
+const clickedPersonName = ref("");
+const clickedPersonEmail = ref("");
 
 /**
  * @internal
@@ -57,10 +62,6 @@ const handleSaveNodePositions = async () => {
   }
 };
 
-// State for clicked person data
-const clickedPersonName = ref("");
-const clickedPersonEmail = ref("");
-
 // Handle zoom state changes from cytoscape
 const handleZoomStateChanged = (zoomState) => {
   if (homeLeftPanelRef.value) {
@@ -87,6 +88,14 @@ const handleZoomStateChanged = (zoomState) => {
 const handleZoomBack = () => {
   if (cytoscapeRef.value) {
     cytoscapeRef.value.zoomToFullView();
+  }
+};
+
+// Handle edge view back request from left panel
+const handleEdgeViewBack = () => {
+  // Reset the edge view in the AI recommendations component
+  if (aiRecommendationsRef.value) {
+    aiRecommendationsRef.value.resetEdgeView();
   }
 };
 
@@ -122,6 +131,7 @@ onMounted(async () => {
       :clickedPersonEmail="clickedPersonEmail"
       :class="{ 'panel-hidden': appStore.isFullscreen }"
       @zoomBack="handleZoomBack"
+      @edgeViewBack="handleEdgeViewBack"
     />
     <HomeRightPanel
       v-if="
