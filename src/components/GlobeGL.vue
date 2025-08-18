@@ -5,15 +5,6 @@
       class="globe-container"
       :class="{ 'dark-mode': appStore.isDarkMode }"
     ></div>
-
-    <!-- Person Detail View -->
-    <PersonDetailView
-      v-if="selectedPerson"
-      :person="selectedPerson"
-      :is-visible="showPersonDetail"
-      @back-to-globe="handleBackToGlobe"
-      @image-loaded="onPersonImageLoaded"
-    />
   </div>
 </template>
 
@@ -23,7 +14,6 @@ import { FrontSide } from "three";
 import * as THREE from "three";
 import { useAppStore } from "../stores/app";
 import { dWebColors, getPhotoUrl } from "../lib/utils.js";
-import PersonDetailView from "./PersonDetailView.vue";
 /** @import { Person } from "../types.d.ts" */
 
 /**
@@ -60,19 +50,11 @@ const getPersonPhotoUrl = (person) => {
 
 export default {
   name: "GlobeGL",
-  components: {
-    PersonDetailView,
-  },
   props: ["people"],
   data() {
     return {
       globe: null,
-      /** @type {null | Person} */
-      selectedPerson: null,
-      showPersonDetail: false,
       personMeshes: new Map(), // Store references to person meshes for click detection
-      /** @type {null | ((event: MouseEvent) => unknown)} */
-      clickListener: null,
       /** @type {null | ((event: MouseEvent) => unknown)} */
       hoverListener: null,
     };
@@ -88,9 +70,6 @@ export default {
 
   beforeUnmount() {
     // Clean up event listeners
-    if (this.clickListener) {
-      window.removeEventListener("click", this.clickListener);
-    }
     if (this.hoverListener) {
       window.removeEventListener("mousemove", this.hoverListener);
     }
@@ -152,9 +131,6 @@ export default {
       // Enable auto-rotation through controls
       this.globe.controls().autoRotate = true;
       this.globe.controls().autoRotateSpeed = 0.5;
-
-      // Set up click detection for person meshes
-      this.setupPersonClickDetection();
 
       // Set up hover effects for person meshes
       this.setupHoverEffects();
@@ -460,106 +436,9 @@ export default {
       }
     },
 
-    /**
-     * @param {Person} person
-     * @returns {void}
-     */
-    handlePersonClick(person) {
-      console.log("Person clicked:", person.name);
-      this.selectedPerson = person;
-      this.showPersonDetail = true;
-
-      // Animate camera to focus on the person's location
-      this.animateToPerson(person);
-    },
-
-    /**
-     * @param {Person} person
-     * @returns {void}
-     */
-    animateToPerson(person) {
-      if (this.globe && doesPersonHaveLocation(person)) {
-        // Animate camera to focus on the person
-        this.globe.pointOfView(
-          {
-            lat: person.locationLatitude,
-            lng: person.locationLongitude,
-            altitude: 0.5,
-          },
-          1000,
-        ); // 1 second animation
-      }
-    },
-
-    handleBackToGlobe() {
-      this.showPersonDetail = false;
-
-      // Animate back to default view
-      setTimeout(() => {
-        this.selectedPerson = null;
-        if (this.globe) {
-          this.globe.pointOfView({ lat: 0, lng: 0, altitude: 1.8 }, 1000);
-        }
-      }, 800); // Wait for transition to complete
-    },
-
     onPersonImageLoaded() {
       // Optional: Add any additional animations when person image loads
       console.log("Person image loaded");
-    },
-
-    setupPersonClickDetection() {
-      // Set up raycaster for detecting clicks on person meshes
-      const raycaster = new THREE.Raycaster();
-      const mouse = new THREE.Vector2();
-
-      const onMouseClick = (event) => {
-        // Don't handle clicks if person detail is visible
-        if (this.showPersonDetail) {
-          return;
-        }
-
-        // Calculate mouse position in normalized device coordinates
-        mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-
-        // Get the Three.js scene from the globe
-        const scene = this.globe.scene();
-        if (!scene) return;
-
-        // Update the picking ray with the camera and mouse position
-        raycaster.setFromCamera(mouse, this.globe.camera());
-
-        // Get all person meshes
-        const personMeshes = Array.from(this.personMeshes.values());
-
-        // Check for intersections
-        const intersects = raycaster.intersectObjects(personMeshes, true);
-
-        if (intersects.length > 0) {
-          const clickedMesh = intersects[0].object;
-          const person = this.findPersonByMesh(clickedMesh);
-          if (person) {
-            this.handlePersonClick(person);
-          }
-        }
-      };
-
-      // Add click event listener
-      window.addEventListener("click", onMouseClick);
-
-      // Store the event listener for cleanup
-      this.clickListener = onMouseClick;
-    },
-
-    findPersonByMesh(mesh) {
-      // Find the person data associated with this mesh
-      for (const [person, personMesh] of this.personMeshes.entries()) {
-        if (personMesh === mesh) {
-          return person;
-        }
-      }
-      return null;
     },
 
     setupHoverEffects() {
@@ -568,11 +447,6 @@ export default {
       let hoveredMesh = null;
 
       const onMouseMove = (event) => {
-        // Don't handle hover if person detail is visible
-        if (this.showPersonDetail) {
-          return;
-        }
-
         // Calculate mouse position in normalized device coordinates
         mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
@@ -653,10 +527,6 @@ export default {
         this.globe.pauseAnimation();
 
         // Remove global event listeners
-        if (this.clickListener) {
-          window.removeEventListener("click", this.clickListener);
-          this.clickListener = null;
-        }
         if (this.hoverListener) {
           window.removeEventListener("mousemove", this.hoverListener);
           this.hoverListener = null;
@@ -676,7 +546,6 @@ export default {
         this.globe.resumeAnimation();
 
         // Re-setup event listeners
-        this.setupPersonClickDetection();
         this.setupHoverEffects();
 
         console.log("Globe resumed");
