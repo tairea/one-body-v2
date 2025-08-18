@@ -11,10 +11,15 @@ export const useAppStore = defineStore("app", {
      */
     people: null,
     /**
-     * Recommendations, or null if loading.
+     * All recommendations, or null if loading.
      * @type {null | Readonly<Recommendation[]>}
      */
     recommendations: null,
+    /**
+     * Whether the user is viewing an edge collaboration.
+     * @type {boolean}
+     */
+    isEdgeView: false,
     person: null,
 
     // Dark mode state
@@ -111,6 +116,9 @@ export const useAppStore = defineStore("app", {
       this.activeComponent = "airecommendations";
       this.isViewingProfile = false; // Reset profile view when switching components
       this.currentPersonData = null; // Clear person data when switching components
+    },
+    setEdgeView(isEdgeView) {
+      this.isEdgeView = isEdgeView;
     },
     hideComponents() {
       this.activeComponent = null;
