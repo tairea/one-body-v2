@@ -13,8 +13,7 @@ import { select, selectAll } from "d3-selection";
 import cytoscapeCola from "cytoscape-cola";
 import cytoscapeQtip from "cytoscape-qtip";
 import { useAppStore } from "../stores/app";
-import { useNodeClick } from "../assets/useNodeClick.js";
-import { useNodeClickConcentric } from "../assets/useNodeClickConcentric.js";
+
 import { getPhotoUrl } from "../lib/utils";
 /** @import { Person } from "../types.d.ts" */
 
@@ -34,11 +33,17 @@ const svgRef = ref(null);
 const cy = ref(null);
 const edges = ref([]);
 
+// Add new state for person graph view
+const isShowingPersonGraph = ref(false);
+const currentPersonGraph = ref(null);
+const personGraphCy = ref(null);
+
 // Get dark mode state
 const appStore = useAppStore();
 
 // Helper function to safely get photo URL for a person
 const getPersonPhotoUrl = (person) => {
+  console.log("person:", person);
   if (!person.hasPhoto) {
     return null;
   }
@@ -82,6 +87,74 @@ const lightModeStyles = [
       "font-family": "Montserrat, sans-serif",
       "border-width": 0,
       "background-color": "transparent",
+    },
+  },
+  {
+    selector: "node[type='person']",
+    style: {
+      "background-image": "data(photo)",
+      "background-width": "100%",
+      "background-height": "100%",
+      "background-fit": "cover",
+      "background-color": "#ffffff",
+      "border-color": "#000000",
+      "border-width": "1px",
+      color: "#000000",
+      "font-family": "Consolas, monospace",
+      "font-size": "6px",
+      label: "data(label)",
+      width: "data(nodeSize)",
+      height: "data(nodeSize)",
+      "text-wrap": "wrap",
+      "text-max-width": "60px",
+      "text-valign": "center",
+      "text-halign": "center",
+      "text-margin-y": "0px",
+    },
+  },
+  {
+    selector: "node[type='value']",
+    style: {
+      "background-color": "#ff4f2d",
+      "border-color": "transparent",
+      "border-width": "0px",
+      "text-wrap": "wrap",
+      "text-max-width": "80px",
+      "font-size": "6px",
+      color: "#ffffff",
+      width: 20,
+      height: 20,
+      label: "",
+    },
+  },
+  {
+    selector: "node[type='vision']",
+    style: {
+      "background-color": "#e06ef9",
+      "border-color": "transparent",
+      "border-width": "0px",
+      "text-wrap": "wrap",
+      "text-max-width": "80px",
+      "font-size": "6px",
+      color: "#ffffff",
+      width: 20,
+      height: 20,
+      label: "",
+    },
+  },
+  {
+    selector: "node[type='vehicle']",
+    style: {
+      "background-color": "#bbdf27",
+      "border-color": "transparent",
+      "border-width": "0px",
+      "text-wrap": "wrap",
+      "text-max-width": "80px",
+      "font-size": "6px",
+      color: "#ffffff",
+      width: 20,
+      height: 20,
+      label: "",
     },
   },
   {
@@ -142,6 +215,74 @@ const darkModeStyles = [
       "font-family": "Montserrat, sans-serif",
       "border-width": 0,
       "background-color": "transparent",
+    },
+  },
+  {
+    selector: "node[type='person']",
+    style: {
+      "background-image": "data(photo)",
+      "background-width": "100%",
+      "background-height": "100%",
+      "background-fit": "cover",
+      "background-color": "#000000",
+      "border-color": "#ffffff",
+      "border-width": "1px",
+      color: "#ffffff",
+      "font-family": "Consolas, monospace",
+      "font-size": "6px",
+      label: "data(label)",
+      width: "data(nodeSize)",
+      height: "data(nodeSize)",
+      "text-wrap": "wrap",
+      "text-max-width": "60px",
+      "text-valign": "center",
+      "text-halign": "center",
+      "text-margin-y": "0px",
+    },
+  },
+  {
+    selector: "node[type='value']",
+    style: {
+      "background-color": "#ff4f2d",
+      "border-color": "transparent",
+      "border-width": "0px",
+      "text-wrap": "wrap",
+      "text-max-width": "80px",
+      "font-size": "6px",
+      color: "#0c0c0c",
+      width: 20,
+      height: 20,
+      label: "",
+    },
+  },
+  {
+    selector: "node[type='vision']",
+    style: {
+      "background-color": "#e06ef9",
+      "border-color": "transparent",
+      "border-width": "0px",
+      "text-wrap": "wrap",
+      "text-max-width": "80px",
+      "font-size": "6px",
+      color: "#0c0c0c",
+      width: 20,
+      height: 20,
+      label: "",
+    },
+  },
+  {
+    selector: "node[type='vehicle']",
+    style: {
+      "background-color": "#bbdf27",
+      "border-color": "transparent",
+      "border-width": "0px",
+      "text-wrap": "wrap",
+      "text-max-width": "80px",
+      "font-size": "6px",
+      color: "#0c0c0c",
+      width: 20,
+      height: 20,
+      label: "",
     },
   },
   {
@@ -221,6 +362,331 @@ const restoreNodeImages = () => {
   });
 
   console.log("Node images restored");
+};
+
+// Function to generate person graph data (similar to InteractiveCytoscapeView.vue)
+const generatePersonGraphData = (person) => {
+  console.log("generatePersonGraphData called with person:", person);
+  const nodes = [];
+  const edges = [];
+
+  // Check if we have saved positions
+  const hasSavedPositions = person.personsGraphSnapshot && 
+                           person.personsGraphSnapshot.nodes && 
+                           person.personsGraphSnapshot.nodes.length > 0;
+
+  // Add person node (center)
+  const personNode = {
+    data: {
+      id: "person",
+      label: person.name,
+      type: "person",
+      photo: getPersonPhotoUrl(person),
+      nodeSize: 60, // Default size for person node
+    },
+    position: { x: 0, y: 0 },
+  };
+  
+  nodes.push(personNode);
+
+  // Add values nodes
+  if (person.values && Array.isArray(person.values) && person.values.length > 0) {
+    person.values.forEach((value, index) => {
+      const valueId = `value-${index}`;
+      let position;
+      
+      if (hasSavedPositions) {
+        const savedNode = person.personsGraphSnapshot.nodes.find(n => n.id === valueId);
+        position = savedNode ? savedNode.position : null;
+      }
+      
+      if (!position) {
+        // Calculate default position if no saved position
+        const angle = (index / person.values.length) * 2 * Math.PI;
+        const radius = 120;
+        position = {
+          x: Math.cos(angle) * radius,
+          y: Math.sin(angle) * radius,
+        };
+      }
+      
+      const valueNode = {
+        data: {
+          id: valueId,
+          label: value,
+          type: "value",
+        },
+        position,
+      };
+      nodes.push(valueNode);
+
+      // Add edge from person to value
+      edges.push({
+        data: {
+          id: `person-value-${index}`,
+          source: "person",
+          target: valueId,
+          label: "has value",
+        },
+      });
+    });
+  }
+
+  // Add visions nodes
+  if (person.visions && Array.isArray(person.visions) && person.visions.length > 0) {
+    person.visions.forEach((vision, index) => {
+      const visionId = `vision-${index}`;
+      let position;
+      
+      if (hasSavedPositions) {
+        const savedNode = person.personsGraphSnapshot.nodes.find(n => n.id === visionId);
+        position = savedNode ? savedNode.position : null;
+      }
+      
+      if (!position) {
+        // Calculate default position if no saved position
+        const angle = (index / person.visions.length) * 2 * Math.PI;
+        const radius = 200;
+        position = {
+          x: Math.cos(angle) * radius,
+          y: Math.sin(angle) * radius,
+        };
+      }
+      
+      const visionNode = {
+        data: {
+          id: visionId,
+          label: vision,
+          type: "vision",
+        },
+        position,
+      };
+      nodes.push(visionNode);
+
+      // Add edge from person to vision
+      edges.push({
+        data: {
+          id: `person-vision-${index}`,
+          source: "person",
+          target: visionId,
+          label: "has vision",
+        },
+      });
+    });
+  }
+
+  // Add vehicles nodes
+  if (person.vehicles && Array.isArray(person.vehicles) && person.vehicles.length > 0) {
+    person.vehicles.forEach((vehicle, index) => {
+      const vehicleId = `vehicle-${index}`;
+      let position;
+      
+      if (hasSavedPositions) {
+        const savedNode = person.personsGraphSnapshot.nodes.find(n => n.id === vehicleId);
+        position = savedNode ? savedNode.position : null;
+      }
+      
+      if (!position) {
+        // Calculate default position if no saved position
+        const angle = (index / person.vehicles.length) * 2 * Math.PI;
+        const radius = 280;
+        position = {
+          x: Math.cos(angle) * radius,
+          y: Math.sin(angle) * radius,
+        };
+      }
+      
+      const vehicleNode = {
+        data: {
+          id: vehicleId,
+          label: vehicle.title,
+          type: "vehicle",
+          description: vehicle.description,
+        },
+        position,
+      };
+      nodes.push(vehicleNode);
+
+      // Add edge from person to vehicle
+      edges.push({
+        data: {
+          id: `person-vehicle-${index}`,
+          source: "person",
+          target: vehicleId,
+          label: "has vehicle",
+        },
+      });
+    });
+  }
+
+  console.log("Generated nodes:", nodes);
+  console.log("Generated edges:", edges);
+  return { nodes, edges };
+};
+
+// Function to show person graph
+const showPersonGraph = (person) => {
+  console.log("showPersonGraph called with person:", person);
+  console.log("Person values:", person?.values);
+  console.log("Person visions:", person?.visions);
+  console.log("Person vehicles:", person?.vehicles);
+  
+  // Check if person has the required data
+  const hasValues = person.values && Array.isArray(person.values) && person.values.length > 0;
+  const hasVisions = person.visions && Array.isArray(person.visions) && person.visions.length > 0;
+  const hasVehicles = person.vehicles && Array.isArray(person.vehicles) && person.vehicles.length > 0;
+  
+  console.log("Data check:", { hasValues, hasVisions, hasVehicles });
+  console.log("Values array:", person.values);
+  console.log("Visions array:", person.visions);
+  console.log("Vehicles array:", person.vehicles);
+  
+  if (!person) {
+    console.warn("No person data provided");
+    return;
+  }
+  
+  // Create a simple test graph even if some data is missing
+  if (!hasValues && !hasVisions && !hasVehicles) {
+    console.warn("Person has no values, visions, or vehicles - creating minimal graph");
+    // We'll still create a graph with just the person node
+  }
+
+  currentPersonGraph.value = person;
+  isShowingPersonGraph.value = true;
+
+  // Hide the main network graph
+  if (cy.value) {
+    cy.value.container().style.display = "none";
+  }
+
+  // Create person graph container
+  const container = containerRef.value;
+  console.log("Container ref:", container);
+  if (container) {
+    // Create a new container for the person graph
+    const personGraphContainer = document.createElement('div');
+    personGraphContainer.id = 'person-graph-container';
+    personGraphContainer.style.cssText = `
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      background-color: var(--graph-background-color);
+      z-index: 10;
+    `;
+    container.appendChild(personGraphContainer);
+    console.log("Person graph container created and appended");
+
+    // Generate person graph data
+    const { nodes, edges } = generatePersonGraphData(person);
+
+    // Create new Cytoscape instance for person graph
+    console.log("Creating Cytoscape instance with:", { nodes, edges });
+    personGraphCy.value = cytoscape({
+      container: personGraphContainer,
+      elements: { nodes, edges },
+      style: appStore.isDarkMode ? darkModeStyles : lightModeStyles,
+      layout: {
+        name: "preset",
+        positions: nodes.reduce((acc, node) => {
+          acc[node.data.id] = node.position;
+          return acc;
+        }, {}),
+        fit: true,
+        padding: 100,
+        animate: false,
+      },
+      minZoom: 0.5,
+      maxZoom: 2,
+      wheelSensitivity: 0.3,
+      autoungrabify: false,
+      autolock: false,
+    });
+    console.log("Cytoscape instance created:", personGraphCy.value);
+
+    // Center and fit the view
+    personGraphCy.value.fit();
+    personGraphCy.value.center();
+
+    // Add node interactions
+    personGraphCy.value.on("tap", "node[type!='person']", (evt) => {
+      const node = evt.target;
+      const isExpanded = node.data("expanded");
+      const label = node.data("label");
+      
+      if (isExpanded) {
+        // Shrink back to dot
+        node.style({
+          width: 20,
+          height: 20,
+          label: ""
+        });
+        node.data("expanded", false);
+      } else {
+        // Expand and show label
+        const nodeSize = Math.max(60, label.length * 6);
+        node.style({
+          width: nodeSize,
+          height: nodeSize,
+          label: label,
+          "text-max-width": nodeSize - 10,
+          "text-wrap": "wrap"
+        });
+        node.data("expanded", true);
+      }
+    });
+
+    // Add hover effects for non-person nodes
+    personGraphCy.value.on("mouseover", "node[type!='person']", (evt) => {
+      const node = evt.target;
+      const label = node.data("label");
+      const nodeSize = Math.max(60, label.length * 6);
+      
+      node.style({
+        width: nodeSize,
+        height: nodeSize,
+        label: label,
+        "text-max-width": nodeSize - 10,
+        "text-wrap": "wrap"
+      });
+    });
+
+    personGraphCy.value.on("mouseout", "node[type!='person']", (evt) => {
+      const node = evt.target;
+      if (!node.data("expanded")) {
+        node.style({
+          width: 20,
+          height: 20,
+          label: ""
+        });
+      }
+    });
+  }
+};
+
+// Function to return to network view
+const returnToNetworkView = () => {
+  isShowingPersonGraph.value = false;
+  currentPersonGraph.value = null;
+
+  // Destroy person graph
+  if (personGraphCy.value) {
+    personGraphCy.value.destroy();
+    personGraphCy.value = null;
+  }
+
+  // Remove person graph container
+  const personGraphContainer = document.getElementById('person-graph-container');
+  if (personGraphContainer) {
+    personGraphContainer.remove();
+  }
+
+  // Show the main network graph
+  if (cy.value) {
+    cy.value.container().style.display = "block";
+  }
 };
 
 // Function to safely activate Cytoscape component
@@ -325,6 +791,11 @@ const updateGraphStyles = () => {
   const root = document.documentElement;
   root.style.setProperty("--graph-background-color", backgroundColor);
 
+  // Also update person graph styles if it exists
+  if (personGraphCy.value) {
+    personGraphCy.value.style(newStyles);
+  }
+
   console.log("styles updated");
 };
 
@@ -341,6 +812,12 @@ watch(
     themeUpdateTimeout = setTimeout(() => {
       console.log("Updating graph styles");
       updateGraphStyles();
+      
+      // Also update person graph styles if it exists
+      if (personGraphCy.value) {
+        const newStyles = appStore.isDarkMode ? darkModeStyles : lightModeStyles;
+        personGraphCy.value.style(newStyles);
+      }
     }, 50); // 50ms debounce
   },
 );
@@ -500,7 +977,8 @@ const handleZoomOut = () => {
 defineExpose({
   showAiView,
   showMembersView,
-  handleZoomOut,
+  showPersonGraph,
+  returnToNetworkView,
 });
 
 onMounted(async () => {
@@ -538,14 +1016,26 @@ onMounted(async () => {
         updateGraphStyles();
 
         // Reinitialize node click functionality
-        //const { handleNodeClick, cleanup } = useNodeClick(cy.value, select(svgRef.value), people);
-        const { handleNodeClick, handleZoomOut, cleanup } =
-          useNodeClickConcentric(cy.value, select(svgRef.value), people);
+        // Use simple node click handler for person graphs
+        const handleNodeClick = (evt) => {
+          const node = evt.target;
+          const personName = node.data('id');
+          const person = people.find(p => p.name === personName);
+          
+          if (person && person.values && person.visions && person.vehicles) {
+            showPersonGraph(person);
+          } else {
+            console.warn("Person data incomplete for graph view:", person);
+          }
+        };
+        
         nodeClickHandler = handleNodeClick;
-        nodeClickCleanup = cleanup;
-
-        // Pass the zoom out function to the store
-        appStore.setConcentricZoomOut(handleZoomOut);
+        nodeClickCleanup = () => {
+          // Cleanup function for node click
+          if (cy.value) {
+            cy.value.removeListener("tap", "node", handleNodeClick);
+          }
+        };
 
         // Add node click event listener
         cy.value.on("tap", "node", handleNodeClick);
@@ -599,14 +1089,26 @@ onMounted(async () => {
       });
 
       // Initialize node click functionality after cy is created
-      // const { handleNodeClick, cleanup } = useNodeClick(cy.value, select(svgRef.value), people);
-      const { handleNodeClick, handleZoomOut, cleanup } =
-        useNodeClickConcentric(cy.value, select(svgRef.value), people);
+      // Use simple node click handler for person graphs
+      const handleNodeClick = (evt) => {
+        const node = evt.target;
+        const personName = node.data('id');
+        const person = people.find(p => p.name === personName);
+        
+        if (person && person.values && person.visions && person.vehicles) {
+          showPersonGraph(person);
+        } else {
+          console.warn("Person data incomplete for graph view:", person);
+        }
+      };
+      
       nodeClickHandler = handleNodeClick;
-      nodeClickCleanup = cleanup;
-
-      // Pass the zoom out function to the store
-      appStore.setConcentricZoomOut(handleZoomOut);
+      nodeClickCleanup = () => {
+        // Cleanup function for node click
+        if (cy.value) {
+          cy.value.removeListener("tap", "node", handleNodeClick);
+        }
+      };
 
       // Add node click event listener
       cy.value.on("tap", "node", handleNodeClick);
@@ -633,6 +1135,12 @@ onUnmounted(() => {
   // Cleanup node click functionality
   if (nodeClickCleanup) {
     nodeClickCleanup();
+  }
+
+  // Cleanup person graph
+  if (personGraphCy.value) {
+    personGraphCy.value.destroy();
+    personGraphCy.value = null;
   }
 });
 </script>
@@ -669,6 +1177,15 @@ onUnmounted(() => {
       class="zoom-out-button"
       style="opacity: 0"
       @click="handleZoomOut"
+    >
+      <span>← Back to Network</span>
+    </div>
+
+    <!-- Person Graph Back Button -->
+    <div
+      v-if="isShowingPersonGraph"
+      class="person-graph-back-button"
+      @click="returnToNetworkView"
     >
       <span>← Back to Network</span>
     </div>
@@ -808,6 +1325,39 @@ onUnmounted(() => {
 }
 
 .dark-mode .zoom-out-button:hover {
+  background: rgba(45, 55, 72, 1);
+}
+
+/* Person Graph Back Button Styles */
+.person-graph-back-button {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2d3748;
+}
+
+.dark-mode .person-graph-back-button {
+  background: rgba(45, 55, 72, 0.95);
+  border-color: #718096;
+  color: #e2e8f0;
+}
+
+.person-graph-back-button:hover {
+  background: rgba(255, 255, 255, 1);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dark-mode .person-graph-back-button:hover {
   background: rgba(45, 55, 72, 1);
 }
 

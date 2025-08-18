@@ -360,7 +360,7 @@ const getPersonPhotoUrl = (personData) => {
   if (personData.id && typeof personData.id === 'number') {
     return getPhotoUrl(personData, location.href);
   }
-  
+
   // Fallback: no photo available
   return null;
 };
