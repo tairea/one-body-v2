@@ -931,33 +931,25 @@ const initializeAllGraphs = () => {
   const nodes = people.map((personData) => {
     return {
       data: {
-        id: `person-${personData.id}`,
+        id: personData.id.toString(),
         label: formatTextWithLineBreaks(personData.name),
         type: "person",
         photo: getPersonPhotoUrl(personData),
         nodeSize: calculatePersonNodeSize(personData.name),
       },
-      //   position: {
-      //     x: graphOffset.x + 0,
-      //     y: graphOffset.y + 0,
-      //   },
     };
   });
 
-  /*
-  const edges = recommendations
-    .filter((match) => match && match.person1 && match.person2)
-    .map((match, index) => ({
-      data: {
-        id: `edge${index}`,
-        source: match.person1,
-        target: match.person2,
-        ranking: match.ranking,
-        reason: match.reason,
-        potential: match.potential,
-      },
-    }));
-    */
+  const edges = recommendations.map((match, index) => ({
+    data: {
+      id: `edge${index}`,
+      source: match.person1Id.toString(),
+      target: match.person2Id.toString(),
+      ranking: match.ranking,
+      reason: match.reason,
+      potential: match.potential,
+    },
+  }));
 
   // Initialize single cytoscape instance with all data
   cyInstances.value.set(
@@ -965,9 +957,8 @@ const initializeAllGraphs = () => {
     cytoscape({
       container: containerRef.value,
       elements: {
-        nodes: nodes,
-        // TODO
-        edges: [],
+        nodes,
+        edges,
       },
       // TODO fix
       style: appStore.isDarkMode ? darkModeStyles : lightModeStyles,
