@@ -652,19 +652,19 @@ const fadeElements = (elements, opacity, duration = 300) => {
 // Edge interaction functions
 const handleEdgeClick = async (event) => {
   console.log("Edge clicked!", event.target.data());
-  
+
   if (!cyInstances.value.has("main")) {
     console.log("No main cytoscape instance found");
     return;
   }
-  
+
   isEdgeView.value = true;
   console.log("isEdgeView set to:", isEdgeView.value);
-  
+
   // Update app store instead of emitting event
   appStore.setEdgeView(true);
   console.log("Updated app store edge view state");
-  
+
   const mainCy = cyInstances.value.get("main");
 
   // Remove any existing edge percentage labels
@@ -767,30 +767,30 @@ const handleEdgeClick = async (event) => {
   labelContainer.style.width = "500px";
   labelContainer.style.fontSize = "0.9rem";
   labelContainer.style.color = appStore.isDarkMode ? "#ffffff" : "#000000";
-  
+
   const ranking = edge.data("ranking");
   const percentage = (ranking * 100).toFixed(0) + "%";
-  
+
   labelContainer.innerHTML = `
-    <div style="display: flex; justify-content: space-between; align-items: center;">  
+    <div style="display: flex; justify-content: space-between; align-items: center;">
       <strong>AI Suggestions <span style="font-weight:600;font-size:10px;color:#ccc">(ChatGPT-4o)</span></strong>
       <strong style="color:#04DC45">${percentage} Collab Rank</strong>
     </div>
     <p style="margin: 10px 0px">${edge.data("reason")}</p>
-    <strong>Potential Collabs:</strong> 
+    <strong>Potential Collabs:</strong>
     <ul style="margin-top: 5px;margin-bottom:0px">
       <li style="padding:5px 0px">${edge.data("potential")[0]}</li>
       <li style="padding:5px 0px">${edge.data("potential")[1]}</li>
     </ul>
   `;
-  
+
   document.body.appendChild(labelContainer);
   edgeLabelContainer.value = labelContainer;
 
   // Update label position continuously
   function updateLabelPosition() {
     if (!labelContainer.parentNode) return; // Stop if container was removed
-    
+
     const updatedSourcePosition = sourceNode.renderedPosition();
     const updatedTargetPosition = targetNode.renderedPosition();
     const updatedCenterX = (updatedSourcePosition.x + updatedTargetPosition.x) / 2;
@@ -928,9 +928,9 @@ const handleEdgeMouseOut = (event) => {
 
 const resetEdgeView = () => {
   if (!cyInstances.value.has("main")) return;
-  
+
   isEdgeView.value = false;
-  
+
   // Update app store instead of emitting event
   appStore.setEdgeView(false);
 
@@ -970,15 +970,6 @@ const resetEdgeView = () => {
 
 // Function to setup interactions for a cytoscape instance
 const setupInteractions = (cyInstance) => {
-  // Add some basic interactions for person nodes
-  cyInstance.on("tap", "node[type='person']", (evt) => {
-    const node = evt.target;
-    const nodeData = node.data();
-
-    // Zoom to this person's graph
-    zoomToPersonGraph(nodeData.id);
-  });
-
   // Add interactions for non-person nodes
   cyInstance.on("tap", "node[type!='person']", (evt) => {
     const node = evt.target;
@@ -1067,7 +1058,7 @@ const setupInteractions = (cyInstance) => {
   cyInstance.on("tap", "edge", handleEdgeClick);
   cyInstance.on("mouseover", "edge", handleEdgeHover);
   cyInstance.on("mouseout", "edge", handleEdgeMouseOut);
-  
+
   console.log("Edge interactions bound to cytoscape instance");
 };
 
