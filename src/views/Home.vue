@@ -147,7 +147,7 @@ onMounted(async () => {
     />
 
     <div
-      v-if="appStore.people"
+      v-if="appStore.people && appStore.recommendations"
       class="components-container"
       :class="{ fullscreen: appStore.isFullscreen }"
     >
