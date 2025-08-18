@@ -1,7 +1,6 @@
 <script setup>
 // @ts-check
 import { onMounted, ref } from "vue";
-import CytoscapeGraph from "../components/CytoscapeGraph.vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import GlobeGL from "../components/GlobeGL.vue";
 import HomeLeftPanel from "../components/HomeLeftPanel.vue";
@@ -44,7 +43,7 @@ const handleNodePositionChanged = () => {
 // Handle saving graph snapshot
 const handleSaveNodePositions = async () => {
   if (!cytoscapeRef.value) return;
-  
+
   try {
     isSavingPositions.value = true;
     await cytoscapeRef.value.saveGraphSnapshot();
@@ -65,7 +64,7 @@ const handleZoomStateChanged = (zoomState) => {
   if (homeLeftPanelRef.value) {
     homeLeftPanelRef.value.handleZoomStateChange(zoomState);
   }
-  
+
   // Update clicked person data
   if (zoomState.isZoomed && zoomState.personId && appStore.people) {
     // Extract numeric ID from personId (e.g., "person-123" -> 123)
@@ -98,20 +97,20 @@ onMounted(async () => {
 <template>
   <div class="app-container" v-if="true" :class="{ 'dark-mode': appStore.isDarkMode, 'fullscreen': appStore.isFullscreen }">
     <DarkModeToggle />
-    
+
     <!-- Close Fullscreen Button -->
     <div v-if="appStore.isFullscreen" class="close-fullscreen-btn" @click="appStore.exitFullscreen">
       <v-icon icon="mdi-close" size="24" />
     </div>
-    
-    <HomeLeftPanel 
+
+    <HomeLeftPanel
       ref="homeLeftPanelRef"
       :clickedPersonName="clickedPersonName"
       :clickedPersonEmail="clickedPersonEmail"
-      :class="{ 'panel-hidden': appStore.isFullscreen }" 
+      :class="{ 'panel-hidden': appStore.isFullscreen }"
       @zoomBack="handleZoomBack"
     />
-    <HomeRightPanel 
+    <HomeRightPanel
       v-if="appStore.people && appStore.people.length > 0 && appStore.activeComponent === 'cytoscape'"
       :person="appStore.people[0]"
       :hasNodePositionChanges="hasNodePositionChanges"
@@ -121,11 +120,6 @@ onMounted(async () => {
     />
 
     <div v-if="appStore.people" class="components-container" :class="{ 'fullscreen': appStore.isFullscreen }">
-      <!-- <CytoscapeGraph
-        ref="cytoscapeRef"
-        :people="appStore.people"
-        :class="{ active: appStore.activeComponent === 'cytoscape' }"
-      /> -->
       <InteractiveCytoscapeMany
         ref="cytoscapeRef"
         :people="appStore.people"
@@ -139,12 +133,12 @@ onMounted(async () => {
         :class="{ active: appStore.activeComponent === 'globe' }"
       />
       <!-- Add Person Dialog -->
-       
-      
+
+
     </div>
-    
+
     <!-- AddPersonDialog - positioned outside components-container for proper overlay -->
-    <AddPersonDialog 
+    <AddPersonDialog
       v-if="appStore.isAddPersonDialogOpen"
       :editing-person="appStore.editingPerson"
       @close="appStore.hideAddPersonDialog()"
