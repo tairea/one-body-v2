@@ -7,6 +7,7 @@ import HomeLeftPanel from "../components/HomeLeftPanel.vue";
 import HomeRightPanel from "../components/HomeRightPanel.vue";
 import AddPersonDialog from "../components/AddPersonDialog.vue";
 import { useAppStore } from "../stores/app";
+import AiRecommendations from "../components/AiRecommendations.vue";
 import InteractiveCytoscapeMany from "../components/InteractiveCytoscapeMany.vue";
 /** @import { Person } from "../types.d.ts" */
 
@@ -151,7 +152,10 @@ onMounted(async () => {
         :people="appStore.people"
         :class="{ active: appStore.activeComponent === 'globe' }"
       />
-      <!-- Add Person Dialog -->
+      <AiRecommendations
+        ref="aiRecommendationsRef"
+        :class="{ active: appStore.activeComponent === 'airecommendations' }"
+      />
     </div>
 
     <!-- AddPersonDialog - positioned outside components-container for proper overlay -->

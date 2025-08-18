@@ -14,7 +14,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(["showAiView", "showMembersView", "zoomBack"]);
+const emit = defineEmits(["showMembersView", "zoomBack"]);
 const appStore = useAppStore();
 
 // Add state for zoom
@@ -38,6 +38,10 @@ const handleShowGlobe = () => {
 
 const handleShowCytoscape = () => {
   appStore.showCytoscape();
+};
+
+const handleShowAiRecommendations = () => {
+  appStore.showAiRecommendations();
 };
 
 const handleZoomBack = () => {
@@ -92,7 +96,7 @@ const handleZoomBack = () => {
         <p class="b1">{{ appStore.people?.length || "?" }} Members</p>
       </div>
 
-      <div id="ai" class="button" @click="emit('showAiView')">
+      <div id="ai" class="button" @click="handleShowAiRecommendations">
         <v-icon icon="mdi-robot-love-outline" size="20" />
         <p class="b1">AI suggested collabs</p>
       </div>

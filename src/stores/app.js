@@ -19,7 +19,7 @@ export const useAppStore = defineStore("app", {
     isFullscreen: false,
 
     // Component state
-    /** @type {null | "globe" | "cytoscape"} */
+    /** @type {null | "globe" | "cytoscape" | "airecommendations"} */
     activeComponent: "cytoscape",
 
     // Profile view state
@@ -97,6 +97,11 @@ export const useAppStore = defineStore("app", {
     },
     showCytoscape() {
       this.activeComponent = "cytoscape";
+      this.isViewingProfile = false; // Reset profile view when switching components
+      this.currentPersonData = null; // Clear person data when switching components
+    },
+    showAiRecommendations() {
+      this.activeComponent = "airecommendations";
       this.isViewingProfile = false; // Reset profile view when switching components
       this.currentPersonData = null; // Clear person data when switching components
     },
