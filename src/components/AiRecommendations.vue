@@ -773,7 +773,7 @@ const handleEdgeClick = async (event) => {
 
   labelContainer.innerHTML = `
     <div style="display: flex; justify-content: space-between; align-items: center;">
-      <strong>AI Suggestions <span style="font-weight:600;font-size:10px;color:#ccc">(ChatGPT-4o)</span></strong>
+      <strong>AI Suggestions <span style="font-weight:600;font-size:10px;color:#ccc">(Llama 3.2)</span></strong>
       <strong style="color:#04DC45">${percentage} Collab Rank</strong>
     </div>
     <p style="margin: 10px 0px">${edge.data("reason")}</p>
