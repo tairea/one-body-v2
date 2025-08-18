@@ -39,17 +39,21 @@ const getPersonPhotoUrl = (person) => {
   if (!person.hasPhoto) {
     return undefined;
   }
-  
+
   // If the person has a photo field with data (data URL), use it directly
-  if (person.photo && typeof person.photo === 'string' && person.photo.startsWith('data:')) {
+  if (
+    person.photo &&
+    typeof person.photo === "string" &&
+    person.photo.startsWith("data:")
+  ) {
     return person.photo;
   }
-  
+
   // If the person has an ID, construct the API URL
-  if (person.id && typeof person.id === 'number') {
+  if (person.id && typeof person.id === "number") {
     return getPhotoUrl(person, location.href);
   }
-  
+
   // Fallback: no photo available
   return undefined;
 };

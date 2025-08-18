@@ -30,23 +30,23 @@ const handleNodePositionChanged = (changeData) => {
 
 // Handle graph snapshot saved
 const handleGraphSnapshotSaved = (snapshot) => {
-  console.log('Graph snapshot saved:', snapshot);
+  console.log("Graph snapshot saved:", snapshot);
 };
 
 // Save node positions
 const saveNodePositions = async () => {
   try {
     isSavingPositions.value = true;
-    
+
     // Save to store first (updates localStorage)
     await cytoscapeRef.value.saveGraphSnapshot();
-    
+
     // Also save to server via API
     const personReference = JSON.parse(localStorage.getItem("personReference"));
-    
+
     if (personReference && personReference.id && personReference.secretKey) {
       const updatePersonUrl = new URL("/api/person", location.href);
-      
+
       const response = await fetch(updatePersonUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -56,16 +56,18 @@ const saveNodePositions = async () => {
           secretKey: personReference.secretKey,
         }),
       });
-      
+
       if (!response.ok) {
-        console.warn('Failed to save node positions to server, but saved locally');
+        console.warn(
+          "Failed to save node positions to server, but saved locally",
+        );
       }
     }
-    
+
     hasNodePositionChanges.value = false;
     pendingNodeChanges.value.clear();
   } catch (error) {
-    console.error('Error saving node positions:', error);
+    console.error("Error saving node positions:", error);
   } finally {
     isSavingPositions.value = false;
   }
@@ -73,7 +75,7 @@ const saveNodePositions = async () => {
 
 onMounted(async () => {
   // Initialize dark mode if not already done
-  if (typeof appStore.isDarkMode === 'undefined') {
+  if (typeof appStore.isDarkMode === "undefined") {
     appStore.initializeDarkMode();
   }
 
@@ -82,22 +84,26 @@ onMounted(async () => {
 });
 
 // Watch for person changes and redirect if no person data
-watch(person, (newPerson) => {
-  if (!newPerson) {
-    // If no person data after initialization, redirect to signup
-    router.push({ name: 'Signup' });
-  }
-}, { immediate: true });
+watch(
+  person,
+  (newPerson) => {
+    if (!newPerson) {
+      // If no person data after initialization, redirect to signup
+      router.push({ name: "Signup" });
+    }
+  },
+  { immediate: true },
+);
 
 const handleSavePerson = (personData) => {
   // Preserve the existing graph snapshot before updating
   const existingSnapshot = person.value?.personsGraphSnapshot;
-  
+
   // If there's an existing snapshot, merge it with the new person data
-  const updatedPersonData = existingSnapshot 
+  const updatedPersonData = existingSnapshot
     ? { ...personData, personsGraphSnapshot: existingSnapshot }
     : personData;
-  
+
   // Update the person in the store
   appStore.updateCurrentPerson(updatedPersonData);
   // Close the dialog
@@ -110,27 +116,40 @@ const handleCloseDialog = () => {
 </script>
 
 <template>
-  <div class="countdown-container" :class="{ 'dark-mode': appStore.isDarkMode, 'fullscreen': appStore.isFullscreen }">
+  <div
+    class="countdown-container"
+    :class="{
+      'dark-mode': appStore.isDarkMode,
+      fullscreen: appStore.isFullscreen,
+    }"
+  >
     <DarkModeToggle />
-    
+
     <!-- Close Fullscreen Button -->
-    <div v-if="appStore.isFullscreen" class="close-fullscreen-btn" @click="appStore.exitFullscreen">
+    <div
+      v-if="appStore.isFullscreen"
+      class="close-fullscreen-btn"
+      @click="appStore.exitFullscreen"
+    >
       <v-icon icon="mdi-close" size="24" />
     </div>
-    
+
     <!-- Left Panel -->
     <CountdownLeftPanel :class="{ 'panel-hidden': appStore.isFullscreen }" />
-    
+
     <!-- Right Panel -->
     <CountdownRightPanel
       :person="person"
       :hasNodePositionChanges="hasNodePositionChanges"
       :isSavingPositions="isSavingPositions"
       @saveNodePositions="saveNodePositions"
-      :class="{ 'panel-hidden': appStore.isFullscreen }" 
+      :class="{ 'panel-hidden': appStore.isFullscreen }"
     />
-    
-    <div class="content-container" :class="{ 'fullscreen': appStore.isFullscreen }">
+
+    <div
+      class="content-container"
+      :class="{ fullscreen: appStore.isFullscreen }"
+    >
       <div v-if="person" class="countdown-content">
         <!-- Interactive Cytoscape graph of individual person -->
         <InteractiveCytoscape
@@ -142,7 +161,7 @@ const handleCloseDialog = () => {
     </div>
 
     <!-- AddPersonDialog for editing profiles -->
-    <AddPersonDialog 
+    <AddPersonDialog
       v-if="appStore.isAddPersonDialogOpen"
       :editing-person="appStore.editingPerson"
       @save="handleSavePerson"
@@ -212,7 +231,6 @@ $border-dark: #4a5568;
   }
 
   .dark-mode & {
-
     color: rgba(255, 255, 255, 0.87);
 
     &:hover {
@@ -228,7 +246,9 @@ $border-dark: #4a5568;
   display: flex;
   flex-direction: column;
   margin: 0 auto;
-  transition: width 0.3s ease, margin 0.3s ease;
+  transition:
+    width 0.3s ease,
+    margin 0.3s ease;
 
   &.fullscreen {
     width: 100%;
@@ -237,7 +257,6 @@ $border-dark: #4a5568;
 }
 
 .countdown-content {
-
   color: $text-primary;
   width: 100%;
   height: 100%;
@@ -250,7 +269,9 @@ $border-dark: #4a5568;
 // Panel transitions for fullscreen
 :deep(.left-overlay),
 :deep(.right-overlay) {
-  transition: opacity 0.4s ease, visibility 0.4s ease;
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s ease;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -279,7 +300,7 @@ $border-dark: #4a5568;
       display: none;
     }
   }
-  
+
   .content-container {
     width: 100%;
     margin: 0;

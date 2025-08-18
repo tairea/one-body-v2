@@ -21,7 +21,7 @@
         type="text"
         :placeholder="instruction"
         class="strings-input"
-        :class="{ 'editing': editingChip !== null }"
+        :class="{ editing: editingChip !== null }"
         ref="stringInput"
       />
       <small class="edit-hint">💡 Click any chip to edit it</small>
@@ -36,7 +36,11 @@
         @click="editString(string)"
       >
         {{ string }}
-        <button @click.stop="removeString(string)" class="chip-remove" type="button">
+        <button
+          @click.stop="removeString(string)"
+          class="chip-remove"
+          type="button"
+        >
           ×
         </button>
       </div>

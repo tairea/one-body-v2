@@ -49,15 +49,15 @@ const handleSaveNodePositions = async () => {
     await cytoscapeRef.value.saveGraphSnapshot();
     hasNodePositionChanges.value = false;
   } catch (error) {
-    console.error('Error saving node positions:', error);
+    console.error("Error saving node positions:", error);
   } finally {
     isSavingPositions.value = false;
   }
 };
 
 // State for clicked person data
-const clickedPersonName = ref('');
-const clickedPersonEmail = ref('');
+const clickedPersonName = ref("");
+const clickedPersonEmail = ref("");
 
 // Handle zoom state changes from cytoscape
 const handleZoomStateChanged = (zoomState) => {
@@ -68,16 +68,16 @@ const handleZoomStateChanged = (zoomState) => {
   // Update clicked person data
   if (zoomState.isZoomed && zoomState.personId && appStore.people) {
     // Extract numeric ID from personId (e.g., "person-123" -> 123)
-    const numericId = parseInt(zoomState.personId.replace('person-', ''));
-    const person = appStore.people.find(p => p.id === numericId);
+    const numericId = parseInt(zoomState.personId.replace("person-", ""));
+    const person = appStore.people.find((p) => p.id === numericId);
     if (person) {
-      clickedPersonName.value = person.name || '';
-      clickedPersonEmail.value = person.email || '';
+      clickedPersonName.value = person.name || "";
+      clickedPersonEmail.value = person.email || "";
     }
   } else {
     // Reset when zooming back
-    clickedPersonName.value = '';
-    clickedPersonEmail.value = '';
+    clickedPersonName.value = "";
+    clickedPersonEmail.value = "";
   }
 };
 
@@ -95,11 +95,22 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="app-container" v-if="true" :class="{ 'dark-mode': appStore.isDarkMode, 'fullscreen': appStore.isFullscreen }">
+  <div
+    class="app-container"
+    v-if="true"
+    :class="{
+      'dark-mode': appStore.isDarkMode,
+      fullscreen: appStore.isFullscreen,
+    }"
+  >
     <DarkModeToggle />
 
     <!-- Close Fullscreen Button -->
-    <div v-if="appStore.isFullscreen" class="close-fullscreen-btn" @click="appStore.exitFullscreen">
+    <div
+      v-if="appStore.isFullscreen"
+      class="close-fullscreen-btn"
+      @click="appStore.exitFullscreen"
+    >
       <v-icon icon="mdi-close" size="24" />
     </div>
 
@@ -111,7 +122,11 @@ onMounted(async () => {
       @zoomBack="handleZoomBack"
     />
     <HomeRightPanel
-      v-if="appStore.people && appStore.people.length > 0 && appStore.activeComponent === 'cytoscape'"
+      v-if="
+        appStore.people &&
+        appStore.people.length > 0 &&
+        appStore.activeComponent === 'cytoscape'
+      "
       :person="appStore.people[0]"
       :hasNodePositionChanges="hasNodePositionChanges"
       :isSavingPositions="isSavingPositions"
@@ -119,7 +134,11 @@ onMounted(async () => {
       :class="{ 'panel-hidden': appStore.isFullscreen }"
     />
 
-    <div v-if="appStore.people" class="components-container" :class="{ 'fullscreen': appStore.isFullscreen }">
+    <div
+      v-if="appStore.people"
+      class="components-container"
+      :class="{ fullscreen: appStore.isFullscreen }"
+    >
       <InteractiveCytoscapeMany
         ref="cytoscapeRef"
         :people="appStore.people"
@@ -133,8 +152,6 @@ onMounted(async () => {
         :class="{ active: appStore.activeComponent === 'globe' }"
       />
       <!-- Add Person Dialog -->
-
-
     </div>
 
     <!-- AddPersonDialog - positioned outside components-container for proper overlay -->
@@ -145,9 +162,7 @@ onMounted(async () => {
       @save="appStore.hideAddPersonDialog()"
     />
   </div>
-  <div class="app-container" v-else>
-    Coming soon...
-  </div>
+  <div class="app-container" v-else>Coming soon...</div>
 </template>
 
 <style lang="scss" scoped>
@@ -205,7 +220,9 @@ onMounted(async () => {
   position: relative;
   width: 100%;
   height: 100%;
-  transition: width 0.3s ease, margin 0.3s ease;
+  transition:
+    width 0.3s ease,
+    margin 0.3s ease;
 
   &.fullscreen {
     width: 100%;
@@ -232,7 +249,9 @@ onMounted(async () => {
 // Panel transitions for fullscreen
 :deep(.left-overlay),
 :deep(.right-overlay) {
-  transition: opacity 0.4s ease, visibility 0.4s ease;
+  transition:
+    opacity 0.4s ease,
+    visibility 0.4s ease;
   opacity: 1;
   visibility: visible;
   pointer-events: auto;

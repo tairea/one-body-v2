@@ -65,10 +65,10 @@ const handleSavePerson = async (personData) => {
 
     // Get the response data with id and secretKey
     const { id, secretKey } = await response.json();
-    
+
     // Create the complete person data with the id from the API
     const completePersonData = { ...personData, id };
-    
+
     // add person to store with complete data
     appStore.addPerson(completePersonData);
 

@@ -7,16 +7,16 @@ import { useAppStore } from "../stores/app";
 const props = defineProps({
   person: {
     type: Object,
-    required: true
+    required: true,
   },
   hasNodePositionChanges: {
     type: Boolean,
-    default: false
+    default: false,
   },
   isSavingPositions: {
     type: Boolean,
-    default: false
-  }
+    default: false,
+  },
 });
 
 const router = useRouter();
@@ -37,37 +37,65 @@ const handleToggleNodeLabels = () => {
 
 const handleSaveNodePositions = () => {
   // Emit event to parent to save node positions
-  emit('saveNodePositions');
+  emit("saveNodePositions");
 };
 
 // Define emits
-const emit = defineEmits(['saveNodePositions']);
+const emit = defineEmits(["saveNodePositions"]);
 </script>
 
 <template>
-  <div class="right-overlay" :class="{ 'dark-mode': appStore.isDarkMode }" v-bind="$attrs">
+  <div
+    class="right-overlay"
+    :class="{ 'dark-mode': appStore.isDarkMode }"
+    v-bind="$attrs"
+  >
     <div v-if="props.person">
       <!-- Profile Actions -->
       <div class="profile-section">
-        
-        <div class="icon-button" @click="handleEditProfile" title="Edit Profile Data">
+        <div
+          class="icon-button"
+          @click="handleEditProfile"
+          title="Edit Profile Data"
+        >
           <v-icon icon="mdi-account-edit" size="20" />
         </div>
-        
-        <div class="icon-button" @click="handleFullscreen" title="Full-Screen Interactive View">
+
+        <div
+          class="icon-button"
+          @click="handleFullscreen"
+          title="Full-Screen Interactive View"
+        >
           <v-icon icon="mdi-fullscreen" size="20" />
         </div>
-        
-        <div class="icon-button" @click="handleToggleNodeLabels" :title="appStore.showNodeLabels ? 'Hide Node Labels' : 'Show Node Labels'">
-          <v-icon :icon="appStore.showNodeLabels ? 'mdi-eye-off' : 'mdi-eye'" size="20" />
+
+        <div
+          class="icon-button"
+          @click="handleToggleNodeLabels"
+          :title="
+            appStore.showNodeLabels ? 'Hide Node Labels' : 'Show Node Labels'
+          "
+        >
+          <v-icon
+            :icon="appStore.showNodeLabels ? 'mdi-eye-off' : 'mdi-eye'"
+            size="20"
+          />
         </div>
-        
+
         <!-- Save Node Positions Button - only show when there are changes -->
-        <div v-if="hasNodePositionChanges" class="icon-button save-positions-button" 
-             :class="{ 'saving': isSavingPositions, 'disabled': isSavingPositions }"
-             @click="handleSaveNodePositions"
-             title="Save New Node Positions">
-          <v-icon :icon="isSavingPositions ? 'mdi-loading mdi-spin' : 'mdi-content-save'" size="20" />
+        <div
+          v-if="hasNodePositionChanges"
+          class="icon-button save-positions-button"
+          :class="{ saving: isSavingPositions, disabled: isSavingPositions }"
+          @click="handleSaveNodePositions"
+          title="Save New Node Positions"
+        >
+          <v-icon
+            :icon="
+              isSavingPositions ? 'mdi-loading mdi-spin' : 'mdi-content-save'
+            "
+            size="20"
+          />
         </div>
       </div>
     </div>
@@ -117,8 +145,6 @@ const emit = defineEmits(['saveNodePositions']);
     flex-direction: column;
     align-items: flex-end;
     margin-right: 10px;
-
-    
   }
 
   .icon-button {
@@ -134,7 +160,6 @@ const emit = defineEmits(['saveNodePositions']);
     border: 1px solid rgba(0, 0, 0, 0.3);
     background-color: rgba(255, 255, 255, 0.9);
     backdrop-filter: blur(10px);
-    
 
     &:hover {
       background-color: rgba(255, 255, 255, 1);
@@ -146,37 +171,37 @@ const emit = defineEmits(['saveNodePositions']);
       color: #333;
       transition: color 0.2s ease;
     }
-    
+
     &.save-positions-button {
-      background-color: #4CAF50;
-      border-color: #4CAF50;
-      
+      background-color: #4caf50;
+      border-color: #4caf50;
+
       &:hover {
         background-color: #45a049;
       }
-      
+
       .v-icon {
         color: white;
       }
-      
+
       &.saving {
-        background-color: #FF9800;
-        border-color: #FF9800;
+        background-color: #ff9800;
+        border-color: #ff9800;
         cursor: not-allowed;
-        
+
         &:hover {
-          background-color: #FF9800;
+          background-color: #ff9800;
           transform: none;
           box-shadow: none;
         }
       }
-      
+
       &.disabled {
         opacity: 0.7;
         cursor: not-allowed;
-        
+
         &:hover {
-          background-color: #4CAF50;
+          background-color: #4caf50;
           transform: none;
           box-shadow: none;
         }
@@ -209,15 +234,15 @@ const emit = defineEmits(['saveNodePositions']);
       .v-icon {
         color: rgba(255, 255, 255, 0.87) !important;
       }
-      
+
       &.save-positions-button {
-        background-color: #4CAF50;
-        border-color: #4CAF50;
-        
+        background-color: #4caf50;
+        border-color: #4caf50;
+
         &:hover {
           background-color: #45a049;
         }
-        
+
         .v-icon {
           color: white !important;
         }

@@ -6,12 +6,12 @@ import { useAppStore } from "../stores/app";
 const props = defineProps({
   clickedPersonName: {
     type: String,
-    default: ''
+    default: "",
   },
   clickedPersonEmail: {
     type: String,
-    default: ''
-  }
+    default: "",
+  },
 });
 
 const emit = defineEmits(["showAiView", "showMembersView", "zoomBack"]);
@@ -29,7 +29,7 @@ const handleZoomStateChange = (zoomState) => {
 
 // Expose the handler for parent components
 defineExpose({
-  handleZoomStateChange
+  handleZoomStateChange,
 });
 
 const handleShowGlobe = () => {
@@ -41,12 +41,16 @@ const handleShowCytoscape = () => {
 };
 
 const handleZoomBack = () => {
-  emit('zoomBack');
+  emit("zoomBack");
 };
 </script>
 
 <template>
-  <div class="left-overlay" :class="{ 'dark-mode': appStore.isDarkMode }" v-bind="$attrs">
+  <div
+    class="left-overlay"
+    :class="{ 'dark-mode': appStore.isDarkMode }"
+    v-bind="$attrs"
+  >
     <!-- DWEB LOGO & TITLE -->
     <div id="wg" v-if="!isZoomed">
       <img
@@ -62,14 +66,13 @@ const handleZoomBack = () => {
     <!-- ZOOMED VIEW - Show back button and person info -->
     <div v-if="isZoomed" class="zoomed-view">
       <div class="person-info">
-        <h3>{{clickedPersonName}}</h3>
-        <p>{{clickedPersonEmail || 'No email available'}}</p>
+        <h3>{{ clickedPersonName }}</h3>
+        <p>{{ clickedPersonEmail || "No email available" }}</p>
       </div>
       <div class="back-button" @click="handleZoomBack">
         <v-icon icon="mdi-arrow-left" size="20" />
         <span>Back</span>
       </div>
-      
     </div>
 
     <!-- BUTTONS - Only show when not zoomed -->

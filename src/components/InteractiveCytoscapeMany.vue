@@ -15,15 +15,19 @@ const props = defineProps({
   people: {
     type: Array,
     required: true,
-    default: () => []
-  }
+    default: () => [],
+  },
 });
 
 // Watch for node label visibility changes
 const showNodeLabels = computed(() => appStore.showNodeLabels);
 
 // Emit events for parent components
-const emit = defineEmits(['nodePositionChanged', 'graphSnapshotSaved', 'zoomStateChanged']);
+const emit = defineEmits([
+  "nodePositionChanged",
+  "graphSnapshotSaved",
+  "zoomStateChanged",
+]);
 
 const containerRef = ref(null);
 const cyInstances = ref(new Map()); // Store multiple cytoscape instances
@@ -308,9 +312,9 @@ const updateGraphStyles = () => {
 
   const isDark = appStore.isDarkMode;
   const newStyles = isDark ? darkModeStyles : lightModeStyles;
-  
+
   // Update styles for all cytoscape instances
-  cyInstances.value.forEach(cy => {
+  cyInstances.value.forEach((cy) => {
     if (cy) {
       cy.style(newStyles);
     }
@@ -326,7 +330,7 @@ const updateGraphStyles = () => {
 const calculatePersonNodeSize = (text) => {
   const minSize = 50; // Reduced from 60
   const maxSize = 80; // Reduced from 120
-  
+
   // Calculate size based on text length with text wrapping for longer names
   let calculatedSize;
   if (text.length <= 8) {
@@ -338,22 +342,22 @@ const calculatePersonNodeSize = (text) => {
     // Text wrapping for names over 10 characters
     // Use the actual formatted text to determine line count and max line length
     const formattedText = formatTextWithLineBreaks(text);
-    const lines = formattedText.split('\n');
-    const maxLineLength = Math.max(...lines.map(line => line.length));
-    
+    const lines = formattedText.split("\n");
+    const maxLineLength = Math.max(...lines.map((line) => line.length));
+
     // For wrapped text, make it much tighter
     // Width: accommodate the longest actual line
     const width = minSize + Math.max(0, maxLineLength - 8) * 2;
     // Height: accommodate multiple lines but much tighter
     const height = minSize + (lines.length - 1) * 12;
-    
+
     // Use the larger of width or height to maintain square/circular shape
     calculatedSize = Math.max(width, height);
   }
-  
+
   // Ensure size is within bounds
   const finalSize = Math.max(minSize, Math.min(maxSize, calculatedSize));
-  
+
   return finalSize;
 };
 
@@ -362,16 +366,16 @@ const formatTextWithLineBreaks = (text) => {
   if (text.length <= 10) {
     return text;
   }
-  
+
   // Split text into words
-  const words = text.split(' ');
+  const words = text.split(" ");
   const lines = [];
-  let currentLine = '';
-  
+  let currentLine = "";
+
   for (let i = 0; i < words.length; i++) {
     const word = words[i];
-    const testLine = currentLine + (currentLine ? ' ' : '') + word;
-    
+    const testLine = currentLine + (currentLine ? " " : "") + word;
+
     // If adding this word would exceed 10 characters, start a new line
     if (testLine.length > 10) {
       if (currentLine) {
@@ -389,13 +393,13 @@ const formatTextWithLineBreaks = (text) => {
       currentLine = testLine;
     }
   }
-  
+
   // Add the last line
   if (currentLine) {
     lines.push(currentLine);
   }
-  
-  return lines.join('\n');
+
+  return lines.join("\n");
 };
 
 // Get the appropriate photo URL for a person
@@ -404,17 +408,21 @@ const getPersonPhotoUrl = (personData) => {
   if (!personData.hasPhoto) {
     return null;
   }
-  
+
   // If the person has a photo field with data (data URL), use it directly
-  if (personData.photo && typeof personData.photo === 'string' && personData.photo.startsWith('data:')) {
+  if (
+    personData.photo &&
+    typeof personData.photo === "string" &&
+    personData.photo.startsWith("data:")
+  ) {
     return personData.photo;
   }
-  
+
   // If the person has an ID, construct the API URL
-  if (personData.id && typeof personData.id === 'number') {
+  if (personData.id && typeof personData.id === "number") {
     return getPhotoUrl(personData, location.href);
   }
-  
+
   // Fallback: no photo available
   return null;
 };
@@ -425,14 +433,15 @@ const initializeGraphData = (personData, personIndex) => {
   const edges = [];
 
   // Check if we have saved positions
-  const hasSavedPositions = personData.personsGraphSnapshot && 
-                           personData.personsGraphSnapshot.nodes && 
-                           personData.personsGraphSnapshot.nodes.length > 0;
+  const hasSavedPositions =
+    personData.personsGraphSnapshot &&
+    personData.personsGraphSnapshot.nodes &&
+    personData.personsGraphSnapshot.nodes.length > 0;
 
   // Calculate offset for this person's graph
   const graphOffset = {
     x: (personIndex % 3) * 600, // Changed from 400 to 600 for more noticeable gaps
-    y: Math.floor(personIndex / 3) * 600 // Changed from 400 to 600 for more noticeable gaps
+    y: Math.floor(personIndex / 3) * 600, // Changed from 400 to 600 for more noticeable gaps
   };
 
   // Add person node (center of this person's graph)
@@ -444,24 +453,26 @@ const initializeGraphData = (personData, personIndex) => {
       photo: getPersonPhotoUrl(personData),
       nodeSize: calculatePersonNodeSize(personData.name),
     },
-    position: { 
-      x: graphOffset.x + 0, 
-      y: graphOffset.y + 0 
+    position: {
+      x: graphOffset.x + 0,
+      y: graphOffset.y + 0,
     },
   };
-  
+
   nodes.push(personNode);
 
   // Add values nodes
   personData.values.forEach((value, index) => {
     const valueId = `value-${personData.id}-${index}`;
     let position;
-    
+
     if (hasSavedPositions) {
-      const savedNode = personData.personsGraphSnapshot.nodes.find(n => n.id === valueId);
+      const savedNode = personData.personsGraphSnapshot.nodes.find(
+        (n) => n.id === valueId,
+      );
       position = savedNode ? savedNode.position : null;
     }
-    
+
     if (!position) {
       // Calculate default position if no saved position
       const angle = (index / personData.values.length) * 2 * Math.PI;
@@ -471,7 +482,7 @@ const initializeGraphData = (personData, personIndex) => {
         y: graphOffset.y + Math.sin(angle) * radius,
       };
     }
-    
+
     const valueNode = {
       data: {
         id: valueId,
@@ -497,12 +508,14 @@ const initializeGraphData = (personData, personIndex) => {
   personData.visions.forEach((vision, index) => {
     const visionId = `vision-${personData.id}-${index}`;
     let position;
-    
+
     if (hasSavedPositions) {
-      const savedNode = personData.personsGraphSnapshot.nodes.find(n => n.id === visionId);
+      const savedNode = personData.personsGraphSnapshot.nodes.find(
+        (n) => n.id === visionId,
+      );
       position = savedNode ? savedNode.position : null;
     }
-    
+
     if (!position) {
       // Calculate default position if no saved position
       const angle = (index / personData.visions.length) * 2 * Math.PI;
@@ -512,7 +525,7 @@ const initializeGraphData = (personData, personIndex) => {
         y: graphOffset.y + Math.sin(angle) * radius,
       };
     }
-    
+
     const visionNode = {
       data: {
         id: visionId,
@@ -538,12 +551,14 @@ const initializeGraphData = (personData, personIndex) => {
   personData.vehicles.forEach((vehicle, index) => {
     const vehicleId = `vehicle-${personData.id}-${index}`;
     let position;
-    
+
     if (hasSavedPositions) {
-      const savedNode = personData.personsGraphSnapshot.nodes.find(n => n.id === vehicleId);
+      const savedNode = personData.personsGraphSnapshot.nodes.find(
+        (n) => n.id === vehicleId,
+      );
       position = savedNode ? savedNode.position : null;
     }
-    
+
     if (!position) {
       // Calculate default position if no saved position
       const angle = (index / personData.vehicles.length) * 2 * Math.PI;
@@ -553,7 +568,7 @@ const initializeGraphData = (personData, personIndex) => {
         y: graphOffset.y + Math.sin(angle) * radius,
       };
     }
-    
+
     const vehicleNode = {
       data: {
         id: vehicleId,
@@ -561,7 +576,7 @@ const initializeGraphData = (personData, personIndex) => {
         type: "vehicle",
         description: vehicle.description,
       },
-        position,
+      position,
     };
     nodes.push(vehicleNode);
 
@@ -596,7 +611,7 @@ const setupInteractions = (cyInstance) => {
   cyInstance.on("tap", "node[type='person']", (evt) => {
     const node = evt.target;
     const nodeData = node.data();
-    
+
     // Zoom to this person's graph
     zoomToPersonGraph(nodeData.id);
   });
@@ -605,7 +620,7 @@ const setupInteractions = (cyInstance) => {
   cyInstance.on("tap", "node[type!='person']", (evt) => {
     const node = evt.target;
     const nodeData = node.data();
-    
+
     // For non-person nodes, find the person they belong to and zoom to them
     const personId = findPersonIdFromNodeId(nodeData.id);
     if (personId) {
@@ -613,31 +628,31 @@ const setupInteractions = (cyInstance) => {
     } else {
       console.log("Clicked node:", nodeData);
     }
-    
+
     // Handle expand/collapse for non-person nodes
     const isExpanded = node.data("expanded");
     const label = node.data("label");
-    
+
     if (isExpanded) {
       // Shrink back to dot (unless global labels are visible)
       if (!showNodeLabels.value) {
         node.style({
           width: 20,
           height: 20,
-          label: ""
+          label: "",
         });
       }
       node.data("expanded", false);
     } else {
       // Expand and show label with precise sizing
       const { width, height } = calculateOptimalNodeSize(label);
-      
+
       node.style({
         width: width,
         height: height,
         label: label,
         "text-max-width": Math.min(60, width - 10), // More restrictive text width for wrapping
-        "text-wrap": "wrap"
+        "text-wrap": "wrap",
       });
       node.data("expanded", true);
     }
@@ -647,11 +662,11 @@ const setupInteractions = (cyInstance) => {
   cyInstance.on("dragfreeon", "node", (evt) => {
     const node = evt.target;
     const newPosition = node.position();
-    
+
     // Emit event for parent components to show save button
-    emit('nodePositionChanged', {
+    emit("nodePositionChanged", {
       nodeId: node.id(),
-      position: newPosition
+      position: newPosition,
     });
   });
 
@@ -662,13 +677,13 @@ const setupInteractions = (cyInstance) => {
     if (!showNodeLabels.value) {
       const label = node.data("label");
       const { width, height } = calculateOptimalNodeSize(label);
-      
+
       node.style({
         width: width,
         height: height,
         label: label,
         "text-max-width": Math.min(60, width - 10), // More restrictive text width for wrapping
-        "text-wrap": "wrap"
+        "text-wrap": "wrap",
       });
     }
   });
@@ -680,7 +695,7 @@ const setupInteractions = (cyInstance) => {
       node.style({
         width: 20,
         height: 20,
-        label: ""
+        label: "",
       });
     }
   });
@@ -689,67 +704,67 @@ const setupInteractions = (cyInstance) => {
 // Helper function to find person ID from any node ID
 const findPersonIdFromNodeId = (nodeId) => {
   if (!nodeId) return null;
-  
+
   // Extract person ID from node ID patterns
-  if (nodeId.startsWith('person-')) {
+  if (nodeId.startsWith("person-")) {
     return nodeId;
-  } else if (nodeId.startsWith('value-')) {
+  } else if (nodeId.startsWith("value-")) {
     // value-{personId}-{index}
-    const parts = nodeId.split('-');
+    const parts = nodeId.split("-");
     if (parts.length >= 2) {
       return `person-${parts[1]}`;
     }
-  } else if (nodeId.startsWith('vision-')) {
+  } else if (nodeId.startsWith("vision-")) {
     // vision-{personId}-{index}
-    const parts = nodeId.split('-');
+    const parts = nodeId.split("-");
     if (parts.length >= 2) {
       return `person-${parts[1]}`;
     }
-  } else if (nodeId.startsWith('vehicle-')) {
+  } else if (nodeId.startsWith("vehicle-")) {
     // vehicle-{personId}-{index}
-    const parts = nodeId.split('-');
+    const parts = nodeId.split("-");
     if (parts.length >= 2) {
       return `person-${parts[1]}`;
     }
   }
-  
+
   return null;
 };
 
 // Helper function to fade elements in/out
 const fadeElements = (elements, opacity, duration = 300) => {
   elements.style({
-    'opacity': opacity,
-    'transition-property': 'opacity',
-    'transition-duration': `${duration}ms`
+    opacity: opacity,
+    "transition-property": "opacity",
+    "transition-duration": `${duration}ms`,
   });
 };
 
 // Function to find and zoom to the nearest person from a click position
 const zoomToNearestPerson = (clickPos) => {
-  if (!cyInstances.value || !cyInstances.value.has('main')) return;
-  
-  const mainCy = cyInstances.value.get('main');
+  if (!cyInstances.value || !cyInstances.value.has("main")) return;
+
+  const mainCy = cyInstances.value.get("main");
   const personNodes = mainCy.$('node[type="person"]');
-  
+
   if (personNodes.length === 0) return;
-  
+
   let nearestPerson = null;
   let minDistance = Infinity;
-  
-  personNodes.forEach(personNode => {
+
+  personNodes.forEach((personNode) => {
     const personPos = personNode.renderedPosition();
     const distance = Math.sqrt(
-      Math.pow(clickPos.x - personPos.x, 2) + 
-      Math.pow(clickPos.y - personPos.y, 2)
+      Math.pow(clickPos.x - personPos.x, 2) +
+        Math.pow(clickPos.y - personPos.y, 2),
     );
-    
+
     if (distance < minDistance) {
       minDistance = distance;
       nearestPerson = personNode;
     }
   });
-  
+
   if (nearestPerson) {
     zoomToPersonGraph(nearestPerson.id());
   }
@@ -757,47 +772,50 @@ const zoomToNearestPerson = (clickPos) => {
 
 // Function to zoom to a specific person's graph with animation
 const zoomToPersonGraph = (personId) => {
-  if (!cyInstances.value || !cyInstances.value.has('main') || isZooming.value) return;
-  
+  if (!cyInstances.value || !cyInstances.value.has("main") || isZooming.value)
+    return;
+
   isZooming.value = true; // Set flag to prevent double zooming
-  
-  const mainCy = cyInstances.value.get('main');
+
+  const mainCy = cyInstances.value.get("main");
   const personNode = mainCy.$(`#${personId}`);
-  
+
   if (personNode.length === 0) {
     isZooming.value = false; // Reset flag if no person found
     return;
   }
-  
+
   console.log(`Zooming to person: ${personId}`);
-  
+
   // Get all nodes and edges connected to this person
   const personGraph = personNode.connectedNodes().add(personNode);
-  
+
   console.log(`Person graph has ${personGraph.length} nodes`);
-  
+
   // Hide other PEOPLE's graphs (not the person's own nodes)
   // We need to find all nodes that belong to OTHER people
   const allPersonNodes = mainCy.$('node[type="person"]');
   const otherPersonNodes = allPersonNodes.difference(personNode);
-  
+
   // Extract the person ID from the selected person's node ID
-  const selectedPersonId = personId.replace('person-', '');
-  
+  const selectedPersonId = personId.replace("person-", "");
+
   // For each other person, hide their entire graph (person + connected nodes + edges)
   let allOtherElements = mainCy.collection();
-  otherPersonNodes.forEach(otherPerson => {
+  otherPersonNodes.forEach((otherPerson) => {
     // Get the other person's ID
-    const otherPersonId = otherPerson.id().replace('person-', '');
-    
+    const otherPersonId = otherPerson.id().replace("person-", "");
+
     // Find all nodes that belong to this other person using ID patterns
     const otherPersonValues = mainCy.$(`node[id^="value-${otherPersonId}-"]`);
     const otherPersonVisions = mainCy.$(`node[id^="vision-${otherPersonId}-"]`);
-    const otherPersonVehicles = mainCy.$(`node[id^="vehicle-${otherPersonId}-"]`);
-    
+    const otherPersonVehicles = mainCy.$(
+      `node[id^="vehicle-${otherPersonId}-"]`,
+    );
+
     // Get all edges connected to this other person
     const otherPersonEdges = otherPerson.connectedEdges();
-    
+
     // Add all elements from this other person's graph
     allOtherElements = allOtherElements
       .union(otherPerson)
@@ -806,47 +824,49 @@ const zoomToPersonGraph = (personId) => {
       .union(otherPersonVehicles)
       .union(otherPersonEdges);
   });
-  
-  console.log(`Hiding ${allOtherElements.length} elements from other people's graphs`);
+
+  console.log(
+    `Hiding ${allOtherElements.length} elements from other people's graphs`,
+  );
   console.log(`Selected person ID: ${selectedPersonId}`);
-  
+
   // Hide other people's graphs with fade out effect
   fadeElements(allOtherElements, 0.1, 300);
-  
+
   // Calculate the bounding box of the person's graph
   const bbox = personGraph.boundingBox();
-  
-  console.log('Bounding box:', bbox);
-  
+
+  console.log("Bounding box:", bbox);
+
   // Add some padding around the graph
   const padding = 100; // Increased padding for better view
   bbox.x1 -= padding;
   bbox.y1 -= padding;
   bbox.x2 += padding;
   bbox.y2 += padding;
-  
-  console.log('Bounding box with padding:', bbox);
-  
+
+  console.log("Bounding box with padding:", bbox);
+
   // Fit the view to this person's graph with animation
   mainCy.animate({
     fit: {
       eles: personGraph,
-      padding: padding
+      padding: padding,
     },
     duration: 800,
-    easing: 'ease-in-out'
+    easing: "ease-in-out",
   });
-  
+
   // Update state
   isZoomedToPerson.value = true;
   currentZoomedPerson.value = personId;
-  
+
   // Emit event to notify parent components about zoom state change
-  emit('zoomStateChanged', {
+  emit("zoomStateChanged", {
     isZoomed: true,
-    personId: personId
+    personId: personId,
   });
-  
+
   // Reset flag after animation completes
   setTimeout(() => {
     isZooming.value = false;
@@ -855,16 +875,17 @@ const zoomToPersonGraph = (personId) => {
 
 // Function to zoom back to full view with animation
 const zoomToFullView = () => {
-  if (!cyInstances.value || !cyInstances.value.has('main') || isZooming.value) return;
-  
+  if (!cyInstances.value || !cyInstances.value.has("main") || isZooming.value)
+    return;
+
   isZooming.value = true; // Set flag to prevent double zooming
-  
-  const mainCy = cyInstances.value.get('main');
-  
+
+  const mainCy = cyInstances.value.get("main");
+
   // First show all elements again with fade in effect
   const allElements = mainCy.elements();
   fadeElements(allElements, 1, 300);
-  
+
   // Fit to all elements with animation and custom padding
   mainCy.animate({
     fit: {
@@ -872,24 +893,24 @@ const zoomToFullView = () => {
         left: 300,
         right: 300,
         top: 100,
-        bottom: 100
-      }
+        bottom: 100,
+      },
     },
     center: true,
     duration: 800,
-    easing: 'ease-in-out'
+    easing: "ease-in-out",
   });
-  
+
   // Update state
   isZoomedToPerson.value = false;
   currentZoomedPerson.value = null;
-  
+
   // Emit event to notify parent components about zoom state change
-  emit('zoomStateChanged', {
+  emit("zoomStateChanged", {
     isZoomed: false,
-    personId: null
+    personId: null,
   });
-  
+
   // Reset flag after animation completes
   setTimeout(() => {
     isZooming.value = false;
@@ -898,83 +919,91 @@ const zoomToFullView = () => {
 
 // Function to regenerate the graph with updated person data
 const regenerateGraph = () => {
-  if (!cyInstances.value || cyInstances.value.size === 0 || !props.people || isUpdatingSnapshot.value) return;
-  
+  if (
+    !cyInstances.value ||
+    cyInstances.value.size === 0 ||
+    !props.people ||
+    isUpdatingSnapshot.value
+  )
+    return;
+
   try {
     // Clear all existing instances
-    cyInstances.value.forEach(cy => {
+    cyInstances.value.forEach((cy) => {
       if (cy) {
         cy.elements().remove();
       }
     });
-    
+
     // Reinitialize all graphs
     initializeAllGraphs();
-    
   } catch (error) {
-    console.error('Error regenerating graphs:', error);
+    console.error("Error regenerating graphs:", error);
   }
 };
 
 // Function to initialize all graphs for all people
 const initializeAllGraphs = () => {
   if (!props.people || props.people.length === 0) return;
-  
+
   // Clear existing instances
-  cyInstances.value.forEach(cy => {
+  cyInstances.value.forEach((cy) => {
     if (cy) {
       cy.destroy();
     }
   });
   cyInstances.value.clear();
-  
+
   // Create a single cytoscape instance for all people
   const allNodes = [];
   const allEdges = [];
-  
+
   props.people.forEach((personData, index) => {
     const { nodes, edges } = initializeGraphData(personData, index);
     allNodes.push(...nodes);
     allEdges.push(...edges);
   });
-  
+
   // Initialize single cytoscape instance with all data
-  cyInstances.value.set('main', cytoscape({
-    container: containerRef.value,
-    elements: {
-      nodes: allNodes,
-      edges: allEdges,
-    },
-    style: appStore.isDarkMode ? darkModeStyles : lightModeStyles,
-    layout: {
-      name: "preset", // Use preset positions
-      positions: allNodes.reduce((acc, node) => {
-        acc[node.data.id] = node.position;
-        return acc;
-      }, {}),
-      fit: true,
-      animate: false,
-    },
-    minZoom: 0.1, // Allow more zoom out to see all graphs
-    maxZoom: 2,
-    wheelSensitivity: 0.3,
-    autoungrabify: true, // Changed from false to true to make nodes non-draggable
-    autolock: false,
-  }));
-  
-  const mainCy = cyInstances.value.get('main');
-  
+  cyInstances.value.set(
+    "main",
+    cytoscape({
+      container: containerRef.value,
+      elements: {
+        nodes: allNodes,
+        edges: allEdges,
+      },
+      style: appStore.isDarkMode ? darkModeStyles : lightModeStyles,
+      layout: {
+        name: "preset", // Use preset positions
+        positions: allNodes.reduce((acc, node) => {
+          acc[node.data.id] = node.position;
+          return acc;
+        }, {}),
+        fit: true,
+        animate: false,
+      },
+      minZoom: 0.1, // Allow more zoom out to see all graphs
+      maxZoom: 2,
+      wheelSensitivity: 0.3,
+      autoungrabify: true, // Changed from false to true to make nodes non-draggable
+      autolock: false,
+    }),
+  );
+
+  const mainCy = cyInstances.value.get("main");
+
   // Center the view and ensure proper fit with custom padding
   mainCy.fit({
     padding: {
       left: 300,
       right: 300,
       top: 100,
-      bottom: 100
-    }
+      bottom: 100,
+    },
   });
   mainCy.center();
-  
+
   // Force a resize to ensure proper rendering
   setTimeout(() => {
     mainCy.resize();
@@ -983,27 +1012,27 @@ const initializeAllGraphs = () => {
         left: 300,
         right: 300,
         top: 100,
-        bottom: 100
-      }
+        bottom: 100,
+      },
     });
     mainCy.center();
-    
+
     // Force style refresh to ensure person node sizes are applied
     mainCy.style().update();
-    
+
     // Explicitly set person node sizes to ensure they're applied
     const personElements = mainCy.$('node[type="person"]');
-    personElements.forEach(personElement => {
+    personElements.forEach((personElement) => {
       const personElementData = personElement.data();
       if (personElementData.nodeSize) {
         personElement.style({
           width: personElementData.nodeSize,
-          height: personElementData.nodeSize
+          height: personElementData.nodeSize,
         });
       }
     });
   }, 100);
-  
+
   // Add interactions
   setupInteractions(mainCy);
 };
@@ -1025,81 +1054,90 @@ watch(
       regenerateGraph();
     }
   },
-  { immediate: true, deep: true }
+  { immediate: true, deep: true },
 );
 
 // Watch for changes to people properties that affect the graphs
 watch(
-  () => props.people?.map(p => p.values?.length),
+  () => props.people?.map((p) => p.values?.length),
   (newLengths, oldLengths) => {
-    if (cyInstances.value.size > 0 && props.people && 
-        JSON.stringify(newLengths) !== JSON.stringify(oldLengths) && 
-        !isUpdatingSnapshot.value) {
+    if (
+      cyInstances.value.size > 0 &&
+      props.people &&
+      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
+      !isUpdatingSnapshot.value
+    ) {
       regenerateGraph();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 watch(
-  () => props.people?.map(p => p.visions?.length),
+  () => props.people?.map((p) => p.visions?.length),
   (newLengths, oldLengths) => {
-    if (cyInstances.value.size > 0 && props.people && 
-        JSON.stringify(newLengths) !== JSON.stringify(oldLengths) && 
-        !isUpdatingSnapshot.value) {
+    if (
+      cyInstances.value.size > 0 &&
+      props.people &&
+      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
+      !isUpdatingSnapshot.value
+    ) {
       regenerateGraph();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 watch(
-  () => props.people?.map(p => p.vehicles?.length),
+  () => props.people?.map((p) => p.vehicles?.length),
   (newLengths, oldLengths) => {
-    if (cyInstances.value.size > 0 && props.people && 
-        JSON.stringify(newLengths) !== JSON.stringify(oldLengths) && 
-        !isUpdatingSnapshot.value) {
+    if (
+      cyInstances.value.size > 0 &&
+      props.people &&
+      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
+      !isUpdatingSnapshot.value
+    ) {
       regenerateGraph();
     }
   },
-  { deep: true }
+  { deep: true },
 );
 
 // Function to save the current graph snapshot to the person
 const saveGraphSnapshot = async () => {
-  if (!cyInstances.value || cyInstances.value.size === 0 || !props.people) return;
-  
+  if (!cyInstances.value || cyInstances.value.size === 0 || !props.people)
+    return;
+
   try {
     isUpdatingSnapshot.value = true;
-    
-    const mainCy = cyInstances.value.get('main');
+
+    const mainCy = cyInstances.value.get("main");
     if (!mainCy) return;
-    
+
     // For now, we'll save the entire graph state
     // In the future, you might want to save individual person snapshots
-    const nodes = mainCy.nodes().map(node => ({
+    const nodes = mainCy.nodes().map((node) => ({
       id: node.id(),
-      label: node.data('label'),
-      type: node.data('type'),
-      photo: node.data('photo'),
-      nodeSize: node.data('nodeSize'),
-      position: node.position()
+      label: node.data("label"),
+      type: node.data("type"),
+      photo: node.data("photo"),
+      nodeSize: node.data("nodeSize"),
+      position: node.position(),
     }));
-    
-    const edges = mainCy.edges().map(edge => ({
+
+    const edges = mainCy.edges().map((edge) => ({
       id: edge.id(),
       source: edge.source().id(),
       target: edge.target().id(),
-      label: edge.data('label')
+      label: edge.data("label"),
     }));
-    
+
     const graphSnapshot = { nodes, edges };
-    
+
     // Emit event for parent components
-    emit('graphSnapshotSaved', graphSnapshot);
-    
+    emit("graphSnapshotSaved", graphSnapshot);
   } catch (error) {
-    console.error('Error saving graph snapshot:', error);
+    console.error("Error saving graph snapshot:", error);
     throw error; // Re-throw so parent can handle it
   } finally {
     // Reset flag after a short delay to allow store update to complete
@@ -1113,7 +1151,7 @@ const saveGraphSnapshot = async () => {
 const updateNodePosition = (nodeId, newPosition) => {
   // This function would need to be updated based on how you want to handle
   // position updates for multiple people's graphs
-  console.log('Update node position:', nodeId, newPosition);
+  console.log("Update node position:", nodeId, newPosition);
 };
 
 // Expose methods for parent components
@@ -1122,12 +1160,12 @@ defineExpose({
   updateNodePosition,
   regenerateGraph,
   zoomToPersonGraph,
-  zoomToFullView
+  zoomToFullView,
 });
 
 onMounted(async () => {
   // Initialize dark mode if not already done
-  if (typeof appStore.isDarkMode === 'undefined') {
+  if (typeof appStore.isDarkMode === "undefined") {
     appStore.initializeDarkMode();
   }
 
@@ -1140,7 +1178,6 @@ onMounted(async () => {
   try {
     // Initialize all graphs
     initializeAllGraphs();
-    
   } catch (error) {
     console.error("Error initializing Interactive Cytoscape:", error);
   }
@@ -1148,24 +1185,25 @@ onMounted(async () => {
 
 // Watch for changes in node label visibility
 watch(showNodeLabels, (newValue) => {
-  if (cyInstances.value.get('main')) { // Check if mainCy exists
-    const mainCy = cyInstances.value.get('main');
+  if (cyInstances.value.get("main")) {
+    // Check if mainCy exists
+    const mainCy = cyInstances.value.get("main");
     const nodes = mainCy.nodes();
-    
-    nodes.forEach(node => {
+
+    nodes.forEach((node) => {
       const nodeType = node.data("type");
       if (nodeType !== "person") {
         if (newValue) {
           // Show labels for all non-person nodes with precise sizing
           const label = node.data("label");
           const { width, height } = calculateOptimalNodeSize(label);
-          
+
           node.style({
             width: width,
             height: height,
             label: label,
             "text-max-width": Math.min(60, width - 10), // More restrictive text width for wrapping
-            "text-wrap": "wrap"
+            "text-wrap": "wrap",
           });
         } else {
           // Hide labels for all non-person nodes (unless they were clicked/expanded)
@@ -1173,7 +1211,7 @@ watch(showNodeLabels, (newValue) => {
             node.style({
               width: 20,
               height: 20,
-              label: ""
+              label: "",
             });
           }
         }
@@ -1185,18 +1223,18 @@ watch(showNodeLabels, (newValue) => {
 // Helper function to calculate optimal node size based on text content
 const calculateOptimalNodeSize = (label) => {
   if (!label) return { width: 20, height: 20 };
-  
+
   // Base font size is 6px as defined in the styles
   const fontSize = 6;
   const lineHeight = fontSize * 1.2; // Standard line height ratio
-  
+
   // Estimate text width (rough approximation for monospace-like font)
   const avgCharWidth = fontSize * 0.6; // Approximate character width
   const textWidth = label.length * avgCharWidth;
-  
+
   // Calculate optimal dimensions - keep nodes circular
   let size;
-  
+
   if (textWidth <= 40) {
     // Short text (1-2 words) - small circular nodes
     size = Math.max(40, textWidth + 20);
@@ -1210,17 +1248,17 @@ const calculateOptimalNodeSize = (label) => {
     // Very long text (7+ words) - largest circular nodes with text wrapping
     size = Math.max(80, Math.min(100, textWidth * 0.4 + 40)); // Scale down long text impact
   }
-  
+
   // Ensure minimum and maximum sizes
   size = Math.max(30, Math.min(100, size));
-  
+
   // Return circular dimensions
   return { width: size, height: size };
 };
 
 onUnmounted(() => {
   // Clean up all cytoscape instances
-  cyInstances.value.forEach(cy => {
+  cyInstances.value.forEach((cy) => {
     if (cy) {
       cy.destroy();
     }
@@ -1230,7 +1268,13 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="interactive-cytoscape-view" :class="{ 'dark-mode': appStore.isDarkMode, 'fullscreen': appStore.isFullscreen }">
+  <div
+    class="interactive-cytoscape-view"
+    :class="{
+      'dark-mode': appStore.isDarkMode,
+      fullscreen: appStore.isFullscreen,
+    }"
+  >
     <div class="cytoscape-container">
       <div ref="containerRef" class="cy-container"></div>
     </div>

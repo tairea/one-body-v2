@@ -32,14 +32,14 @@ export async function imageFileToDataUrl(file) {
     // Calculate source rectangle for cropping (object-fit: cover behavior)
     const sourceWidth = bitmap.width;
     const sourceHeight = bitmap.height;
-    
+
     // Calculate the crop dimensions to maintain aspect ratio
     const aspectRatio = sourceWidth / sourceHeight;
     let sourceX = 0;
     let sourceY = 0;
     let cropWidth = sourceWidth;
     let cropHeight = sourceHeight;
-    
+
     if (aspectRatio > 1) {
       // Image is wider than tall - crop the sides
       cropHeight = sourceHeight;
@@ -56,8 +56,14 @@ export async function imageFileToDataUrl(file) {
     // Draw the cropped image to fill the entire canvas
     ctx.drawImage(
       bitmap,
-      sourceX, sourceY, cropWidth, cropHeight,  // Source rectangle
-      0, 0, side, side                          // Destination rectangle
+      sourceX,
+      sourceY,
+      cropWidth,
+      cropHeight, // Source rectangle
+      0,
+      0,
+      side,
+      side, // Destination rectangle
     );
 
     return canvas.toDataURL("image/jpeg");

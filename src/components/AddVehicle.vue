@@ -19,11 +19,7 @@
         <!-- Dialog Header -->
         <v-card-title class="dialog-header">
           🚀
-          {{
-            editMode
-              ? "Edit Vehicle"
-              : "Add a vehicle (org/project/method)"
-          }}
+          {{ editMode ? "Edit Vehicle" : "Add a vehicle (org/project/method)" }}
         </v-card-title>
         <p class="step-description">
           Share with us one of the main things you're working on.
@@ -42,7 +38,10 @@
           <!-- Title Input -->
           <div class="form-group">
             <label for="vehicle-title"
-              >Title: <small class="form-hint">Give a title for this thing you do (required)</small></label
+              >Title:
+              <small class="form-hint"
+                >Give a title for this thing you do (required)</small
+              ></label
             >
 
             <input
@@ -57,7 +56,11 @@
           <!-- Description Input -->
           <div class="form-group">
             <label for="vehicle-description mb-0"
-              >Description: <small class="form-hint">What is it? What is it about? What do you do there? Why is it cool? (optional)</small></label
+              >Description:
+              <small class="form-hint"
+                >What is it? What is it about? What do you do there? Why is it
+                cool? (optional)</small
+              ></label
             >
             <!-- <small class="form-hint">You can be as specific or as general as you want</small> -->
             <textarea

@@ -308,9 +308,15 @@ export default {
     },
     // Computed property to get the profile image URL when editing
     profileImageUrl() {
-      if (this.editingPerson && this.editingPerson.hasPhoto && this.editingPerson.id) {
+      if (
+        this.editingPerson &&
+        this.editingPerson.hasPhoto &&
+        this.editingPerson.id
+      ) {
         // Type assertion to ensure editingPerson has the required structure
-        const person = /** @type {{ id: number, hasPhoto: boolean }} */ (this.editingPerson);
+        const person = /** @type {{ id: number, hasPhoto: boolean }} */ (
+          this.editingPerson
+        );
         return getPhotoUrl(person, location.href);
       }
       return this.profileImage;
@@ -609,7 +615,7 @@ export default {
 }
 
 // Override Vuetify's pointer-events restriction for disabled stepper items
-.custom-stepper .v-stepper-item[disabled], 
+.custom-stepper .v-stepper-item[disabled],
 .custom-stepper .v-stepper-item--disabled {
   pointer-events: auto !important;
 }

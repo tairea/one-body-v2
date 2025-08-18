@@ -76,7 +76,9 @@ export function addPerson(person) {
     valuesList: jsonToBlob(person.values || []),
     visionsList: jsonToBlob(person.visions || []),
     vehiclesList: jsonToBlob(person.vehicles || []),
-    personsGraphSnapshot: person.personsGraphSnapshot ? jsonToBlob(person.personsGraphSnapshot) : null,
+    personsGraphSnapshot: person.personsGraphSnapshot
+      ? jsonToBlob(person.personsGraphSnapshot)
+      : null,
   });
   assert(
     result &&
@@ -140,7 +142,9 @@ export function updatePerson(person, secretKey) {
         valuesList: jsonToBlob(person.values || []),
         visionsList: jsonToBlob(person.visions || []),
         vehiclesList: jsonToBlob(person.vehicles || []),
-        personsGraphSnapshot: person.personsGraphSnapshot ? jsonToBlob(person.personsGraphSnapshot) : null,
+        personsGraphSnapshot: person.personsGraphSnapshot
+          ? jsonToBlob(person.personsGraphSnapshot)
+          : null,
       });
 
       return { id: person.id, secretKey: row.secretKey };
@@ -167,7 +171,9 @@ export function readPeople() {
       values: /** @type {any} */ (blobToJson(databasePerson.valuesList)),
       visions: /** @type {any} */ (blobToJson(databasePerson.visionsList)),
       vehicles: /** @type {any} */ (blobToJson(databasePerson.vehiclesList)),
-      personsGraphSnapshot: databasePerson.personsGraphSnapshot ? /** @type {any} */ (blobToJson(databasePerson.personsGraphSnapshot)) : undefined,
+      personsGraphSnapshot: databasePerson.personsGraphSnapshot
+        ? /** @type {any} */ (blobToJson(databasePerson.personsGraphSnapshot))
+        : undefined,
     }),
   );
 }

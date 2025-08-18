@@ -35,7 +35,7 @@ export const useAppStore = defineStore("app", {
     cytoscapeSvg: null, // Store SVG reference for cleanup
     /** @type {null | (() => unknown)} */
     concentricZoomOut: null,
-    
+
     // Node label visibility state
     showNodeLabels: false,
 
@@ -143,7 +143,7 @@ export const useAppStore = defineStore("app", {
     setConcentricZoomOut(zoomOutFunction) {
       this.concentricZoomOut = zoomOutFunction;
     },
-    
+
     // Node label visibility actions
     toggleNodeLabels() {
       this.showNodeLabels = !this.showNodeLabels;
@@ -171,7 +171,7 @@ export const useAppStore = defineStore("app", {
     // setCurrentView(view) {
     //   this.isCurrentView = view
     // },
-    
+
     /**
      * Add a new person to the store or update existing one
      * @param {Person} personData
@@ -182,23 +182,25 @@ export const useAppStore = defineStore("app", {
         this.people = [personData];
       } else {
         // Check if person already exists
-        const existingIndex = this.people.findIndex(p => p.id === personData.id);
+        const existingIndex = this.people.findIndex(
+          (p) => p.id === personData.id,
+        );
         if (existingIndex !== -1) {
           // Update existing person by creating new array
           this.people = [
             ...this.people.slice(0, existingIndex),
             personData,
-            ...this.people.slice(existingIndex + 1)
+            ...this.people.slice(existingIndex + 1),
           ];
         } else {
           // Add new person
           this.people = [...this.people, personData];
         }
       }
-      
+
       // Always set as current person for immediate access
       this.person = personData;
-      
+
       // Save to localStorage for persistence
       this.savePersonToStorage(personData);
     },
@@ -211,20 +213,22 @@ export const useAppStore = defineStore("app", {
     updateCurrentPerson(personData) {
       // Update the current person
       this.person = personData;
-      
+
       // Also update in people array if it exists
       if (this.people !== null) {
-        const existingIndex = this.people.findIndex(p => p.id === personData.id);
+        const existingIndex = this.people.findIndex(
+          (p) => p.id === personData.id,
+        );
         if (existingIndex !== -1) {
           // Update existing person by creating new array
           this.people = [
             ...this.people.slice(0, existingIndex),
             personData,
-            ...this.people.slice(existingIndex + 1)
+            ...this.people.slice(existingIndex + 1),
           ];
         }
       }
-      
+
       // Save to localStorage for persistence
       this.savePersonToStorage(personData);
     },
@@ -236,9 +240,9 @@ export const useAppStore = defineStore("app", {
      */
     savePersonToStorage(personData) {
       try {
-        localStorage.setItem('currentPerson', JSON.stringify(personData));
+        localStorage.setItem("currentPerson", JSON.stringify(personData));
       } catch (error) {
-        console.warn('Failed to save person to localStorage:', error);
+        console.warn("Failed to save person to localStorage:", error);
       }
     },
 
@@ -248,12 +252,12 @@ export const useAppStore = defineStore("app", {
      */
     loadPersonFromStorage() {
       try {
-        const stored = localStorage.getItem('currentPerson');
+        const stored = localStorage.getItem("currentPerson");
         if (stored) {
           return JSON.parse(stored);
         }
       } catch (error) {
-        console.warn('Failed to load person from localStorage:', error);
+        console.warn("Failed to load person from localStorage:", error);
       }
       return null;
     },
@@ -269,7 +273,7 @@ export const useAppStore = defineStore("app", {
         // Also add to people array if it's not already there
         if (this.people === null) {
           this.people = [storedPerson];
-        } else if (!this.people.find(p => p.id === storedPerson.id)) {
+        } else if (!this.people.find((p) => p.id === storedPerson.id)) {
           this.people = [...this.people, storedPerson];
         }
       }
@@ -284,16 +288,16 @@ export const useAppStore = defineStore("app", {
       if (this.person) {
         const updatedPerson = {
           ...this.person,
-          personsGraphSnapshot: graphData
+          personsGraphSnapshot: graphData,
         };
         this.updateCurrentPerson(updatedPerson);
-        
+
         // Also save to database if we have the person's ID and secretKey
         if (this.person.id) {
           try {
             await this.savePersonToDatabase(updatedPerson);
           } catch (error) {
-            console.warn('Failed to save graph snapshot to database:', error);
+            console.warn("Failed to save graph snapshot to database:", error);
           }
         }
       }
@@ -306,13 +310,17 @@ export const useAppStore = defineStore("app", {
      */
     async savePersonToDatabase(personData) {
       if (!personData.id) {
-        throw new Error('Cannot save to database: missing ID');
+        throw new Error("Cannot save to database: missing ID");
       }
 
       // Get secretKey from localStorage
-      const personReference = JSON.parse(localStorage.getItem("personReference"));
+      const personReference = JSON.parse(
+        localStorage.getItem("personReference"),
+      );
       if (!personReference || !personReference.secretKey) {
-        throw new Error('Cannot save to database: missing secretKey in localStorage');
+        throw new Error(
+          "Cannot save to database: missing secretKey in localStorage",
+        );
       }
 
       const updatePersonUrl = new URL("/api/person", window.location.href);
