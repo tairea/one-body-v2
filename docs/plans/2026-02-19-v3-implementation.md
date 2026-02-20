@@ -14,62 +14,287 @@
 
 ---
 
-## Task 1: Supabase CLI Setup + Project Creation
+## Task 1: Supabase CLI Setup + TUI Setup Script
+
+**Note:** `npm install supabase --save-dev`, `supabase init`, and the initial `.env.sample` update were already completed in a prior commit (dab7c4d). This task adds the interactive TUI setup script that community organizers run to bootstrap their instance.
 
 **Files:**
-- Modify: `.env.sample`
-- Create: `.env` (not committed)
+- Create: `scripts/setup.js`
+- Modify: `.env.sample` (add community branding vars)
+- Modify: `package.json` (add `"setup"` script)
 
-### Step 1: Install Supabase CLI
+### Overview
 
-```bash
-npm install supabase --save-dev
-```
+Community organizers run `npm run setup` once. The script:
+1. Prompts for community branding (name, tagline, logo file path)
+2. Handles Supabase login (opens browser if not already authenticated)
+3. Lists orgs → user picks one
+4. Prompts for project name, DB password (or auto-generates), region
+5. Creates the Supabase project via CLI
+6. Waits for project to become healthy
+7. Fetches API keys automatically
+8. Links CLI to project
+9. Applies migrations (`supabase db push`)
+10. Uploads community logo to `community-assets` Storage bucket
+11. Writes `.env` with all values populated
 
-### Step 2: Login to Supabase
-
-```bash
-npx supabase login
-```
-
-This opens a browser tab. Complete the OAuth flow. Come back to the terminal.
-
-### Step 3: Initialize Supabase in the project
-
-Run from the worktree root:
-
-```bash
-npx supabase init
-```
-
-This creates a `supabase/` directory with `config.toml`.
-
-### Step 4: Create a Supabase project
-
-Go to https://supabase.com/dashboard/projects and:
-1. Click "New project"
-2. Name it `one-body-v3`
-3. Set a strong database password (save it)
-4. Choose a region close to your users
-5. Click "Create new project" — wait ~2 minutes
-
-### Step 5: Get project credentials
-
-In the Supabase dashboard:
-- Go to **Project Settings → API**
-- Copy: **Project URL**, **anon public key**, **service_role key**
-- Go to **Project Settings → General**
-- Copy: **Reference ID** (the project ref)
-
-### Step 6: Link CLI to the project
+### Step 1: Install @inquirer/prompts
 
 ```bash
-npx supabase link --project-ref <your-project-ref>
+npm install @inquirer/prompts
 ```
 
-Enter the database password when prompted.
+### Step 2: Create scripts/setup.js
 
-### Step 7: Update .env.sample and create .env
+```js
+// @ts-check
+import { input, password, select } from "@inquirer/prompts";
+import { createClient } from "@supabase/supabase-js";
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+
+// ─── CLI helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * Run a supabase CLI command and return parsed JSON output.
+ * @param {string[]} args
+ * @returns {any}
+ */
+function supabaseJSON(args) {
+  const result = spawnSync("npx", ["supabase", ...args, "--output", "json"], {
+    encoding: "utf8",
+    stdio: ["pipe", "pipe", "pipe"],
+  });
+  if (result.status !== 0) {
+    throw new Error(result.stderr || `supabase ${args[0]} failed`);
+  }
+  return JSON.parse(result.stdout);
+}
+
+/**
+ * Run a supabase CLI command with stdio inherited (interactive).
+ * @param {string[]} args
+ */
+function supabaseInteractive(args) {
+  const result = spawnSync("npx", ["supabase", ...args], {
+    stdio: "inherit",
+    encoding: "utf8",
+  });
+  if (result.status !== 0) {
+    throw new Error(`supabase ${args[0]} failed`);
+  }
+}
+
+function isLoggedIn() {
+  try {
+    supabaseJSON(["orgs", "list"]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** @returns {string} */
+function generatePassword() {
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+/**
+ * Poll until project status is ACTIVE_HEALTHY or timeout.
+ * @param {string} projectRef
+ */
+async function waitForProject(projectRef) {
+  const maxMs = 180_000;
+  const start = Date.now();
+  process.stdout.write("  Waiting for project");
+  while (Date.now() - start < maxMs) {
+    await new Promise((r) => setTimeout(r, 5000));
+    process.stdout.write(".");
+    try {
+      const projects = supabaseJSON(["projects", "list"]);
+      const project = projects.find((p) => p.id === projectRef);
+      if (project?.status === "ACTIVE_HEALTHY") {
+        console.log(" ready!");
+        return;
+      }
+    } catch {
+      // keep polling
+    }
+  }
+  throw new Error("Project did not become ready within 3 minutes.");
+}
+
+// ─── Main ─────────────────────────────────────────────────────────────────────
+
+async function main() {
+  console.log("\n✦ One Body Community Setup\n");
+
+  // ── 1. Community branding ────────────────────────────────────────────────
+  console.log("Community branding\n");
+
+  const communityName = await input({
+    message: "Community name:",
+    default: "My Community",
+  });
+
+  const communityTagline = await input({
+    message: "Community tagline:",
+    default: "Connected by purpose",
+  });
+
+  const logoPath = await input({
+    message: "Path to community logo image (leave blank to skip):",
+    default: "",
+  });
+
+  if (logoPath && !existsSync(logoPath)) {
+    console.error(`\nLogo file not found: ${logoPath}`);
+    process.exit(1);
+  }
+
+  // ── 2. Supabase auth ─────────────────────────────────────────────────────
+  console.log("\nSupabase setup\n");
+
+  if (!isLoggedIn()) {
+    console.log("Opening browser for Supabase login...\n");
+    supabaseInteractive(["login"]);
+  } else {
+    console.log("✓ Already logged in to Supabase");
+  }
+
+  // ── 3. Organisation ──────────────────────────────────────────────────────
+  const orgs = supabaseJSON(["orgs", "list"]);
+  let orgId;
+  if (orgs.length === 1) {
+    orgId = orgs[0].id;
+    console.log(`✓ Organisation: ${orgs[0].name}`);
+  } else {
+    orgId = await select({
+      message: "Select organisation:",
+      choices: orgs.map((o) => ({ name: o.name, value: o.id })),
+    });
+  }
+
+  // ── 4. Project config ────────────────────────────────────────────────────
+  const projectName = await input({
+    message: "Supabase project name:",
+    default: "one-body",
+  });
+
+  const rawPassword = await password({
+    message: "Database password (press Enter to auto-generate):",
+    mask: "*",
+  });
+  const dbPassword = rawPassword || generatePassword();
+
+  const region = await select({
+    message: "Region:",
+    choices: [
+      { name: "US East — N. Virginia", value: "us-east-1" },
+      { name: "US West — Oregon", value: "us-west-1" },
+      { name: "EU West — Ireland", value: "eu-west-1" },
+      { name: "EU Central — Frankfurt", value: "eu-central-1" },
+      { name: "AP Southeast — Singapore", value: "ap-southeast-1" },
+      { name: "AP Northeast — Tokyo", value: "ap-northeast-1" },
+    ],
+  });
+
+  // ── 5. Create project ────────────────────────────────────────────────────
+  console.log("\nCreating project...");
+  const project = supabaseJSON([
+    "projects",
+    "create",
+    projectName,
+    "--org-id",
+    orgId,
+    "--db-password",
+    dbPassword,
+    "--region",
+    region,
+  ]);
+  const projectRef = project.id;
+  console.log(`✓ Project created: ${projectRef}`);
+
+  await waitForProject(projectRef);
+
+  // ── 6. Fetch API keys ────────────────────────────────────────────────────
+  console.log("Fetching API keys...");
+  const keys = supabaseJSON(["projects", "api-keys", "--project-ref", projectRef]);
+  const anonKey = keys.find((k) => k.name === "anon")?.api_key;
+  const serviceKey = keys.find((k) => k.name === "service_role")?.api_key;
+  const supabaseUrl = `https://${projectRef}.supabase.co`;
+  console.log("✓ API keys fetched");
+
+  // ── 7. Link CLI ──────────────────────────────────────────────────────────
+  console.log("Linking CLI...");
+  spawnSync(
+    "npx",
+    ["supabase", "link", "--project-ref", projectRef, "--password", dbPassword],
+    { stdio: "inherit", encoding: "utf8" }
+  );
+  console.log("✓ CLI linked");
+
+  // ── 8. Apply migrations ──────────────────────────────────────────────────
+  console.log("Applying database migrations...");
+  supabaseInteractive(["db", "push"]);
+  console.log("✓ Migrations applied");
+
+  // ── 9. Upload community logo ─────────────────────────────────────────────
+  let logoUrl = "";
+  if (logoPath) {
+    console.log("Uploading community logo...");
+    const client = createClient(supabaseUrl, serviceKey);
+    const file = readFileSync(logoPath);
+    const ext = logoPath.split(".").pop();
+    const storagePath = `logo.${ext}`;
+    const { error } = await client.storage
+      .from("community-assets")
+      .upload(storagePath, file, { upsert: true });
+    if (error) {
+      console.warn(`  Warning: logo upload failed — ${error.message}`);
+    } else {
+      logoUrl = `${supabaseUrl}/storage/v1/object/public/community-assets/${storagePath}`;
+      console.log("✓ Logo uploaded");
+    }
+  }
+
+  // ── 10. Write .env ───────────────────────────────────────────────────────
+  const lines = [
+    `VITE_SUPABASE_URL=${supabaseUrl}`,
+    `VITE_SUPABASE_ANON_KEY=${anonKey}`,
+    `SUPABASE_SERVICE_ROLE_KEY=${serviceKey}`,
+    `VITE_COMMUNITY_NAME=${communityName}`,
+    `VITE_COMMUNITY_TAGLINE=${communityTagline}`,
+    logoUrl ? `VITE_COMMUNITY_LOGO_URL=${logoUrl}` : `# VITE_COMMUNITY_LOGO_URL=`,
+    `# OPENCAGE_API_KEY=  ← add your key from opencagedata.com`,
+  ];
+  writeFileSync(".env", lines.join("\n") + "\n");
+  console.log("✓ .env written");
+
+  // ── Done ─────────────────────────────────────────────────────────────────
+  console.log(`
+✨ Your community is ready!
+
+  Community:  ${communityName}
+  Project:    ${supabaseUrl}
+
+Next steps:
+  1. Add your OPENCAGE_API_KEY to .env  (geocoding for location fields)
+     Get a free key at: https://opencagedata.com
+  2. Run:   npm run dev
+  3. Visit: http://localhost:5173
+`);
+}
+
+main().catch((err) => {
+  console.error("\nSetup failed:", err.message);
+  process.exit(1);
+});
+```
+
+### Step 3: Update .env.sample
 
 Replace the contents of `.env.sample`:
 
@@ -77,16 +302,33 @@ Replace the contents of `.env.sample`:
 VITE_SUPABASE_URL=https://<project-ref>.supabase.co
 VITE_SUPABASE_ANON_KEY=<anon-public-key>
 SUPABASE_SERVICE_ROLE_KEY=<service-role-key>
+VITE_COMMUNITY_NAME=<your-community-name>
+VITE_COMMUNITY_TAGLINE=<your-community-tagline>
+VITE_COMMUNITY_LOGO_URL=<public-logo-url-or-leave-blank>
 OPENCAGE_API_KEY=<api-key>
 ```
 
-Create `.env` with real values (already in `.gitignore`).
+### Step 4: Add setup script to package.json
 
-### Step 8: Commit
+In `package.json`, add to the `scripts` block:
+
+```json
+"setup": "node scripts/setup.js",
+```
+
+### Step 5: Run tests
 
 ```bash
-git add supabase/ .env.sample package.json package-lock.json
-git commit -m "feat: add Supabase CLI + project init"
+npm test
+```
+
+Expected: 13 tests still passing.
+
+### Step 6: Commit
+
+```bash
+git add scripts/setup.js .env.sample package.json package-lock.json
+git commit -m "feat: add TUI community setup script"
 ```
 
 ---
@@ -157,6 +399,14 @@ alter table public.recommendations enable row level security;
 
 create policy "public can read recommendations"
   on public.recommendations for select using (true);
+
+-- Storage: community-assets bucket (public read, set up by setup script)
+insert into storage.buckets (id, name, public)
+  values ('community-assets', 'community-assets', true);
+
+create policy "public can view community assets"
+  on storage.objects for select
+  using (bucket_id = 'community-assets');
 
 -- Storage: profile-photos bucket (public read)
 insert into storage.buckets (id, name, public)
@@ -583,6 +833,11 @@ git commit -m "feat: update Pinia store for Supabase auth and data fetching"
 
 ### Step 1: Create the auth page
 
+Community branding is read from Vite env vars (`import.meta.env`):
+- `VITE_COMMUNITY_NAME` — shown as the page heading
+- `VITE_COMMUNITY_TAGLINE` — shown below the name
+- `VITE_COMMUNITY_LOGO_URL` — shown as a logo above the name (optional)
+
 Create `src/views/Auth.vue`:
 
 ```vue
@@ -593,6 +848,10 @@ import { useRouter } from "vue-router";
 import { supabase } from "../lib/supabase.js";
 
 const router = useRouter();
+
+const communityName = import.meta.env.VITE_COMMUNITY_NAME || "One Body";
+const communityTagline = import.meta.env.VITE_COMMUNITY_TAGLINE || "";
+const communityLogoUrl = import.meta.env.VITE_COMMUNITY_LOGO_URL || "";
 
 /** @type {import("vue").Ref<"signin" | "signup" | "magic">} */
 const mode = ref("signin");
@@ -658,8 +917,24 @@ function submit() {
 <template>
   <v-app>
     <v-main class="d-flex align-center justify-center" style="min-height: 100vh">
-      <v-card width="420" class="pa-6">
-        <v-card-title class="text-h5 mb-4">One Body</v-card-title>
+      <v-card width="420" class="pa-6 text-center">
+
+        <!-- Community logo -->
+        <div v-if="communityLogoUrl" class="mb-4">
+          <v-img
+            :src="communityLogoUrl"
+            max-height="80"
+            contain
+          />
+        </div>
+
+        <!-- Community name + tagline -->
+        <v-card-title class="text-h5 justify-center">
+          {{ communityName }}
+        </v-card-title>
+        <v-card-subtitle v-if="communityTagline" class="mb-6">
+          {{ communityTagline }}
+        </v-card-subtitle>
 
         <v-btn-toggle v-model="mode" mandatory divided class="mb-6 w-100">
           <v-btn value="signin" size="small">Sign In</v-btn>
@@ -711,7 +986,7 @@ function submit() {
 
 ### Step 2: Manual test
 
-Run `npm run dev:vite` and visit `http://localhost:5173`. You should see the auth card with three mode buttons.
+Run `npm run dev` and visit `http://localhost:5173`. You should see the auth card with community name, optional tagline, optional logo, and three mode buttons.
 
 ### Step 3: Commit
 
