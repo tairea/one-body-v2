@@ -4,6 +4,9 @@ import { supabase } from "../lib/supabase.js";
 import { rowToPerson, rowToRecommendation } from "../lib/mappers.js";
 /** @import { Person, Recommendation } from "../types.d.ts" */
 
+/** @type {string} */
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+
 export const useAppStore = defineStore("app", {
   state: () => ({
     // ── Auth ─────────────────────────────────────────────────────────────────
@@ -64,7 +67,7 @@ export const useAppStore = defineStore("app", {
     // ── Data fetching ─────────────────────────────────────────────────────────
 
     async fetchGraph() {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = SUPABASE_URL;
       const [{ data: peopleRows, error: peopleErr }, { data: recRows, error: recErr }] =
         await Promise.all([
           supabase.from("people").select("*"),
@@ -78,7 +81,7 @@ export const useAppStore = defineStore("app", {
 
     async fetchMyPerson() {
       if (!this.authUser) return;
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = SUPABASE_URL;
       const { data, error } = await supabase
         .from("people")
         .select("*")
@@ -91,7 +94,7 @@ export const useAppStore = defineStore("app", {
     // ── Realtime ──────────────────────────────────────────────────────────────
 
     subscribeToPersonUpdates() {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseUrl = SUPABASE_URL;
       supabase
         .channel("people-positions")
         .on(

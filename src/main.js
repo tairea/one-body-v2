@@ -4,7 +4,6 @@ import "./style.css";
 import App from "./App.vue";
 import { createPinia } from "pinia";
 import router from "./router/index.js";
-import { useAppStore } from "./stores/app.js";
 
 // Vuetify
 import "vuetify/styles";
@@ -23,9 +22,5 @@ const pinia = createPinia();
 app.use(pinia);
 app.use(router);
 app.use(vuetify);
-
-// Initialize store from localStorage after pinia is set up
-const appStore = useAppStore();
-appStore.initializeFromStorage();
 
 app.mount("#app");
