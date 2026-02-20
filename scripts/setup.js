@@ -175,16 +175,15 @@ async function main() {
   const keys = supabaseJSON(["projects", "api-keys", "--project-ref", projectRef]);
   const anonKey = keys.find((k) => k.name === "anon")?.api_key;
   const serviceKey = keys.find((k) => k.name === "service_role")?.api_key;
+  if (!anonKey || !serviceKey) {
+    throw new Error("Could not find anon or service_role key in API response. Check the Supabase dashboard.");
+  }
   const supabaseUrl = `https://${projectRef}.supabase.co`;
   console.log("✓ API keys fetched");
 
   // ── 7. Link CLI ──────────────────────────────────────────────────────────
   console.log("Linking CLI...");
-  spawnSync(
-    "npx",
-    ["supabase", "link", "--project-ref", projectRef, "--password", dbPassword],
-    { stdio: "inherit", encoding: "utf8" }
-  );
+  supabaseInteractive(["link", "--project-ref", projectRef, "--password", dbPassword]);
   console.log("✓ CLI linked");
 
   // ── 8. Apply migrations ──────────────────────────────────────────────────
@@ -200,9 +199,18 @@ async function main() {
     const file = readFileSync(logoPath);
     const ext = logoPath.split(".").pop();
     const storagePath = `logo.${ext}`;
+    const mimeTypes = {
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      gif: "image/gif",
+      webp: "image/webp",
+      svg: "image/svg+xml",
+    };
+    const contentType = mimeTypes[ext?.toLowerCase()] ?? "application/octet-stream";
     const { error } = await client.storage
       .from("community-assets")
-      .upload(storagePath, file, { upsert: true });
+      .upload(storagePath, file, { upsert: true, contentType });
     if (error) {
       console.warn(`  Warning: logo upload failed — ${error.message}`);
     } else {
