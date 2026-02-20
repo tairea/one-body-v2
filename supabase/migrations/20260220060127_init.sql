@@ -39,7 +39,8 @@ create policy "owner can insert their profile"
 
 create policy "owner can update their profile"
   on public.people for update
-  using (auth.uid() = user_id);
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
 
 create policy "owner can delete their profile"
   on public.people for delete
@@ -60,6 +61,7 @@ create policy "public can view community assets"
   using (bucket_id = 'community-assets');
 
 -- Storage: profile-photos bucket (public read)
+-- Convention: photos stored at {user_id}/avatar (no extension; mime type set via contentType)
 insert into storage.buckets (id, name, public)
   values ('profile-photos', 'profile-photos', true);
 
@@ -76,6 +78,17 @@ create policy "owner can upload their photo"
 
 create policy "owner can update their photo"
   on storage.objects for update
+  using (
+    bucket_id = 'profile-photos'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  )
+  with check (
+    bucket_id = 'profile-photos'
+    and auth.uid()::text = (storage.foldername(name))[1]
+  );
+
+create policy "owner can delete their photo"
+  on storage.objects for delete
   using (
     bucket_id = 'profile-photos'
     and auth.uid()::text = (storage.foldername(name))[1]
