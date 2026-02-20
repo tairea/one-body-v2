@@ -1,17 +1,17 @@
 <script setup>
 // @ts-check
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
+import { useRouter } from "vue-router";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import GlobeGL from "../components/GlobeGL.vue";
 import HomeLeftPanel from "../components/HomeLeftPanel.vue";
 import HomeRightPanel from "../components/HomeRightPanel.vue";
-import AddPersonDialog from "../components/AddPersonDialog.vue";
 import { useAppStore } from "../stores/app";
 import AiRecommendations from "../components/AiRecommendations.vue";
 import InteractiveCytoscapeMany from "../components/InteractiveCytoscapeMany.vue";
-/** @import { Person, Recommendation } from "../types.d.ts" */
 
 const appStore = useAppStore();
+const router = useRouter();
 const cytoscapeRef = ref(null);
 const homeLeftPanelRef = ref(null);
 const aiRecommendationsRef = ref(null);
@@ -24,35 +24,17 @@ const isSavingPositions = ref(false);
 const clickedPersonName = ref("");
 const clickedPersonEmail = ref("");
 
-/**
- * @internal
- * @typedef {object} GraphData
- * @prop {ReadonlyArray<Person>} people
- * @prop {ReadonlyArray<Recommendation>} recommendations
- */
-
-/** @returns {Promise<GraphData>} */
-const fetchGraphData = async () => {
-  // const graphUrl = new URL("/api/graph", location.href);
-  const graphUrl = new URL("/api/graph", location.href);
-  const response = await fetch(graphUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch graph with status ${response.status}`);
-  }
-  return await response.json();
-};
-
 // Handle node position changes from the cytoscape component
 const handleNodePositionChanged = () => {
   hasNodePositionChanges.value = true;
 };
 
-// Handle saving graph snapshot
+// Handle saving graph snapshot — triggered by "Save positions" button
 const handleSaveNodePositions = async () => {
   if (!cytoscapeRef.value) return;
-
   try {
     isSavingPositions.value = true;
+    // saveGraphSnapshot builds the snapshot and emits graphSnapshotSaved
     await cytoscapeRef.value.saveGraphSnapshot();
     hasNodePositionChanges.value = false;
   } catch (error) {
@@ -60,6 +42,11 @@ const handleSaveNodePositions = async () => {
   } finally {
     isSavingPositions.value = false;
   }
+};
+
+// Persist snapshot to Supabase when cytoscape emits it
+const handleGraphSnapshotSaved = async (graphData) => {
+  await appStore.saveGraphSnapshot(graphData);
 };
 
 // Handle zoom state changes from cytoscape
@@ -70,12 +57,12 @@ const handleZoomStateChanged = (zoomState) => {
 
   // Update clicked person data
   if (zoomState.isZoomed && zoomState.personId && appStore.people) {
-    // Extract numeric ID from personId (e.g., "person-123" -> 123)
-    const numericId = parseInt(zoomState.personId.replace("person-", ""));
-    const person = appStore.people.find((p) => p.id === numericId);
+    // personId format: "person-{UUID}"
+    const personId = zoomState.personId.replace("person-", "");
+    const person = appStore.people.find((p) => p.id === personId);
     if (person) {
       clickedPersonName.value = person.name || "";
-      clickedPersonEmail.value = person.email || "";
+      clickedPersonEmail.value = "";
     }
   } else {
     // Reset when zooming back
@@ -93,15 +80,20 @@ const handleZoomBack = () => {
 
 // Handle edge view back request from left panel
 const handleEdgeViewBack = () => {
-  // Reset the edge view in the AI recommendations component
   if (aiRecommendationsRef.value) {
     aiRecommendationsRef.value.resetEdgeView();
   }
 };
 
 onMounted(async () => {
-  const { people, recommendations } = await fetchGraphData();
-  appStore.setGraph(people, recommendations);
+  await appStore.fetchGraph();
+  await appStore.fetchMyPerson();
+  appStore.subscribeToPersonUpdates();
+  appStore.initializeDarkMode();
+});
+
+onUnmounted(() => {
+  appStore.unsubscribeFromPersonUpdates();
 });
 </script>
 
@@ -115,6 +107,15 @@ onMounted(async () => {
     }"
   >
     <DarkModeToggle />
+    <v-btn
+      class="edit-profile-btn"
+      variant="outlined"
+      size="small"
+      prepend-icon="mdi-account-edit"
+      @click="router.push('/profile')"
+    >
+      Edit Profile
+    </v-btn>
 
     <!-- Close Fullscreen Button -->
     <div
@@ -156,7 +157,7 @@ onMounted(async () => {
         :people="appStore.people"
         :class="{ active: appStore.activeComponent === 'cytoscape' }"
         @nodePositionChanged="handleNodePositionChanged"
-        @graphSnapshotSaved="handleSaveNodePositions"
+        @graphSnapshotSaved="handleGraphSnapshotSaved"
         @zoomStateChanged="handleZoomStateChanged"
       />
       <GlobeGL
@@ -171,13 +172,6 @@ onMounted(async () => {
       />
     </div>
 
-    <!-- AddPersonDialog - positioned outside components-container for proper overlay -->
-    <AddPersonDialog
-      v-if="appStore.isAddPersonDialogOpen"
-      :editing-person="appStore.editingPerson"
-      @close="appStore.hideAddPersonDialog()"
-      @save="appStore.hideAddPersonDialog()"
-    />
   </div>
   <div class="app-container" v-else>Coming soon...</div>
 </template>
@@ -198,6 +192,13 @@ onMounted(async () => {
   &.fullscreen {
     padding: 0;
   }
+}
+
+.edit-profile-btn {
+  position: fixed;
+  top: 15px;
+  right: 60px;
+  z-index: 3000;
 }
 
 // Close fullscreen button
