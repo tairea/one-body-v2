@@ -1,80 +1,138 @@
 // @ts-check
 import { defineStore } from "pinia";
+import { supabase } from "../lib/supabase.js";
+import { rowToPerson, rowToRecommendation } from "../lib/mappers.js";
 /** @import { Person, Recommendation } from "../types.d.ts" */
 
 export const useAppStore = defineStore("app", {
   state: () => ({
-    // Global state
-    /**
-     * All people, or null if loading.
-     * @type {null | Readonly<Person[]>}
-     */
+    // ── Auth ─────────────────────────────────────────────────────────────────
+    /** @type {import("@supabase/supabase-js").User | null} */
+    authUser: null,
+    authLoading: true,
+
+    // ── My profile ───────────────────────────────────────────────────────────
+    /** @type {Person | null} */
+    myPerson: null,
+
+    // ── Graph data ───────────────────────────────────────────────────────────
+    /** @type {null | Readonly<Person[]>} */
     people: null,
-    /**
-     * All recommendations, or null if loading.
-     * @type {null | Readonly<Recommendation[]>}
-     */
+    /** @type {null | Readonly<Recommendation[]>} */
     recommendations: null,
-    /**
-     * Whether the user is viewing an edge collaboration.
-     * @type {boolean}
-     */
+
+    // ── UI state (unchanged from v2) ─────────────────────────────────────────
     isEdgeView: false,
-    person: null,
-
-    // Dark mode state
     isDarkMode: false,
-
-    // Fullscreen state
     isFullscreen: false,
-
-    // Component state
     /** @type {null | "globe" | "cytoscape" | "airecommendations"} */
     activeComponent: "cytoscape",
-
-    // Profile view state
     isViewingProfile: false,
-    currentPersonData: null, // Store the clicked person's data
+    currentPersonData: null,
     /** @type {null | "values" | "visions" | "vehicles"} */
     activeProfileSection: null,
-
-    // Cytoscape state
     cytoscapeData: null,
     cytoscapeInitialized: false,
     cytoscapeInstance: null,
-    cytoscapeSvg: null, // Store SVG reference for cleanup
+    cytoscapeSvg: null,
     /** @type {null | (() => unknown)} */
     concentricZoomOut: null,
-
-    // Node label visibility state
     showNodeLabels: false,
-
-    // AddPersonDialog state
-    isAddPersonDialogOpen: false,
-    editingPerson: null, // Store the person being edited
-
-    // Other app-wide state can be added here
-    // isLoading: false,
-    // currentView: 'members', // or 'ai'
-    // userPreferences: {},
-    // etc.
   }),
+
   actions: {
-    /**
-     * @param {ReadonlyArray<Person>} people
-     * @param {ReadonlyArray<Recommendation>} recommendations
-     * @returns {void}
-     */
+    // ── Auth ─────────────────────────────────────────────────────────────────
+
+    async initAuth() {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      this.authUser = session?.user ?? null;
+      this.authLoading = false;
+
+      supabase.auth.onAuthStateChange((_event, session) => {
+        this.authUser = session?.user ?? null;
+      });
+    },
+
+    async signOut() {
+      await supabase.auth.signOut();
+      this.authUser = null;
+      this.myPerson = null;
+    },
+
+    // ── Data fetching ─────────────────────────────────────────────────────────
+
+    async fetchGraph() {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const [{ data: peopleRows, error: peopleErr }, { data: recRows, error: recErr }] =
+        await Promise.all([
+          supabase.from("people").select("*"),
+          supabase.from("recommendations").select("*"),
+        ]);
+      if (peopleErr) throw peopleErr;
+      if (recErr) throw recErr;
+      this.people = (peopleRows ?? []).map((r) => rowToPerson(r, supabaseUrl));
+      this.recommendations = (recRows ?? []).map(rowToRecommendation);
+    },
+
+    async fetchMyPerson() {
+      if (!this.authUser) return;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const { data, error } = await supabase
+        .from("people")
+        .select("*")
+        .eq("user_id", this.authUser.id)
+        .maybeSingle();
+      if (error) throw error;
+      this.myPerson = data ? rowToPerson(data, supabaseUrl) : null;
+    },
+
+    // ── Realtime ──────────────────────────────────────────────────────────────
+
+    subscribeToPersonUpdates() {
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      supabase
+        .channel("people-positions")
+        .on(
+          "postgres_changes",
+          { event: "UPDATE", schema: "public", table: "people" },
+          (payload) => {
+            const updated = rowToPerson(/** @type {any} */ (payload.new), supabaseUrl);
+            if (this.people) {
+              this.people = this.people.map((p) =>
+                p.id === updated.id ? updated : p
+              );
+            }
+          }
+        )
+        .subscribe();
+    },
+
+    unsubscribeFromPersonUpdates() {
+      supabase.removeChannel(supabase.channel("people-positions"));
+    },
+
+    // ── Graph snapshot ────────────────────────────────────────────────────────
+
+    async saveGraphSnapshot(graphData) {
+      if (!this.myPerson || !this.authUser) return;
+      const { error } = await supabase
+        .from("people")
+        .update({ persons_graph_snapshot: graphData })
+        .eq("user_id", this.authUser.id);
+      if (error) throw error;
+      this.myPerson = { ...this.myPerson, personsGraphSnapshot: graphData };
+    },
+
+    // ── UI actions (preserved from v2) ────────────────────────────────────────
+
     setGraph(people, recommendations) {
       this.people = people;
       this.recommendations = recommendations;
     },
-
-    // Dark mode actions
     checkSystemPreference() {
-      this.isDarkMode = window.matchMedia(
-        "(prefers-color-scheme: dark)",
-      ).matches;
+      this.isDarkMode = window.matchMedia("(prefers-color-scheme: dark)").matches;
     },
     toggleDarkMode() {
       this.isDarkMode = !this.isDarkMode;
@@ -83,292 +141,78 @@ export const useAppStore = defineStore("app", {
       this.isDarkMode = dark;
     },
     listenToSystemPreference() {
-      const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      mediaQuery.addEventListener("change", (e) => {
-        this.isDarkMode = e.matches;
-      });
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener(
+        "change",
+        (e) => {
+          this.isDarkMode = e.matches;
+        }
+      );
     },
     initializeDarkMode() {
       this.checkSystemPreference();
       this.listenToSystemPreference();
     },
-
-    // Fullscreen actions
     enterFullscreen() {
       this.isFullscreen = true;
     },
     exitFullscreen() {
       this.isFullscreen = false;
     },
-
-    // Component switching actions
     showGlobe() {
       this.activeComponent = "globe";
-      this.isViewingProfile = false; // Reset profile view when switching components
-      this.currentPersonData = null; // Clear person data when switching components
+      this.isViewingProfile = false;
+      this.currentPersonData = null;
     },
     showCytoscape() {
       this.activeComponent = "cytoscape";
-      this.isViewingProfile = false; // Reset profile view when switching components
-      this.currentPersonData = null; // Clear person data when switching components
+      this.isViewingProfile = false;
+      this.currentPersonData = null;
     },
     showAiRecommendations() {
       this.activeComponent = "airecommendations";
-      this.isViewingProfile = false; // Reset profile view when switching components
-      this.currentPersonData = null; // Clear person data when switching components
+      this.isViewingProfile = false;
+      this.currentPersonData = null;
     },
-    setEdgeView(isEdgeView) {
-      this.isEdgeView = isEdgeView;
+    setEdgeView(v) {
+      this.isEdgeView = v;
     },
     hideComponents() {
       this.activeComponent = null;
-      this.isViewingProfile = false; // Reset profile view when hiding components
-      this.currentPersonData = null; // Clear person data when hiding components
+      this.isViewingProfile = false;
+      this.currentPersonData = null;
     },
-
-    // Profile view actions
-    setViewingProfile(viewing) {
-      this.isViewingProfile = viewing;
+    setViewingProfile(v) {
+      this.isViewingProfile = v;
     },
-    setCurrentPersonData(personData) {
-      this.currentPersonData = personData;
+    setCurrentPersonData(d) {
+      this.currentPersonData = d;
     },
     clearCurrentPersonData() {
       this.currentPersonData = null;
     },
-    /**
-     * @param {"values" | "visions" | "vehicles"} section
-     * @returns {void}
-     */
-    setActiveProfileSection(section) {
-      this.activeProfileSection = section;
+    setActiveProfileSection(s) {
+      this.activeProfileSection = s;
     },
     clearActiveProfileSection() {
       this.activeProfileSection = null;
     },
-
-    // Cytoscape actions
-    setCytoscapeData(data) {
-      this.cytoscapeData = data;
+    setCytoscapeData(d) {
+      this.cytoscapeData = d;
     },
-    setCytoscapeInitialized(initialized) {
-      this.cytoscapeInitialized = initialized;
+    setCytoscapeInitialized(v) {
+      this.cytoscapeInitialized = v;
     },
-    setCytoscapeInstance(instance) {
-      this.cytoscapeInstance = instance;
+    setCytoscapeInstance(v) {
+      this.cytoscapeInstance = v;
     },
-    setCytoscapeSvg(svg) {
-      this.cytoscapeSvg = svg;
+    setCytoscapeSvg(v) {
+      this.cytoscapeSvg = v;
     },
-    setConcentricZoomOut(zoomOutFunction) {
-      this.concentricZoomOut = zoomOutFunction;
+    setConcentricZoomOut(fn) {
+      this.concentricZoomOut = fn;
     },
-
-    // Node label visibility actions
     toggleNodeLabels() {
       this.showNodeLabels = !this.showNodeLabels;
-    },
-
-    // AddPersonDialog actions
-    showAddPersonDialog() {
-      this.isAddPersonDialogOpen = true;
-    },
-    hideAddPersonDialog() {
-      this.isAddPersonDialogOpen = false;
-      this.editingPerson = null;
-    },
-    setEditingPerson(person) {
-      this.editingPerson = person;
-    },
-    clearEditingPerson() {
-      this.editingPerson = null;
-    },
-
-    // Other app actions can be added here
-    // setLoading(loading) {
-    //   this.isLoading = loading
-    // },
-    // setCurrentView(view) {
-    //   this.isCurrentView = view
-    // },
-
-    /**
-     * Add a new person to the store or update existing one
-     * @param {Person} personData
-     * @returns {void}
-     */
-    addPerson(personData) {
-      if (this.people === null) {
-        this.people = [personData];
-      } else {
-        // Check if person already exists
-        const existingIndex = this.people.findIndex(
-          (p) => p.id === personData.id,
-        );
-        if (existingIndex !== -1) {
-          // Update existing person by creating new array
-          this.people = [
-            ...this.people.slice(0, existingIndex),
-            personData,
-            ...this.people.slice(existingIndex + 1),
-          ];
-        } else {
-          // Add new person
-          this.people = [...this.people, personData];
-        }
-      }
-
-      // Always set as current person for immediate access
-      this.person = personData;
-
-      // Save to localStorage for persistence
-      this.savePersonToStorage(personData);
-    },
-
-    /**
-     * Update the current person's data
-     * @param {Person} personData
-     * @returns {void}
-     */
-    updateCurrentPerson(personData) {
-      // Update the current person
-      this.person = personData;
-
-      // Also update in people array if it exists
-      if (this.people !== null) {
-        const existingIndex = this.people.findIndex(
-          (p) => p.id === personData.id,
-        );
-        if (existingIndex !== -1) {
-          // Update existing person by creating new array
-          this.people = [
-            ...this.people.slice(0, existingIndex),
-            personData,
-            ...this.people.slice(existingIndex + 1),
-          ];
-        }
-      }
-
-      // Save to localStorage for persistence
-      this.savePersonToStorage(personData);
-    },
-
-    /**
-     * Save person data to localStorage
-     * @param {Person} personData
-     * @returns {void}
-     */
-    savePersonToStorage(personData) {
-      try {
-        localStorage.setItem("currentPerson", JSON.stringify(personData));
-      } catch (error) {
-        console.warn("Failed to save person to localStorage:", error);
-      }
-    },
-
-    /**
-     * Load person data from localStorage
-     * @returns {Person | null}
-     */
-    loadPersonFromStorage() {
-      try {
-        const stored = localStorage.getItem("currentPerson");
-        if (stored) {
-          return JSON.parse(stored);
-        }
-      } catch (error) {
-        console.warn("Failed to load person from localStorage:", error);
-      }
-      return null;
-    },
-
-    /**
-     * Initialize the store with persisted data
-     * @returns {void}
-     */
-    initializeFromStorage() {
-      const storedPerson = this.loadPersonFromStorage();
-      if (storedPerson) {
-        this.person = storedPerson;
-        // Also add to people array if it's not already there
-        if (this.people === null) {
-          this.people = [storedPerson];
-        } else if (!this.people.find((p) => p.id === storedPerson.id)) {
-          this.people = [...this.people, storedPerson];
-        }
-      }
-    },
-
-    /**
-     * Save the current graph snapshot to the person
-     * @param {Object} graphData - The cytoscape graph data
-     * @returns {Promise<void>}
-     */
-    async saveGraphSnapshot(graphData) {
-      if (this.person) {
-        const updatedPerson = {
-          ...this.person,
-          personsGraphSnapshot: graphData,
-        };
-        this.updateCurrentPerson(updatedPerson);
-
-        // Also save to database if we have the person's ID and secretKey
-        if (this.person.id) {
-          try {
-            await this.savePersonToDatabase(updatedPerson);
-          } catch (error) {
-            console.warn("Failed to save graph snapshot to database:", error);
-          }
-        }
-      }
-    },
-
-    /**
-     * Save person data to the database
-     * @param {Person} personData
-     * @returns {Promise<void>}
-     */
-    async savePersonToDatabase(personData) {
-      if (!personData.id) {
-        throw new Error("Cannot save to database: missing ID");
-      }
-
-      // Get secretKey from localStorage
-      const personReference = JSON.parse(
-        localStorage.getItem("personReference"),
-      );
-      if (!personReference || !personReference.secretKey) {
-        throw new Error(
-          "Cannot save to database: missing secretKey in localStorage",
-        );
-      }
-
-      const updatePersonUrl = new URL("/api/person", window.location.href);
-      const response = await fetch(updatePersonUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          id: personData.id,
-          secretKey: personReference.secretKey,
-          personData: {
-            name: personData.name,
-            email: personData.email,
-            locationName: personData.locationName,
-            locationLatitude: personData.locationLatitude,
-            locationLongitude: personData.locationLongitude,
-            values: personData.values,
-            visions: personData.visions,
-            vehicles: personData.vehicles,
-            personsGraphSnapshot: personData.personsGraphSnapshot,
-          },
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to save person: ${response.status}`);
-      }
     },
   },
 });
