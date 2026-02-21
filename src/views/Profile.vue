@@ -132,6 +132,16 @@ async function save() {
 <template>
   <div class="profile-page" :class="{ dark: store.isDarkMode }">
 
+    <!-- Dark mode toggle -->
+    <v-btn
+      icon
+      variant="text"
+      style="position: fixed; top: 12px; right: 12px; z-index: 100;"
+      @click="store.toggleDarkMode()"
+    >
+      <v-icon>{{ store.isDarkMode ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+    </v-btn>
+
     <!-- Top bar -->
     <header class="profile-header">
       <button v-if="isEditing" class="back-link" @click="router.push('/home')">
