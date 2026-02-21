@@ -95,14 +95,20 @@ async function main() {
     default: "Connected by purpose",
   });
 
-  const logoPath = await input({
-    message: "Path to community logo image (leave blank to skip):",
-    default: "",
-  });
-
-  if (logoPath && !existsSync(logoPath)) {
-    console.error(`\nLogo file not found: ${logoPath}`);
-    process.exit(1);
+  let logoPath = "";
+  while (true) {
+    logoPath = await input({
+      message: "Path to community logo image (leave blank or type 'skip' to skip):",
+      default: "",
+    });
+    if (!logoPath || logoPath.trim().toLowerCase() === "skip") {
+      logoPath = "";
+      break;
+    }
+    if (existsSync(logoPath)) {
+      break;
+    }
+    console.error(`  File not found: ${logoPath} — please try again.`);
   }
 
   // ── 2. Supabase auth ─────────────────────────────────────────────────────
