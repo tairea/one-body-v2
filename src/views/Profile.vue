@@ -131,8 +131,7 @@ async function save() {
 </script>
 
 <template>
-  <v-app>
-    <v-main class="pa-6">
+  <v-main class="pa-6">
       <v-container max-width="900">
 
         <v-row align="center" class="mb-4">
@@ -236,5 +235,4 @@ async function save() {
 
       </v-container>
     </v-main>
-  </v-app>
 </template>

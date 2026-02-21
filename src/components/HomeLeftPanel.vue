@@ -17,6 +17,10 @@ const props = defineProps({
 const emit = defineEmits(["showMembersView", "zoomBack", "edgeViewBack"]);
 const appStore = useAppStore();
 
+const communityName = import.meta.env.VITE_COMMUNITY_NAME || "One Body";
+const communityTagline = import.meta.env.VITE_COMMUNITY_TAGLINE || "";
+const communityLogoUrl = import.meta.env.VITE_COMMUNITY_LOGO_URL || "";
+
 // Add state for zoom
 const isZoomed = ref(false);
 const currentPersonId = ref(null);
@@ -59,16 +63,17 @@ const handleEdgeViewBack = () => {
     :class="{ 'dark-mode': appStore.isDarkMode }"
     v-bind="$attrs"
   >
-    <!-- DWEB LOGO & TITLE -->
+    <!-- COMMUNITY LOGO & TITLE -->
     <div id="wg" v-if="!isZoomed && !appStore.isEdgeView">
       <img
+        v-if="communityLogoUrl"
         id="logo"
-        src="../assets/org_logo_DWeb.jpeg"
+        :src="communityLogoUrl"
         width="100"
         class="mb-4"
       />
-      <h1>DWeb Fellows Alumni</h1>
-      <h2>A collective of DWeb fellows</h2>
+      <h1>{{ communityName }}</h1>
+      <h2 v-if="communityTagline">{{ communityTagline }}</h2>
     </div>
 
     <!-- ZOOMED VIEW - Show back button and person info -->

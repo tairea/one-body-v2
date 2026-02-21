@@ -88,8 +88,11 @@ const handleEdgeViewBack = () => {
 onMounted(async () => {
   await appStore.fetchGraph();
   await appStore.fetchMyPerson();
+  if (!appStore.myPerson) {
+    router.push("/profile");
+    return;
+  }
   appStore.subscribeToPersonUpdates();
-  appStore.initializeDarkMode();
 });
 
 onUnmounted(() => {
