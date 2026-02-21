@@ -1,10 +1,16 @@
 <script setup>
 // @ts-check
-import { ref } from "vue";
+import { ref, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { supabase } from "../lib/supabase.js";
 
 const router = useRouter();
+
+const isDark = ref(window.matchMedia("(prefers-color-scheme: dark)").matches);
+const mq = window.matchMedia("(prefers-color-scheme: dark)");
+const onMqChange = (/** @type {MediaQueryListEvent} */ e) => { isDark.value = e.matches; };
+onMounted(() => mq.addEventListener("change", onMqChange));
+onUnmounted(() => mq.removeEventListener("change", onMqChange));
 
 const communityName = import.meta.env.VITE_COMMUNITY_NAME || "One Body";
 const communityTagline = import.meta.env.VITE_COMMUNITY_TAGLINE || "";
@@ -72,7 +78,15 @@ function submit() {
 </script>
 
 <template>
-  <v-app>
+  <v-app :theme="isDark ? 'dark' : 'light'">
+    <v-btn
+      icon
+      variant="text"
+      style="position: fixed; top: 12px; right: 12px;"
+      @click="isDark = !isDark"
+    >
+      <v-icon>{{ isDark ? 'mdi-weather-sunny' : 'mdi-weather-night' }}</v-icon>
+    </v-btn>
     <v-main class="d-flex align-center justify-center" style="min-height: 100vh">
       <v-card width="420" class="pa-6 text-center">
 
