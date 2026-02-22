@@ -17,6 +17,9 @@ dist-ssr
 # Git worktrees
 .worktrees
 
+# Vercel project link (saved locally so re-deploys update the same project)
+.vercel
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

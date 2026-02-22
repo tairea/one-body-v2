@@ -23,6 +23,8 @@ export function rowToPerson(row, supabaseUrl) {
     id: row.id,
     userId: row.user_id,
     name: row.name,
+    email: row.email ?? undefined,
+    telegram: row.telegram ?? undefined,
     photoUrl: photoUrl(supabaseUrl, row.user_id),
     locationName: row.location_name ?? undefined,
     locationLatitude: row.location_latitude ?? undefined,

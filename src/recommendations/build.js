@@ -76,6 +76,15 @@ async function askOllama({ systemPrompt, input, schema }) {
 }
 
 /**
+ * Flatten a ChipNode tree into a list of labels.
+ * @param {Array<{label: string, children?: Array<any>}>} chips
+ * @returns {string[]}
+ */
+function flattenChips(chips) {
+  return chips.flatMap((c) => [c.label, ...flattenChips(c.children ?? [])]);
+}
+
+/**
  * @param {Readonly<Pick<Person, "name" | "layer1" | "layer2" | "layer3">>} person
  * @returns {string}
  */
@@ -84,11 +93,11 @@ function formatPerson(person) {
     "NAME:",
     person.name,
     `${layer1Name.toUpperCase()}:`,
-    person.layer1.join(", "),
+    flattenChips(/** @type {any} */ (person.layer1)).join(", "),
     `${layer2Name.toUpperCase()}:`,
-    person.layer2.join(", "),
+    flattenChips(/** @type {any} */ (person.layer2)).join(", "),
     `${layer3Name.toUpperCase()}:`,
-    person.layer3.join(", "),
+    flattenChips(/** @type {any} */ (person.layer3)).join(", "),
   ].join("\n");
 }
 

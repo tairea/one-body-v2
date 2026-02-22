@@ -36,3 +36,16 @@ export function useLayers() {
     },
   ];
 }
+
+/**
+ * Linearly interpolate a hex color toward white.
+ * @param {string} hex - e.g. "#ff4f2d"
+ * @param {number} t - 0 = original color, 1 = white
+ * @returns {string} rgb(...) string
+ */
+export function lightenColor(hex, t) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgb(${Math.round(r + (255 - r) * t)},${Math.round(g + (255 - g) * t)},${Math.round(b + (255 - b) * t)})`;
+}

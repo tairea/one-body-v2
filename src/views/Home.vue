@@ -1,20 +1,21 @@
 <script setup>
 // @ts-check
-import { onMounted, onUnmounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { onMounted, onUnmounted, ref, watch } from "vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import GlobeGL from "../components/GlobeGL.vue";
 import HomeLeftPanel from "../components/HomeLeftPanel.vue";
 import HomeRightPanel from "../components/HomeRightPanel.vue";
+import ProfilePanel from "../components/ProfilePanel.vue";
 import { useAppStore } from "../stores/app";
 import AiRecommendations from "../components/AiRecommendations.vue";
 import InteractiveCytoscapeMany from "../components/InteractiveCytoscapeMany.vue";
 
 const appStore = useAppStore();
-const router = useRouter();
 const cytoscapeRef = ref(null);
 const homeLeftPanelRef = ref(null);
 const aiRecommendationsRef = ref(null);
+
+const profilePanelOpen = ref(false);
 
 // State for handling node position changes
 const hasNodePositionChanges = ref(false);
@@ -34,7 +35,6 @@ const handleSaveNodePositions = async () => {
   if (!cytoscapeRef.value) return;
   try {
     isSavingPositions.value = true;
-    // saveGraphSnapshot builds the snapshot and emits graphSnapshotSaved
     await cytoscapeRef.value.saveGraphSnapshot();
     hasNodePositionChanges.value = false;
   } catch (error) {
@@ -55,9 +55,7 @@ const handleZoomStateChanged = (zoomState) => {
     homeLeftPanelRef.value.handleZoomStateChange(zoomState);
   }
 
-  // Update clicked person data
   if (zoomState.isZoomed && zoomState.personId && appStore.people) {
-    // personId format: "person-{UUID}"
     const personId = zoomState.personId.replace("person-", "");
     const person = appStore.people.find((p) => p.id === personId);
     if (person) {
@@ -65,7 +63,6 @@ const handleZoomStateChanged = (zoomState) => {
       clickedPersonEmail.value = "";
     }
   } else {
-    // Reset when zooming back
     clickedPersonName.value = "";
     clickedPersonEmail.value = "";
   }
@@ -85,11 +82,19 @@ const handleEdgeViewBack = () => {
   }
 };
 
+// When profilePanel opens, zoom to the current user's graph
+watch(profilePanelOpen, (open) => {
+  if (open && cytoscapeRef.value && appStore.myPerson?.id) {
+    cytoscapeRef.value.zoomToPersonGraph(`person-${appStore.myPerson.id}`);
+  }
+});
+
 onMounted(async () => {
   await appStore.fetchGraph();
   await appStore.fetchMyPerson();
   if (!appStore.myPerson) {
-    router.push("/profile");
+    // New user — open profile panel instead of routing
+    profilePanelOpen.value = true;
     return;
   }
   appStore.subscribeToPersonUpdates();
@@ -138,6 +143,7 @@ onUnmounted(() => {
       :hasNodePositionChanges="hasNodePositionChanges"
       :isSavingPositions="isSavingPositions"
       @saveNodePositions="handleSaveNodePositions"
+      @editProfile="profilePanelOpen = true"
       :class="{ 'panel-hidden': appStore.isFullscreen }"
     />
 
@@ -165,6 +171,13 @@ onUnmounted(() => {
         :recommendations="appStore.recommendations"
       />
     </div>
+
+    <!-- Profile panel (slide-up, embedded) -->
+    <ProfilePanel
+      :open="profilePanelOpen"
+      :cytoscapeRef="cytoscapeRef"
+      @close="profilePanelOpen = false"
+    />
 
   </div>
   <div class="app-container" v-else>Coming soon...</div>

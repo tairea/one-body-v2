@@ -3,7 +3,6 @@ import { createRouter, createWebHistory } from "vue-router";
 import { supabase } from "../lib/supabase.js";
 import Auth from "../views/Auth.vue";
 import Home from "../views/Home.vue";
-import Profile from "../views/Profile.vue";
 import Countdown from "../views/Countdown.vue";
 
 const routes = [
@@ -17,12 +16,6 @@ const routes = [
     path: "/home",
     name: "Home",
     component: Home,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: "/profile",
-    name: "Profile",
-    component: Profile,
     meta: { requiresAuth: true },
   },
   {

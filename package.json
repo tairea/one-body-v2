@@ -12,7 +12,8 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "node --test",
-    "setup": "node scripts/setup.js"
+    "setup": "node scripts/setup.js",
+    "deploy": "node scripts/deploy.js"
   },
   "dependencies": {
     "@chenfengyuan/vue-countdown": "^2.1.3",

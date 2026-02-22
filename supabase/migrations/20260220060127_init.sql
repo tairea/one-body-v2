@@ -6,6 +6,8 @@ create table public.people (
   id                     uuid primary key default gen_random_uuid(),
   user_id                uuid references auth.users(id) on delete cascade not null unique,
   name                   text not null,
+  email                  text,
+  telegram               text,
   location_name          text,
   location_latitude      float8,
   location_longitude     float8,

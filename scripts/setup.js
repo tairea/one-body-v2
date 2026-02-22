@@ -36,15 +36,6 @@ function supabaseInteractive(args) {
   }
 }
 
-function isLoggedIn() {
-  try {
-    supabaseJSON(["orgs", "list"]);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 /** @returns {string} */
 function generatePassword() {
   return Array.from(crypto.getRandomValues(new Uint8Array(16)))
@@ -75,6 +66,60 @@ async function waitForProject(projectRef) {
     }
   }
   throw new Error("Project did not become ready within 3 minutes.");
+}
+
+/**
+ * Update Supabase project's site_url and uri_allow_list via Management API.
+ * @param {string} appUrl
+ * @param {string} supabaseUrl
+ * @param {string} accessToken
+ */
+async function updateSupabaseAuthUrls(appUrl, supabaseUrl, accessToken) {
+  if (!appUrl || !supabaseUrl || !accessToken) return;
+
+  const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
+
+  try {
+    const getRes = await fetch(
+      `https://api.supabase.com/v1/projects/${projectRef}/config/auth`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    if (!getRes.ok) throw new Error(`${getRes.status} ${await getRes.text()}`);
+    const current = await getRes.json();
+
+    const existing = (current.uri_allow_list ?? "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    const merged = [
+      ...new Set([
+        ...existing,
+        appUrl,
+        `${appUrl}/**`,
+        "http://localhost:5173",
+        "http://localhost:5173/**",
+      ]),
+    ].join(",");
+
+    const patchRes = await fetch(
+      `https://api.supabase.com/v1/projects/${projectRef}/config/auth`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ site_url: appUrl, uri_allow_list: merged }),
+      }
+    );
+    if (!patchRes.ok) throw new Error(`${patchRes.status} ${await patchRes.text()}`);
+
+    console.log(`✓ Supabase site URL updated to ${appUrl}`);
+  } catch (err) {
+    console.warn(`  Warning: Could not update Supabase auth URLs — ${err.message}`);
+    console.log(`  Manually add ${appUrl} in Supabase Dashboard → Authentication → URL Configuration`);
+  }
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
@@ -148,13 +193,17 @@ async function main() {
 
   // ── 3. Supabase auth ─────────────────────────────────────────────────────
   console.log("\nSupabase setup\n");
+  console.log("  You need a personal access token to authenticate the CLI");
+  console.log("  and enable automatic deployment URL management.\n");
+  console.log("  Create one at: https://supabase.com/dashboard/account/tokens\n");
 
-  if (!isLoggedIn()) {
-    console.log("Opening browser for Supabase login...\n");
-    supabaseInteractive(["login"]);
-  } else {
-    console.log("✓ Already logged in to Supabase");
-  }
+  const accessToken = await password({
+    message: "Supabase personal access token:",
+    mask: "*",
+  });
+
+  supabaseInteractive(["login", "--token", accessToken]);
+  console.log("✓ Logged in to Supabase");
 
   // ── 3. Organisation ──────────────────────────────────────────────────────
   const orgs = supabaseJSON(["orgs", "list"]);
@@ -277,6 +326,7 @@ async function main() {
     `VITE_SUPABASE_URL=${supabaseUrl}`,
     `VITE_SUPABASE_ANON_KEY=${anonKey}`,
     `SUPABASE_SERVICE_ROLE_KEY=${serviceKey}`,
+    `SUPABASE_ACCESS_TOKEN=${accessToken}`,
     `VITE_COMMUNITY_NAME=${communityName}`,
     `VITE_COMMUNITY_TAGLINE=${communityTagline}`,
     logoUrl ? `VITE_COMMUNITY_LOGO_URL=${logoUrl}` : `# VITE_COMMUNITY_LOGO_URL=`,
@@ -329,15 +379,15 @@ async function main() {
     console.log("Deploying to Vercel...");
     const deployResult = spawnSync(
       "npx",
-      ["vercel", "dist", "--prod", "--yes"],
-      { stdio: ["pipe", "pipe", "inherit"], encoding: "utf8" }
+      ["vercel", "--prod", "--yes"],
+      { stdio: ["pipe", "pipe", "inherit"], encoding: "utf8", cwd: "dist" }
     );
 
     if (deployResult.status !== 0) {
       console.warn(
         "\n  Warning: Vercel deployment failed.\n" +
         "  You can deploy manually later with:\n" +
-        "    npm run build && npx vercel dist --prod\n"
+        "    npm run deploy\n"
       );
     } else {
       const urlMatch = deployResult.stdout.match(/https:\/\/\S+\.vercel\.app/);
@@ -346,6 +396,8 @@ async function main() {
         console.log(`✓ Deployed: ${appUrl}`);
       }
     }
+
+    await updateSupabaseAuthUrls(appUrl, supabaseUrl, accessToken);
   }
 
   // ── Done ─────────────────────────────────────────────────────────────────

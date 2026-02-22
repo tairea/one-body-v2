@@ -5,7 +5,7 @@ import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { useAppStore } from "../stores/app";
 import cytoscape from "cytoscape";
 import { getPhotoUrl } from "../lib/utils";
-import { useLayers } from "../lib/useLayers";
+import { useLayers, lightenColor } from "../lib/useLayers";
 
 const appStore = useAppStore();
 const router = useRouter();
@@ -107,21 +107,53 @@ const lightModeStyles = [
       "text-halign": "center",
     },
   },
-  ...layers.map((layer) => ({
-    selector: `node[type='${layer.key}']`,
-    style: {
-      "background-color": layer.color,
-      "border-color": "transparent",
-      "border-width": "0px",
-      "text-wrap": "wrap",
-      "text-max-width": "80px",
-      "font-size": "6px",
-      color: "#ffffff",
-      width: 20,
-      height: 20,
-      label: "",
+  ...layers.flatMap((layer) => [
+    {
+      selector: `node[type='${layer.key}-d0']`,
+      style: {
+        "background-color": layer.color,
+        "border-color": "transparent",
+        "border-width": "0px",
+        "text-wrap": "wrap",
+        "text-max-width": "80px",
+        "font-size": "6px",
+        color: "#ffffff",
+        width: 20,
+        height: 20,
+        label: "",
+      },
     },
-  })),
+    {
+      selector: `node[type='${layer.key}-d1']`,
+      style: {
+        "background-color": lightenColor(layer.color, 0.35),
+        "border-color": "transparent",
+        "border-width": "0px",
+        "text-wrap": "wrap",
+        "text-max-width": "80px",
+        "font-size": "6px",
+        color: "#ffffff",
+        width: 14,
+        height: 14,
+        label: "",
+      },
+    },
+    {
+      selector: `node[type='${layer.key}-d2']`,
+      style: {
+        "background-color": lightenColor(layer.color, 0.60),
+        "border-color": "transparent",
+        "border-width": "0px",
+        "text-wrap": "wrap",
+        "text-max-width": "80px",
+        "font-size": "6px",
+        color: "#ffffff",
+        width: 10,
+        height: 10,
+        label: "",
+      },
+    },
+  ]),
   {
     selector: "edge",
     style: {
@@ -210,21 +242,53 @@ const darkModeStyles = [
       "text-halign": "center",
     },
   },
-  ...layers.map((layer) => ({
-    selector: `node[type='${layer.key}']`,
-    style: {
-      "background-color": layer.color,
-      "border-color": "transparent",
-      "border-width": "0px",
-      "text-wrap": "wrap",
-      "text-max-width": "80px",
-      "font-size": "6px",
-      color: "#0c0c0c",
-      width: 20,
-      height: 20,
-      label: "",
+  ...layers.flatMap((layer) => [
+    {
+      selector: `node[type='${layer.key}-d0']`,
+      style: {
+        "background-color": layer.color,
+        "border-color": "transparent",
+        "border-width": "0px",
+        "text-wrap": "wrap",
+        "text-max-width": "80px",
+        "font-size": "6px",
+        color: "#0c0c0c",
+        width: 20,
+        height: 20,
+        label: "",
+      },
     },
-  })),
+    {
+      selector: `node[type='${layer.key}-d1']`,
+      style: {
+        "background-color": lightenColor(layer.color, 0.35),
+        "border-color": "transparent",
+        "border-width": "0px",
+        "text-wrap": "wrap",
+        "text-max-width": "80px",
+        "font-size": "6px",
+        color: "#0c0c0c",
+        width: 14,
+        height: 14,
+        label: "",
+      },
+    },
+    {
+      selector: `node[type='${layer.key}-d2']`,
+      style: {
+        "background-color": lightenColor(layer.color, 0.60),
+        "border-color": "transparent",
+        "border-width": "0px",
+        "text-wrap": "wrap",
+        "text-max-width": "80px",
+        "font-size": "6px",
+        color: "#0c0c0c",
+        width: 10,
+        height: 10,
+        label: "",
+      },
+    },
+  ]),
   {
     selector: "edge",
     style: {
@@ -382,9 +446,12 @@ const initializeGraphData = (personData, personIndex) => {
 
   // Calculate offset for this person's graph
   const graphOffset = {
-    x: (personIndex % 3) * 600, // Changed from 400 to 600 for more noticeable gaps
-    y: Math.floor(personIndex / 3) * 600, // Changed from 400 to 600 for more noticeable gaps
+    x: (personIndex % 3) * 600,
+    y: Math.floor(personIndex / 3) * 600,
   };
+
+  // Person node position
+  const personPos = { x: graphOffset.x, y: graphOffset.y };
 
   // Add person node (center of this person's graph)
   const personNode = {
@@ -395,57 +462,96 @@ const initializeGraphData = (personData, personIndex) => {
       photo: getPersonPhotoUrl(personData),
       nodeSize: calculatePersonNodeSize(personData.name),
     },
-    position: {
-      x: graphOffset.x + 0,
-      y: graphOffset.y + 0,
-    },
+    position: personPos,
   };
-
   nodes.push(personNode);
 
-  // Add layer nodes
-  const radii = [120, 200, 280];
-  for (const [i, layer] of layers.entries()) {
-    const layerKey = layer.key;
-    const items = personData[layerKey] ?? [];
-    const radius = radii[i];
+  /**
+   * Recursively add chip nodes and their children.
+   * @param {object} chip - ChipNode
+   * @param {string} chipId - the ID to assign to this node
+   * @param {string} parentId - parent node ID (for edge)
+   * @param {{x:number,y:number}} parentPos - parent node position (for arc placement)
+   * @param {string} layerKey
+   * @param {string} baseColor
+   * @param {number} depth
+   * @param {number} totalSiblings - total chips at this level
+   * @param {number} siblingIdx - this chip's index among siblings
+   */
+  const addChipNodes = (chip, chipId, parentId, parentPos, layerKey, baseColor, depth, totalSiblings, siblingIdx) => {
+    const radii = [120, 160, 195];
+    const lightenAmounts = [0, 0.35, 0.60];
+    const radius = radii[Math.min(depth, 2)];
+    const color = lightenColor(baseColor, lightenAmounts[Math.min(depth, 2)]);
 
-    items.forEach((item, index) => {
-      const nodeId = `${layerKey}-${personData.id}-${index}`;
-      let position;
+    let position = null;
+    if (hasSavedPositions) {
+      const savedNode = personData.personsGraphSnapshot.nodes.find((n) => n.id === chipId);
+      if (savedNode) position = savedNode.position;
+    }
 
-      if (hasSavedPositions) {
-        const savedNode = personData.personsGraphSnapshot.nodes.find(
-          (n) => n.id === nodeId,
-        );
-        position = savedNode ? savedNode.position : null;
-      }
+    if (!position) {
+      const count = totalSiblings || 1;
+      const angle = (siblingIdx / count) * 2 * Math.PI;
+      position = {
+        x: parentPos.x + Math.cos(angle) * radius,
+        y: parentPos.y + Math.sin(angle) * radius,
+      };
+    }
 
-      if (!position) {
-        const angle = (index / items.length) * 2 * Math.PI;
-        position = {
-          x: graphOffset.x + Math.cos(angle) * radius,
-          y: graphOffset.y + Math.sin(angle) * radius,
-        };
-      }
+    nodes.push({
+      data: {
+        id: chipId,
+        label: chip.label,
+        type: `${layerKey}-d${Math.min(depth, 2)}`,
+        bgColor: color,
+      },
+      position,
+    });
 
-      nodes.push({
-        data: {
-          id: nodeId,
-          label: item,
-          type: layerKey,
-        },
+    edges.push({
+      data: {
+        id: `edge-${parentId}-${chipId}`,
+        source: parentId,
+        target: chipId,
+        label: "",
+      },
+    });
+
+    const children = chip.children ?? [];
+    children.forEach((child, ci) => {
+      addChipNodes(
+        child,
+        `${chipId}-c${ci}`,
+        chipId,
         position,
-      });
+        layerKey,
+        baseColor,
+        depth + 1,
+        children.length,
+        ci,
+      );
+    });
+  };
 
-      edges.push({
-        data: {
-          id: `person-${personData.id}-${layerKey}-${index}`,
-          source: `person-${personData.id}`,
-          target: nodeId,
-          label: `has ${layer.name.toLowerCase()}`,
-        },
-      });
+  // Add layer chip nodes (ChipNode[])
+  for (const layer of layers) {
+    const layerKey = layer.key;
+    const chips = personData[layerKey] ?? [];
+
+    chips.forEach((chip, idx) => {
+      const chipId = `${layerKey}-${personData.id}-c${idx}`;
+      addChipNodes(
+        chip,
+        chipId,
+        `person-${personData.id}`,
+        personPos,
+        layerKey,
+        layer.color,
+        0,
+        chips.length,
+        idx,
+      );
     });
   }
 
@@ -516,12 +622,42 @@ const setupInteractions = (cyInstance) => {
     }
   });
 
-  // Add node dragging detection
+  // Drag-with-children: collect descendants on grab, move them together on drag
+  cyInstance.on("grab", "node", (evt) => {
+    const id = evt.target.id();
+    const desc = [];
+    const collect = (nId) => {
+      cyInstance.$(`edge[source="${nId}"]`).forEach((e) => {
+        const tId = e.target().id();
+        desc.push(tId);
+        collect(tId);
+      });
+    };
+    collect(id);
+    evt.target.scratch({ _desc: desc, _grabPos: { ...evt.target.position() } });
+    desc.forEach((d) => {
+      cyInstance.$(`#${d}`).scratch({ _grabPos: { ...cyInstance.$(`#${d}`).position() } });
+    });
+  });
+
+  cyInstance.on("drag", "node", (evt) => {
+    const node = evt.target;
+    const gp = node.scratch("_grabPos");
+    if (!gp) return;
+    const cur = node.position();
+    const dx = cur.x - gp.x;
+    const dy = cur.y - gp.y;
+    (node.scratch("_desc") ?? []).forEach((d) => {
+      const el = cyInstance.$(`#${d}`);
+      const orig = el.scratch("_grabPos");
+      if (orig) el.position({ x: orig.x + dx, y: orig.y + dy });
+    });
+  });
+
+  // Emit position changed after drag ends
   cyInstance.on("dragfreeon", "node", (evt) => {
     const node = evt.target;
     const newPosition = node.position();
-
-    // Emit event for parent components to show save button
     emit("nodePositionChanged", {
       nodeId: node.id(),
       position: newPosition,
@@ -559,7 +695,9 @@ const setupInteractions = (cyInstance) => {
   });
 };
 
-// Helper function to find person ID from any node ID
+// Helper function to find person ID from any node ID.
+// Node IDs: person-{UUID} | {layerKey}-{UUID}-c{idx}[-c{subIdx}...]
+// UUID is always 36 chars, so after stripping the layerKey prefix we take slice(0,36).
 const findPersonIdFromNodeId = (nodeId) => {
   if (!nodeId) return null;
 
@@ -567,15 +705,13 @@ const findPersonIdFromNodeId = (nodeId) => {
     return nodeId;
   }
 
-  // Layer nodes follow the pattern: {layerKey}-{UUID}-{index}
-  // Since UUIDs contain hyphens, use lastIndexOf to find the trailing -{index}
   for (const layer of layers) {
     const prefix = `${layer.key}-`;
     if (nodeId.startsWith(prefix)) {
-      const withoutPrefix = nodeId.slice(prefix.length); // '{UUID}-{idx}'
-      const lastHyphen = withoutPrefix.lastIndexOf("-");
-      if (lastHyphen !== -1) {
-        return `person-${withoutPrefix.slice(0, lastHyphen)}`;
+      const withoutPrefix = nodeId.slice(prefix.length); // '{UUID}-c{idx}...'
+      // UUID is always 36 characters
+      if (withoutPrefix.length >= 36) {
+        return `person-${withoutPrefix.slice(0, 36)}`;
       }
     }
   }
@@ -908,14 +1044,14 @@ watch(
   { immediate: true, deep: true },
 );
 
-// Watch for changes to layer properties that affect the graphs
+// Watch for changes to layer chip data (structure or content)
 watch(
-  () => props.people?.map((p) => [p.layer1?.length, p.layer2?.length, p.layer3?.length]),
-  (newLengths, oldLengths) => {
+  () => props.people?.map((p) => JSON.stringify([p.layer1, p.layer2, p.layer3])),
+  (newVal, oldVal) => {
     if (
       cyInstances.value.size > 0 &&
       props.people &&
-      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
+      JSON.stringify(newVal) !== JSON.stringify(oldVal) &&
       !isUpdatingSnapshot.value
     ) {
       regenerateGraph();

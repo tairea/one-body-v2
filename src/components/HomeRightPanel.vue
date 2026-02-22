@@ -1,6 +1,5 @@
 <script setup>
 // @ts-check
-import { useRouter } from "vue-router";
 import { useAppStore } from "../stores/app";
 
 // Define props
@@ -19,12 +18,7 @@ const props = defineProps({
   },
 });
 
-const router = useRouter();
 const appStore = useAppStore();
-
-const handleEditProfile = () => {
-  router.push("/profile");
-};
 
 const handleFullscreen = () => {
   appStore.enterFullscreen();
@@ -40,7 +34,11 @@ const handleSaveNodePositions = () => {
 };
 
 // Define emits
-const emit = defineEmits(["saveNodePositions"]);
+const emit = defineEmits(["saveNodePositions", "editProfile"]);
+
+const handleEditProfile = () => {
+  emit("editProfile");
+};
 </script>
 
 <template>
