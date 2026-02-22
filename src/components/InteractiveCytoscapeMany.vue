@@ -629,38 +629,6 @@ const setupInteractions = (cyInstance) => {
     }
   });
 
-  // Drag-with-children: collect descendants on grab, move them together on drag
-  cyInstance.on("grab", "node", (evt) => {
-    const id = evt.target.id();
-    const desc = [];
-    const collect = (nId) => {
-      cyInstance.$(`edge[source="${nId}"]`).forEach((e) => {
-        const tId = e.target().id();
-        desc.push(tId);
-        collect(tId);
-      });
-    };
-    collect(id);
-    evt.target.scratch({ _desc: desc, _grabPos: { ...evt.target.position() } });
-    desc.forEach((d) => {
-      cyInstance.$(`#${d}`).scratch({ _grabPos: { ...cyInstance.$(`#${d}`).position() } });
-    });
-  });
-
-  cyInstance.on("drag", "node", (evt) => {
-    const node = evt.target;
-    const gp = node.scratch("_grabPos");
-    if (!gp) return;
-    const cur = node.position();
-    const dx = cur.x - gp.x;
-    const dy = cur.y - gp.y;
-    (node.scratch("_desc") ?? []).forEach((d) => {
-      const el = cyInstance.$(`#${d}`);
-      const orig = el.scratch("_grabPos");
-      if (orig) el.position({ x: orig.x + dx, y: orig.y + dy });
-    });
-  });
-
   // Emit position changed after drag ends
   cyInstance.on("dragfreeon", "node", (evt) => {
     const node = evt.target;
