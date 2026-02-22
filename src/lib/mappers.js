@@ -27,9 +27,9 @@ export function rowToPerson(row, supabaseUrl) {
     locationName: row.location_name ?? undefined,
     locationLatitude: row.location_latitude ?? undefined,
     locationLongitude: row.location_longitude ?? undefined,
-    values: row.values_list ?? [],
-    visions: row.visions_list ?? [],
-    vehicles: row.vehicles_list ?? [],
+    layer1: row.layer1_list ?? [],
+    layer2: row.layer2_list ?? [],
+    layer3: row.layer3_list ?? [],
     personsGraphSnapshot: row.persons_graph_snapshot ?? undefined,
   };
 }

@@ -2,9 +2,11 @@
 import { ref } from "vue";
 import { select, selectAll } from "d3-selection";
 import { useAppStore } from "../stores/app.js";
+import { useLayers } from "../lib/useLayers.js";
 
 export function useNodeClick(cy, svg, people) {
   const appStore = useAppStore();
+  const layers = useLayers();
   const isNodeView = ref(false);
   const currentHoveredEdge = ref(null);
   const currentHoveredSourceNode = ref(null);
@@ -40,7 +42,7 @@ export function useNodeClick(cy, svg, people) {
     // Save person data to store
     appStore.setCurrentPersonData(personData);
 
-    const { values, visions, vehicles, name } = personData;
+    const { layer1, layer2, layer3, name } = personData;
 
     // Hide all other nodes, edges, and labels
     cy.elements().not(node).style({
@@ -94,14 +96,13 @@ export function useNodeClick(cy, svg, people) {
     const radius_3 = nodeSize * 1;
     const radius_4 = nodeSize * 0.5;
 
+    const layerItems = [layer1, layer2, layer3];
     const data = [
       { onion: "person", children: [] },
-      { onion: "values", children: values },
-      { onion: "visions", children: visions },
-      {
-        onion: "vehicles",
-        children: vehicles.map((v) => (typeof v === "string" ? v : v.title)),
-      },
+      ...layers.map((layer, i) => ({
+        onion: layer.key,
+        children: layerItems[i] ?? [],
+      })),
     ];
 
     // Create the mask element
@@ -166,12 +167,9 @@ export function useNodeClick(cy, svg, people) {
           .attr("fill", "none");
 
         // Show UI (safely check if elements exist)
-        if (d.onion === "values") {
-          appStore.setActiveProfileSection("values");
-        } else if (d.onion === "visions") {
-          appStore.setActiveProfileSection("visions");
-        } else if (d.onion === "vehicles") {
-          appStore.setActiveProfileSection("vehicles");
+        const matchedLayer = layers.find((l) => l.key === d.onion);
+        if (matchedLayer) {
+          appStore.setActiveProfileSection(matchedLayer.key);
         }
       })
       .on("mouseout", function () {

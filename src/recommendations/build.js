@@ -2,15 +2,17 @@
 import assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as process from "node:process";
+import { config } from "dotenv";
 import ollama from "ollama";
 import * as z from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
 /** @import { Person, Recommendation } from "../types.d.ts" */
 
-/**
- * @internal
- * @typedef {Person["vehicles"][number]} Vehicle
- */
+config(); // load .env so VITE_LAYER* vars are available via process.env
+
+const layer1Name = process.env.VITE_LAYER1_NAME || "Values";
+const layer2Name = process.env.VITE_LAYER2_NAME || "Visions";
+const layer3Name = process.env.VITE_LAYER3_NAME || "Vehicles";
 
 /**
  * @internal
@@ -44,9 +46,9 @@ function readArguments(argv) {
       people.every(
         (person) =>
           person.name &&
-          Array.isArray(person.values) &&
-          Array.isArray(person.visions) &&
-          Array.isArray(person.vehicles),
+          Array.isArray(person.layer1) &&
+          Array.isArray(person.layer2) &&
+          Array.isArray(person.layer3),
       ),
     "People data doesn't look right",
   );
@@ -74,28 +76,19 @@ async function askOllama({ systemPrompt, input, schema }) {
 }
 
 /**
- * @param {Vehicle} vehicle
- * @returns {string}
- */
-function formatVehicle(vehicle) {
-  const { title, description } = vehicle;
-  return description ? `- ${title}: ${description}` : `- ${title}`;
-}
-
-/**
- * @param {Readonly<Pick<Person, "name" | "values" | "visions" | "vehicles">>} person
+ * @param {Readonly<Pick<Person, "name" | "layer1" | "layer2" | "layer3">>} person
  * @returns {string}
  */
 function formatPerson(person) {
   return [
     "NAME:",
     person.name,
-    "VALUES:",
-    person.values.join(", "),
-    "VISIONS:",
-    person.visions.join(", "),
-    "VEHICLES:",
-    person.vehicles.map((v) => formatVehicle(v)).join("\n"),
+    `${layer1Name.toUpperCase()}:`,
+    person.layer1.join(", "),
+    `${layer2Name.toUpperCase()}:`,
+    person.layer2.join(", "),
+    `${layer3Name.toUpperCase()}:`,
+    person.layer3.join(", "),
   ].join("\n");
 }
 
@@ -115,18 +108,18 @@ PERSON 1:
 
 ${formatPerson({
   name: "Alice",
-  values: ["cake", "candy", "respect"],
-  visions: ["The world is beautiful", "The world has lots of sweets"],
-  vehicles: [{ title: "Owns a candy company" }],
+  layer1: ["cake", "candy", "respect"],
+  layer2: ["The world is beautiful", "The world has lots of sweets"],
+  layer3: ["Owns a candy company"],
 })}
 
 PERSON 2:
 
 ${formatPerson({
   name: "Bob",
-  values: ["beauty", "headphones"],
-  visions: ["The world sounds great", "The world looks incredible"],
-  vehicles: [{ title: "Is a musician" }],
+  layer1: ["beauty", "headphones"],
+  layer2: ["The world sounds great", "The world looks incredible"],
+  layer3: ["Is a musician"],
 })}
 ---
 

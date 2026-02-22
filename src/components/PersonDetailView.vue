@@ -1,5 +1,7 @@
 <script setup>
 import { getPhotoUrl } from "../lib/utils.js";
+import { useLayers } from "../lib/useLayers.js";
+const layers = useLayers();
 </script>
 
 <template>
@@ -43,38 +45,22 @@ import { getPhotoUrl } from "../lib/utils.js";
       <div class="person-info">
         <h1 class="person-name">{{ person.name }}</h1>
 
-        <!-- Values Section -->
-        <div class="info-section">
-          <h3>Values</h3>
+        <!-- Community layers -->
+        <div
+          v-for="layer in layers"
+          :key="layer.key"
+          class="info-section"
+        >
+          <h3>{{ layer.name }}</h3>
           <div class="tags">
-            <span v-for="value in person.values" :key="value" class="tag">
-              {{ value }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Vision Section -->
-        <div class="info-section">
-          <h3>Vision</h3>
-          <div class="tags">
-            <span v-for="vision in person.visions" :key="vision" class="tag">
-              {{ vision }}
-            </span>
-          </div>
-        </div>
-
-        <!-- Vehicles Section -->
-        <div class="info-section">
-          <h3>Vehicles</h3>
-          <div class="vehicles-list">
-            <div
-              v-for="(vehicle, index) in person.vehicles"
-              :key="index"
-              class="vehicle-item"
+            <span
+              v-for="item in person[layer.key]"
+              :key="item"
+              class="tag"
+              :style="{ backgroundColor: layer.color, borderColor: layer.color, color: '#fff' }"
             >
-              <div class="vehicle-title">{{ vehicle.title }}</div>
-              <div class="vehicle-description">{{ vehicle.description }}</div>
-            </div>
+              {{ item }}
+            </span>
           </div>
         </div>
       </div>

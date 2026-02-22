@@ -13,19 +13,16 @@
         ></em
       >
     </p>
-    <div class="strings-input-container">
-      <input
-        v-model="newString"
-        @keydown="handleStringInputKeydown"
-        @blur="addString"
-        type="text"
-        :placeholder="instruction"
-        class="strings-input"
-        :class="{ editing: editingChip !== null }"
-        ref="stringInput"
-      />
-      <small class="edit-hint">💡 Click any chip to edit it</small>
-    </div>
+    <v-text-field
+      v-model="newString"
+      :label="instruction"
+      variant="outlined"
+      density="compact"
+      hide-details
+      ref="stringInput"
+      @keydown="handleStringInputKeydown"
+      @blur="addString"
+    />
     <div class="chip-container">
       <div
         v-for="string in strings"
@@ -60,6 +57,10 @@ export default {
     strings: {
       type: Array,
       required: true,
+    },
+    color: {
+      type: String,
+      default: null,
     },
   },
   emits: ["update"],
@@ -108,11 +109,14 @@ export default {
       }
       // Focus the input field for immediate editing
       this.$nextTick(() => {
-        this.$refs.stringInput?.focus();
+        this.$refs.stringInput?.focus?.();
         this.editingChip = null;
       });
     },
     getChipColor(string) {
+      if (this.color) {
+        return this.color;
+      }
       // Cycle through DWeb colors sequentially
       const dwebColors = [
         "#ff4f2d", // Bright Red-Orange (large and medium dots)
@@ -168,71 +172,20 @@ export default {
   }
 }
 
-.strings-input-container {
-  margin-bottom: 16px;
-}
-
-.edit-hint {
-  display: block;
-  margin-top: 4px;
-  font-size: 12px;
-  color: #666;
-  font-style: italic;
-
-  .dark-mode & {
-    color: rgba(255, 255, 255, 0.5);
-  }
-}
-
-.strings-input {
-  width: 100%;
-  padding: 10px 12px;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 14px;
-  box-sizing: border-box;
-  transition: border-color 0.2s;
-
-  &:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-  }
-
-  &.editing {
-    border-color: #28a745;
-    box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.25);
-  }
-
-  .dark-mode & {
-    background-color: #4a5568;
-    border-color: #718096;
-    color: rgba(255, 255, 255, 0.87);
-
-    &:focus {
-      border-color: #4299e1;
-      box-shadow: 0 0 0 2px rgba(66, 153, 225, 0.25);
-    }
-
-    &.editing {
-      border-color: #48bb78;
-      box-shadow: 0 0 0 2px rgba(72, 187, 120, 0.25);
-    }
-  }
-}
-
 // Chip container and chips
 .chip-container {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
 }
 
 .chip {
-  padding: 8px 16px;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px;
   border: 1px solid #ddd;
-  border-radius: 20px;
+  border-radius: 8px;
   background: white;
   color: #333;
   font-size: 14px;

@@ -2,33 +2,13 @@
 // @ts-check
 import { defineEmits, computed } from "vue";
 import { useAppStore } from "../stores/app";
+import { useLayers } from "../lib/useLayers";
 import { select } from "d3-selection";
 
 const emit = defineEmits(["showAiView", "showMembersView"]);
 
 const appStore = useAppStore();
-
-// Computed properties for V, V, V div visibility
-const valuesOpacity = computed(() => {
-  return {
-    opacity: appStore.activeProfileSection === "values" ? "1" : "0",
-    transition: "opacity 0.3s ease",
-  };
-});
-
-const visionsOpacity = computed(() => {
-  return {
-    opacity: appStore.activeProfileSection === "visions" ? "1" : "0",
-    transition: "opacity 0.3s ease",
-  };
-});
-
-const vehiclesOpacity = computed(() => {
-  return {
-    opacity: appStore.activeProfileSection === "vehicles" ? "1" : "0",
-    transition: "opacity 0.3s ease",
-  };
-});
+const layers = useLayers();
 
 const handleShowGlobe = () => {
   appStore.showGlobe();
@@ -99,18 +79,19 @@ const handleZoomOut = () => {
       </h1>
     </div>
 
-    <!-- V, V, V's -->
-    <div id="values" class="v" :style="valuesOpacity">
-      <h2 class="v1">VALUES</h2>
-      <h3 class="v2">SKILLS, EXPERIENCE</h3>
-    </div>
-    <div id="visions" class="v" :style="visionsOpacity">
-      <h2 class="v1">VISIONS</h2>
-      <h3 class="v2">INTERESTS, PASSIONS, PURPOSE</h3>
-    </div>
-    <div id="vehicles" class="v" :style="vehiclesOpacity">
-      <h2 class="v1">VEHICLES</h2>
-      <h3 class="v2">INITIATIVES, PROJECTS, BUSINESSES</h3>
+    <!-- Community layers -->
+    <div
+      v-for="layer in layers"
+      :key="layer.key"
+      :id="layer.key"
+      class="v"
+      :style="{
+        opacity: appStore.activeProfileSection === layer.key ? '1' : '0',
+        transition: 'opacity 0.3s ease',
+      }"
+    >
+      <h2 class="v1">{{ layer.name.toUpperCase() }}</h2>
+      <h3 class="v2">{{ layer.description.toUpperCase() }}</h3>
     </div>
 
     <!-- BACK TO MEMBERS -->

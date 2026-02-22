@@ -23,8 +23,7 @@ const router = useRouter();
 const appStore = useAppStore();
 
 const handleEditProfile = () => {
-  appStore.setEditingPerson(props.person);
-  appStore.showAddPersonDialog();
+  router.push("/profile");
 };
 
 const handleFullscreen = () => {

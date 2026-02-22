@@ -9,9 +9,9 @@ create table public.people (
   location_name          text,
   location_latitude      float8,
   location_longitude     float8,
-  values_list            jsonb not null default '[]',
-  visions_list           jsonb not null default '[]',
-  vehicles_list          jsonb not null default '[]',
+  layer1_list            jsonb not null default '[]',
+  layer2_list            jsonb not null default '[]',
+  layer3_list            jsonb not null default '[]',
   persons_graph_snapshot jsonb,
   embedding              vector(1536),
   created_at             timestamptz default now()

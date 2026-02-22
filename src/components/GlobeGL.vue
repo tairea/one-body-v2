@@ -13,7 +13,7 @@ import Globe from "globe.gl";
 import { FrontSide } from "three";
 import * as THREE from "three";
 import { useAppStore } from "../stores/app";
-import { dWebColors, getPhotoUrl } from "../lib/utils.js";
+import { dWebColors } from "../lib/utils.js";
 /** @import { Person } from "../types.d.ts" */
 
 /**
@@ -25,28 +25,7 @@ const doesPersonHaveLocation = (person) =>
   typeof person.locationLongitude === "number";
 
 // Helper function to safely get photo URL for a person
-const getPersonPhotoUrl = (person) => {
-  if (!person.hasPhoto) {
-    return undefined;
-  }
-
-  // If the person has a photo field with data (data URL), use it directly
-  if (
-    person.photo &&
-    typeof person.photo === "string" &&
-    person.photo.startsWith("data:")
-  ) {
-    return person.photo;
-  }
-
-  // If the person has an ID, construct the API URL
-  if (person.id && typeof person.id === "number") {
-    return getPhotoUrl(person, location.href);
-  }
-
-  // Fallback: no photo available
-  return undefined;
-};
+const getPersonPhotoUrl = (person) => person.photoUrl ?? undefined;
 
 export default {
   name: "GlobeGL",
@@ -242,7 +221,7 @@ export default {
     addCombinedCustomLayer(campNavarro) {
       // Convert people data to points format
       /** @type {Person[]} */ const people = this.people;
-      const peoplePoints = people.map((person) => ({
+      const peoplePoints = people.filter(doesPersonHaveLocation).map((person) => ({
         lat: person.locationLatitude,
         lng: person.locationLongitude,
         name: person.name,

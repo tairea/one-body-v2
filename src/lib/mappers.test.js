@@ -12,9 +12,9 @@ const sampleRow = {
   location_name: "Berlin, Germany",
   location_latitude: 52.52,
   location_longitude: 13.4,
-  values_list: ["justice", "creativity"],
-  visions_list: ["a fairer world"],
-  vehicles_list: [{ title: "Open Source Project", description: "A tool for good" }],
+  layer1_list: ["justice", "creativity"],
+  layer2_list: ["a fairer world"],
+  layer3_list: ["open source"],
   persons_graph_snapshot: null,
   created_at: "2026-02-19T00:00:00Z",
 };
@@ -31,11 +31,9 @@ test("rowToPerson maps all fields correctly", () => {
   assert.equal(person.locationName, "Berlin, Germany");
   assert.equal(person.locationLatitude, 52.52);
   assert.equal(person.locationLongitude, 13.4);
-  assert.deepEqual(person.values, ["justice", "creativity"]);
-  assert.deepEqual(person.visions, ["a fairer world"]);
-  assert.deepEqual(person.vehicles, [
-    { title: "Open Source Project", description: "A tool for good" },
-  ]);
+  assert.deepEqual(person.layer1, ["justice", "creativity"]);
+  assert.deepEqual(person.layer2, ["a fairer world"]);
+  assert.deepEqual(person.layer3, ["open source"]);
   assert.equal(person.personsGraphSnapshot, undefined);
 });
 
@@ -45,16 +43,16 @@ test("rowToPerson handles null optional fields", () => {
     location_name: null,
     location_latitude: null,
     location_longitude: null,
-    values_list: [],
-    visions_list: [],
-    vehicles_list: [],
+    layer1_list: [],
+    layer2_list: [],
+    layer3_list: [],
     persons_graph_snapshot: null,
   };
   const person = rowToPerson(row, SUPABASE_URL);
   assert.equal(person.locationName, undefined);
   assert.equal(person.locationLatitude, undefined);
   assert.equal(person.locationLongitude, undefined);
-  assert.deepEqual(person.values, []);
+  assert.deepEqual(person.layer1, []);
 });
 
 test("rowToRecommendation maps all fields correctly", () => {

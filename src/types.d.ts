@@ -6,12 +6,9 @@ export type Person = Readonly<{
   locationName?: string;
   locationLatitude?: number;
   locationLongitude?: number;
-  values: ReadonlyArray<string>;
-  visions: ReadonlyArray<string>;
-  vehicles: ReadonlyArray<{
-    title: string;
-    description?: string;
-  }>;
+  layer1: ReadonlyArray<string>;
+  layer2: ReadonlyArray<string>;
+  layer3: ReadonlyArray<string>;
   personsGraphSnapshot?: {
     nodes: Array<{
       id: string;
@@ -46,9 +43,9 @@ export type PersonRow = {
   location_name: string | null;
   location_latitude: number | null;
   location_longitude: number | null;
-  values_list: string[];
-  visions_list: string[];
-  vehicles_list: { title: string; description?: string }[];
+  layer1_list: string[];
+  layer2_list: string[];
+  layer3_list: string[];
   persons_graph_snapshot: Person["personsGraphSnapshot"] | null;
   created_at: string;
 };

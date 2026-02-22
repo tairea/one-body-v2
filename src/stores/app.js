@@ -32,7 +32,7 @@ export const useAppStore = defineStore("app", {
     activeComponent: "cytoscape",
     isViewingProfile: false,
     currentPersonData: null,
-    /** @type {null | "values" | "visions" | "vehicles"} */
+    /** @type {null | "layer1" | "layer2" | "layer3"} */
     activeProfileSection: null,
     cytoscapeData: null,
     cytoscapeInitialized: false,

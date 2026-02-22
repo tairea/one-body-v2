@@ -18,9 +18,9 @@ const people = (data ?? []).map((row) => ({
   locationName: row.location_name,
   locationLatitude: row.location_latitude,
   locationLongitude: row.location_longitude,
-  values: row.values_list ?? [],
-  visions: row.visions_list ?? [],
-  vehicles: row.vehicles_list ?? [],
+  layer1: row.layer1_list ?? [],
+  layer2: row.layer2_list ?? [],
+  layer3: row.layer3_list ?? [],
 }));
 
 fs.writeFileSync(outputFile, JSON.stringify(people, null, 2), { encoding: "utf8" });

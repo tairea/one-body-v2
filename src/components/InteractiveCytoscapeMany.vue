@@ -5,9 +5,11 @@ import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { useAppStore } from "../stores/app";
 import cytoscape from "cytoscape";
 import { getPhotoUrl } from "../lib/utils";
+import { useLayers } from "../lib/useLayers";
 
 const appStore = useAppStore();
 const router = useRouter();
+const layers = useLayers();
 
 // Props for multiple people
 /** @type {import('vue').PropType<import('../types').Person[]>} */
@@ -105,10 +107,10 @@ const lightModeStyles = [
       "text-halign": "center",
     },
   },
-  {
-    selector: "node[type='value']",
+  ...layers.map((layer) => ({
+    selector: `node[type='${layer.key}']`,
     style: {
-      "background-color": "#ff4f2d",
+      "background-color": layer.color,
       "border-color": "transparent",
       "border-width": "0px",
       "text-wrap": "wrap",
@@ -119,37 +121,7 @@ const lightModeStyles = [
       height: 20,
       label: "",
     },
-  },
-  {
-    selector: "node[type='vision']",
-    style: {
-      "background-color": "#e06ef9",
-      "border-color": "transparent",
-      "border-width": "0px",
-      "text-wrap": "wrap",
-      "text-max-width": "80px",
-      "font-size": "6px",
-      color: "#ffffff",
-      width: 20,
-      height: 20,
-      label: "",
-    },
-  },
-  {
-    selector: "node[type='vehicle']",
-    style: {
-      "background-color": "#bbdf27",
-      "border-color": "transparent",
-      "border-width": "0px",
-      "text-wrap": "wrap",
-      "text-max-width": "80px",
-      "font-size": "6px",
-      color: "#ffffff",
-      width: 20,
-      height: 20,
-      label: "",
-    },
-  },
+  })),
   {
     selector: "edge",
     style: {
@@ -238,10 +210,10 @@ const darkModeStyles = [
       "text-halign": "center",
     },
   },
-  {
-    selector: "node[type='value']",
+  ...layers.map((layer) => ({
+    selector: `node[type='${layer.key}']`,
     style: {
-      "background-color": "#ff4f2d",
+      "background-color": layer.color,
       "border-color": "transparent",
       "border-width": "0px",
       "text-wrap": "wrap",
@@ -252,37 +224,7 @@ const darkModeStyles = [
       height: 20,
       label: "",
     },
-  },
-  {
-    selector: "node[type='vision']",
-    style: {
-      "background-color": "#e06ef9",
-      "border-color": "transparent",
-      "border-width": "0px",
-      "text-wrap": "wrap",
-      "text-max-width": "80px",
-      "font-size": "6px",
-      color: "#0c0c0c",
-      width: 20,
-      height: 20,
-      label: "",
-    },
-  },
-  {
-    selector: "node[type='vehicle']",
-    style: {
-      "background-color": "#bbdf27",
-      "border-color": "transparent",
-      "border-width": "0px",
-      "text-wrap": "wrap",
-      "text-max-width": "80px",
-      "font-size": "6px",
-      color: "#0c0c0c",
-      width: 20,
-      height: 20,
-      label: "",
-    },
-  },
+  })),
   {
     selector: "edge",
     style: {
@@ -461,135 +403,51 @@ const initializeGraphData = (personData, personIndex) => {
 
   nodes.push(personNode);
 
-  // Add values nodes
-  personData.values.forEach((value, index) => {
-    const valueId = `value-${personData.id}-${index}`;
-    let position;
+  // Add layer nodes
+  const radii = [120, 200, 280];
+  for (const [i, layer] of layers.entries()) {
+    const layerKey = layer.key;
+    const items = personData[layerKey] ?? [];
+    const radius = radii[i];
 
-    if (hasSavedPositions) {
-      const savedNode = personData.personsGraphSnapshot.nodes.find(
-        (n) => n.id === valueId,
-      );
-      position = savedNode ? savedNode.position : null;
-    }
+    items.forEach((item, index) => {
+      const nodeId = `${layerKey}-${personData.id}-${index}`;
+      let position;
 
-    if (!position) {
-      // Calculate default position if no saved position
-      const angle = (index / personData.values.length) * 2 * Math.PI;
-      const radius = 120;
-      position = {
-        x: graphOffset.x + Math.cos(angle) * radius,
-        y: graphOffset.y + Math.sin(angle) * radius,
-      };
-    }
+      if (hasSavedPositions) {
+        const savedNode = personData.personsGraphSnapshot.nodes.find(
+          (n) => n.id === nodeId,
+        );
+        position = savedNode ? savedNode.position : null;
+      }
 
-    const valueNode = {
-      data: {
-        id: valueId,
-        label: value,
-        type: "value",
-      },
-      position,
-    };
-    nodes.push(valueNode);
+      if (!position) {
+        const angle = (index / items.length) * 2 * Math.PI;
+        position = {
+          x: graphOffset.x + Math.cos(angle) * radius,
+          y: graphOffset.y + Math.sin(angle) * radius,
+        };
+      }
 
-    // Add edge from person to value
-    edges.push({
-      data: {
-        id: `person-${personData.id}-value-${index}`,
-        source: `person-${personData.id}`,
-        target: valueId,
-        label: "has value",
-      },
+      nodes.push({
+        data: {
+          id: nodeId,
+          label: item,
+          type: layerKey,
+        },
+        position,
+      });
+
+      edges.push({
+        data: {
+          id: `person-${personData.id}-${layerKey}-${index}`,
+          source: `person-${personData.id}`,
+          target: nodeId,
+          label: `has ${layer.name.toLowerCase()}`,
+        },
+      });
     });
-  });
-
-  // Add visions nodes
-  personData.visions.forEach((vision, index) => {
-    const visionId = `vision-${personData.id}-${index}`;
-    let position;
-
-    if (hasSavedPositions) {
-      const savedNode = personData.personsGraphSnapshot.nodes.find(
-        (n) => n.id === visionId,
-      );
-      position = savedNode ? savedNode.position : null;
-    }
-
-    if (!position) {
-      // Calculate default position if no saved position
-      const angle = (index / personData.visions.length) * 2 * Math.PI;
-      const radius = 200;
-      position = {
-        x: graphOffset.x + Math.cos(angle) * radius,
-        y: graphOffset.y + Math.sin(angle) * radius,
-      };
-    }
-
-    const visionNode = {
-      data: {
-        id: visionId,
-        label: vision,
-        type: "vision",
-      },
-      position,
-    };
-    nodes.push(visionNode);
-
-    // Add edge from person to vision
-    edges.push({
-      data: {
-        id: `person-${personData.id}-vision-${index}`,
-        source: `person-${personData.id}`,
-        target: visionId,
-        label: "has vision",
-      },
-    });
-  });
-
-  // Add vehicles nodes
-  personData.vehicles.forEach((vehicle, index) => {
-    const vehicleId = `vehicle-${personData.id}-${index}`;
-    let position;
-
-    if (hasSavedPositions) {
-      const savedNode = personData.personsGraphSnapshot.nodes.find(
-        (n) => n.id === vehicleId,
-      );
-      position = savedNode ? savedNode.position : null;
-    }
-
-    if (!position) {
-      // Calculate default position if no saved position
-      const angle = (index / personData.vehicles.length) * 2 * Math.PI;
-      const radius = 280;
-      position = {
-        x: graphOffset.x + Math.cos(angle) * radius,
-        y: graphOffset.y + Math.sin(angle) * radius,
-      };
-    }
-
-    const vehicleNode = {
-      data: {
-        id: vehicleId,
-        label: vehicle.title,
-        type: "vehicle",
-        description: vehicle.description,
-      },
-      position,
-    };
-    nodes.push(vehicleNode);
-
-    // Add edge from person to vehicle
-    edges.push({
-      data: {
-        id: `person-${personData.id}-vehicle-${index}`,
-        source: `person-${personData.id}`,
-        target: vehicleId,
-        label: "has vehicle",
-      },
-    });
-  });
+  }
 
   return { nodes, edges };
 };
@@ -705,26 +563,20 @@ const setupInteractions = (cyInstance) => {
 const findPersonIdFromNodeId = (nodeId) => {
   if (!nodeId) return null;
 
-  // Extract person ID from node ID patterns
   if (nodeId.startsWith("person-")) {
     return nodeId;
-  } else if (nodeId.startsWith("value-")) {
-    // value-{personId}-{index}
-    const parts = nodeId.split("-");
-    if (parts.length >= 2) {
-      return `person-${parts[1]}`;
-    }
-  } else if (nodeId.startsWith("vision-")) {
-    // vision-{personId}-{index}
-    const parts = nodeId.split("-");
-    if (parts.length >= 2) {
-      return `person-${parts[1]}`;
-    }
-  } else if (nodeId.startsWith("vehicle-")) {
-    // vehicle-{personId}-{index}
-    const parts = nodeId.split("-");
-    if (parts.length >= 2) {
-      return `person-${parts[1]}`;
+  }
+
+  // Layer nodes follow the pattern: {layerKey}-{UUID}-{index}
+  // Since UUIDs contain hyphens, use lastIndexOf to find the trailing -{index}
+  for (const layer of layers) {
+    const prefix = `${layer.key}-`;
+    if (nodeId.startsWith(prefix)) {
+      const withoutPrefix = nodeId.slice(prefix.length); // '{UUID}-{idx}'
+      const lastHyphen = withoutPrefix.lastIndexOf("-");
+      if (lastHyphen !== -1) {
+        return `person-${withoutPrefix.slice(0, lastHyphen)}`;
+      }
     }
   }
 
@@ -807,11 +659,12 @@ const zoomToPersonGraph = (personId) => {
     const otherPersonId = otherPerson.id().replace("person-", "");
 
     // Find all nodes that belong to this other person using ID patterns
-    const otherPersonValues = mainCy.$(`node[id^="value-${otherPersonId}-"]`);
-    const otherPersonVisions = mainCy.$(`node[id^="vision-${otherPersonId}-"]`);
-    const otherPersonVehicles = mainCy.$(
-      `node[id^="vehicle-${otherPersonId}-"]`,
-    );
+    let otherPersonLayerNodes = mainCy.collection();
+    for (const layer of layers) {
+      otherPersonLayerNodes = otherPersonLayerNodes.union(
+        mainCy.$(`node[id^="${layer.key}-${otherPersonId}-"]`)
+      );
+    }
 
     // Get all edges connected to this other person
     const otherPersonEdges = otherPerson.connectedEdges();
@@ -819,9 +672,7 @@ const zoomToPersonGraph = (personId) => {
     // Add all elements from this other person's graph
     allOtherElements = allOtherElements
       .union(otherPerson)
-      .union(otherPersonValues)
-      .union(otherPersonVisions)
-      .union(otherPersonVehicles)
+      .union(otherPersonLayerNodes)
       .union(otherPersonEdges);
   });
 
@@ -986,7 +837,7 @@ const initializeAllGraphs = () => {
       minZoom: 0.1, // Allow more zoom out to see all graphs
       maxZoom: 2,
       wheelSensitivity: 0.3,
-      autoungrabify: true, // Changed from false to true to make nodes non-draggable
+      autoungrabify: false,
       autolock: false,
     }),
   );
@@ -1057,39 +908,9 @@ watch(
   { immediate: true, deep: true },
 );
 
-// Watch for changes to people properties that affect the graphs
+// Watch for changes to layer properties that affect the graphs
 watch(
-  () => props.people?.map((p) => p.values?.length),
-  (newLengths, oldLengths) => {
-    if (
-      cyInstances.value.size > 0 &&
-      props.people &&
-      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
-      !isUpdatingSnapshot.value
-    ) {
-      regenerateGraph();
-    }
-  },
-  { deep: true },
-);
-
-watch(
-  () => props.people?.map((p) => p.visions?.length),
-  (newLengths, oldLengths) => {
-    if (
-      cyInstances.value.size > 0 &&
-      props.people &&
-      JSON.stringify(newLengths) !== JSON.stringify(oldLengths) &&
-      !isUpdatingSnapshot.value
-    ) {
-      regenerateGraph();
-    }
-  },
-  { deep: true },
-);
-
-watch(
-  () => props.people?.map((p) => p.vehicles?.length),
+  () => props.people?.map((p) => [p.layer1?.length, p.layer2?.length, p.layer3?.length]),
   (newLengths, oldLengths) => {
     if (
       cyInstances.value.size > 0 &&

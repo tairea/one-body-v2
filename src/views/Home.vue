@@ -110,15 +110,6 @@ onUnmounted(() => {
     }"
   >
     <DarkModeToggle />
-    <v-btn
-      class="edit-profile-btn"
-      variant="outlined"
-      size="small"
-      prepend-icon="mdi-account-edit"
-      @click="router.push('/profile')"
-    >
-      Edit Profile
-    </v-btn>
 
     <!-- Close Fullscreen Button -->
     <div
@@ -195,13 +186,6 @@ onUnmounted(() => {
   &.fullscreen {
     padding: 0;
   }
-}
-
-.edit-profile-btn {
-  position: fixed;
-  top: 15px;
-  right: 60px;
-  z-index: 3000;
 }
 
 // Close fullscreen button

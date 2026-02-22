@@ -1,5 +1,5 @@
 // @ts-check
-import { input, password, select } from "@inquirer/prompts";
+import { confirm, input, password, select } from "@inquirer/prompts";
 import { createClient } from "@supabase/supabase-js";
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -111,7 +111,42 @@ async function main() {
     console.error(`  File not found: ${logoPath} — please try again.`);
   }
 
-  // ── 2. Supabase auth ─────────────────────────────────────────────────────
+  // ── 2. Community layers ──────────────────────────────────────────────────
+  console.log("\nWhat are 3 key areas you want your community to connect around?\n");
+
+  /** @type {{ name: string, description: string, color: string }[]} */
+  const layers = [];
+  for (let i = 1; i <= 3; i++) {
+    const layerName = await input({
+      message: `Name for area ${i}:`,
+      default: ["Values", "Visions", "Vehicles"][i - 1],
+    });
+
+    const layerDescription = await input({
+      message: `Hint for members — what should they enter for ${layerName}?`,
+      default: [
+        "The principles that guide how you move through the world.",
+        "The futures you want to help bring into being.",
+        "The projects and initiatives you're driving.",
+      ][i - 1],
+    });
+
+    let layerColor = "";
+    while (true) {
+      layerColor = await input({
+        message: `Hex colour for "${layerName}" nodes in the graph (e.g. #ff4f2d):`,
+        default: ["#ff4f2d", "#e06ef9", "#bbdf27"][i - 1],
+      });
+      if (/^#[0-9a-fA-F]{6}$/.test(layerColor)) {
+        break;
+      }
+      console.error(`  Invalid hex colour: ${layerColor} — must be #RRGGBB format.`);
+    }
+
+    layers.push({ name: layerName, description: layerDescription, color: layerColor });
+  }
+
+  // ── 3. Supabase auth ─────────────────────────────────────────────────────
   console.log("\nSupabase setup\n");
 
   if (!isLoggedIn()) {
@@ -135,7 +170,7 @@ async function main() {
   }
 
   // ── 4. Project config ────────────────────────────────────────────────────
-  const projectName = await input({
+  let projectName = await input({
     message: "Supabase project name:",
     default: "one-body",
   });
@@ -159,19 +194,31 @@ async function main() {
   });
 
   // ── 5. Create project ────────────────────────────────────────────────────
-  console.log("\nCreating project...");
-  const project = supabaseJSON([
-    "projects",
-    "create",
-    projectName,
-    "--org-id",
-    orgId,
-    "--db-password",
-    dbPassword,
-    "--region",
-    region,
-  ]);
-  const projectRef = project.id;
+  let projectRef;
+  while (true) {
+    console.log("\nCreating project...");
+    try {
+      const project = supabaseJSON([
+        "projects",
+        "create",
+        projectName,
+        "--org-id",
+        orgId,
+        "--db-password",
+        dbPassword,
+        "--region",
+        region,
+      ]);
+      projectRef = project.id;
+      break;
+    } catch (err) {
+      console.error(`\n  Error creating project: ${err.message}`);
+      projectName = await input({
+        message: "Enter a different project name:",
+        default: projectName,
+      });
+    }
+  }
   console.log(`✓ Project created: ${projectRef}`);
 
   await waitForProject(projectRef);
@@ -234,23 +281,86 @@ async function main() {
     `VITE_COMMUNITY_TAGLINE=${communityTagline}`,
     logoUrl ? `VITE_COMMUNITY_LOGO_URL=${logoUrl}` : `# VITE_COMMUNITY_LOGO_URL=`,
     `# OPENCAGE_API_KEY=  ← add your key from opencagedata.com`,
+    `VITE_LAYER1_NAME=${layers[0].name}`,
+    `VITE_LAYER1_DESCRIPTION=${layers[0].description}`,
+    `VITE_LAYER1_COLOR=${layers[0].color}`,
+    `VITE_LAYER2_NAME=${layers[1].name}`,
+    `VITE_LAYER2_DESCRIPTION=${layers[1].description}`,
+    `VITE_LAYER2_COLOR=${layers[1].color}`,
+    `VITE_LAYER3_NAME=${layers[2].name}`,
+    `VITE_LAYER3_DESCRIPTION=${layers[2].description}`,
+    `VITE_LAYER3_COLOR=${layers[2].color}`,
   ];
   writeFileSync(".env", lines.join("\n") + "\n");
   console.log("✓ .env written");
+
+  // ── 11. Deploy to Vercel (optional) ──────────────────────────────────────
+  let appUrl = "http://localhost:5173";
+
+  const wantsDeploy = await confirm({
+    message: "Deploy your community to Vercel now for a shareable URL?",
+    default: true,
+  });
+
+  if (wantsDeploy) {
+    // Build locally — VITE_* vars are baked into the bundle from .env
+    console.log("\nBuilding app...");
+    const buildResult = spawnSync("npm", ["run", "build"], {
+      stdio: "inherit",
+      encoding: "utf8",
+    });
+    if (buildResult.status !== 0) {
+      throw new Error("Build failed — fix the error above then re-run npm run setup.");
+    }
+    console.log("✓ App built");
+
+    // Check Vercel login
+    const vercelWhoami = spawnSync("npx", ["vercel", "whoami"], {
+      stdio: ["pipe", "pipe", "pipe"],
+      encoding: "utf8",
+    });
+    if (vercelWhoami.status !== 0) {
+      console.log("\nOpening browser for Vercel login...");
+      spawnSync("npx", ["vercel", "login"], { stdio: "inherit", encoding: "utf8" });
+    } else {
+      console.log(`✓ Logged in to Vercel as ${vercelWhoami.stdout.trim()}`);
+    }
+
+    // Deploy the pre-built dist/ folder as static files
+    console.log("Deploying to Vercel...");
+    const deployResult = spawnSync(
+      "npx",
+      ["vercel", "dist", "--prod", "--yes"],
+      { stdio: ["pipe", "pipe", "inherit"], encoding: "utf8" }
+    );
+
+    if (deployResult.status !== 0) {
+      console.warn(
+        "\n  Warning: Vercel deployment failed.\n" +
+        "  You can deploy manually later with:\n" +
+        "    npm run build && npx vercel dist --prod\n"
+      );
+    } else {
+      const urlMatch = deployResult.stdout.match(/https:\/\/\S+\.vercel\.app/);
+      if (urlMatch) {
+        appUrl = urlMatch[0];
+        console.log(`✓ Deployed: ${appUrl}`);
+      }
+    }
+  }
 
   // ── Done ─────────────────────────────────────────────────────────────────
   console.log(`
 ✨ Your community is ready!
 
   Community:  ${communityName}
-  Project:    ${supabaseUrl}
+  App:        ${appUrl}
+  Database:   ${supabaseUrl}
 
 Next steps:
   1. Add your OPENCAGE_API_KEY to .env  (geocoding for location fields)
      Get a free key at: https://opencagedata.com
-  2. Run:   npm run dev
-  3. Visit: http://localhost:5173
-`);
+${wantsDeploy ? "" : "  2. Run:   npm run dev\n  3. Visit: http://localhost:5173\n"}`);
 }
 
 main().catch((err) => {

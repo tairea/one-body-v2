@@ -6,19 +6,20 @@ import { supabase } from "../lib/supabase.js";
 import { useAppStore } from "../stores/app.js";
 import { getGeocodedLocation } from "../lib/getGeocodedLocation.js";
 import StringListStep from "../components/StringListStep.vue";
-import VehiclesStep from "../components/VehiclesStep.vue";
+import { useLayers } from "../lib/useLayers.js";
 
 const router = useRouter();
 const store = useAppStore();
+const layers = useLayers();
 
 const name = ref("");
 const locationInput = ref("");
 const locationName = ref("");
 const locationLatitude = ref(/** @type {number | null} */ (null));
 const locationLongitude = ref(/** @type {number | null} */ (null));
-const values = ref(/** @type {string[]} */ ([]));
-const visions = ref(/** @type {string[]} */ ([]));
-const vehicles = ref(/** @type {{ title: string; description?: string }[]} */ ([]));
+const layer1 = ref(/** @type {string[]} */ ([]));
+const layer2 = ref(/** @type {string[]} */ ([]));
+const layer3 = ref(/** @type {string[]} */ ([]));
 const photoFile = ref(/** @type {File | null} */ (null));
 const photoPreviewUrl = ref(/** @type {string | null} */ (null));
 const saving = ref(false);
@@ -42,9 +43,9 @@ onMounted(async () => {
     locationName.value = store.myPerson.locationName ?? "";
     locationLatitude.value = store.myPerson.locationLatitude ?? null;
     locationLongitude.value = store.myPerson.locationLongitude ?? null;
-    values.value = [...store.myPerson.values];
-    visions.value = [...store.myPerson.visions];
-    vehicles.value = [...store.myPerson.vehicles];
+    layer1.value = [...store.myPerson.layer1];
+    layer2.value = [...store.myPerson.layer2];
+    layer3.value = [...store.myPerson.layer3];
     photoPreviewUrl.value = store.myPerson.photoUrl ?? null;
   }
 });
@@ -99,9 +100,9 @@ async function save() {
         location_name: locationName.value || null,
         location_latitude: locationLatitude.value,
         location_longitude: locationLongitude.value,
-        values_list: values.value,
-        visions_list: visions.value,
-        vehicles_list: vehicles.value,
+        layer1_list: layer1.value,
+        layer2_list: layer2.value,
+        layer3_list: layer3.value,
       },
       { onConflict: "user_id" }
     );
@@ -186,60 +187,46 @@ async function save() {
 
           <!-- Name + Location -->
           <div class="identity-fields">
-            <div class="field-group">
-              <label class="field-label">Full Name <span class="required">*</span></label>
-              <input
-                v-model="name"
-                type="text"
-                class="field-input"
-                placeholder="Your full name"
-                autocomplete="name"
-              />
-            </div>
-            <div class="field-group">
-              <label class="field-label">Location</label>
-              <input
-                v-model="locationInput"
-                type="text"
-                class="field-input"
-                placeholder="City, Country"
-                @blur="geocodeLocation"
-                autocomplete="off"
-              />
-              <span class="field-hint">e.g. Berlin, Germany</span>
-            </div>
+            <v-text-field
+              v-model="name"
+              label="Full Name"
+              variant="outlined"
+              required
+              autocomplete="name"
+              hide-details
+            />
+            <v-text-field
+              v-model="locationInput"
+              label="Location"
+              variant="outlined"
+              placeholder="City, Country"
+              hint="e.g. Berlin, Germany"
+              persistent-hint
+              autocomplete="off"
+              @blur="geocodeLocation"
+            />
           </div>
         </div>
       </section>
 
       <div class="section-divider" />
 
-      <!-- ── Values / Visions / Vehicles ──────────────────────── -->
+      <!-- ── Community Layers ──────────────────────────────────── -->
       <section class="section columns-section">
         <div class="columns-grid">
-          <div class="column">
-            <StringListStep
-              :strings="values"
-              title="Values"
-              description="The principles that guide how you move through the world."
-              instruction="Add a value, press Enter"
-              @update="values = $event"
-            />
-          </div>
-          <div class="column-divider" />
-          <div class="column">
-            <StringListStep
-              :strings="visions"
-              title="Visions"
-              description="The futures you want to help bring into being."
-              instruction="Add a vision, press Enter"
-              @update="visions = $event"
-            />
-          </div>
-          <div class="column-divider" />
-          <div class="column">
-            <VehiclesStep v-model:vehicles="vehicles" />
-          </div>
+          <template v-for="(layer, i) in layers" :key="layer.key">
+            <div class="column-divider" v-if="i > 0" />
+            <div class="column">
+              <StringListStep
+                :strings="i === 0 ? layer1 : i === 1 ? layer2 : layer3"
+                :title="layer.name"
+                :description="layer.description"
+                :instruction="`Add a ${layer.name.toLowerCase()}, press Enter`"
+                :color="layer.color"
+                @update="i === 0 ? (layer1 = $event) : i === 1 ? (layer2 = $event) : (layer3 = $event)"
+              />
+            </div>
+          </template>
         </div>
       </section>
 
@@ -260,32 +247,32 @@ async function save() {
 </template>
 
 <style lang="scss" scoped>
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500&family=Figtree:wght@300;400;500;600&display=swap');
-
 // ── Tokens ──────────────────────────────────────────────────────
 .profile-page {
-  --bg:        #F7F6F3;
-  --surface:   #FFFFFF;
-  --border:    #E2DDD6;
-  --text-primary: #1C1B18;
-  --text-secondary: #6B6760;
-  --text-muted: #A8A49E;
-  --accent:    #2C4A1E;
-  --accent-hover: #1E3314;
-  --error-bg:  #FEF2F2;
-  --error-text: #B91C1C;
+  --bg:           #ffffff;
+  --surface:      #ffffff;
+  --border:       #e0e0e0;
+  --text-primary: #000000;
+  --text-secondary: #555555;
+  --text-muted:   #999999;
+  --accent:       #000000;
+  --accent-text:  #ffffff;
+  --accent-hover: #222222;
+  --error-bg:     #fff0f0;
+  --error-text:   #b91c1c;
 
   &.dark {
-    --bg:        #111110;
-    --surface:   #1A1A18;
-    --border:    #2A2A27;
-    --text-primary: #F0EDE8;
-    --text-secondary: #9A9690;
-    --text-muted: #5A5752;
-    --accent:    #7CB87A;
-    --accent-hover: #96CC94;
-    --error-bg:  #2D1515;
-    --error-text: #FCA5A5;
+    --bg:           #111111;
+    --surface:      #1a1a1a;
+    --border:       #2e2e2e;
+    --text-primary: #ffffff;
+    --text-secondary: #aaaaaa;
+    --text-muted:   #666666;
+    --accent:       #ffffff;
+    --accent-text:  #000000;
+    --accent-hover: #cccccc;
+    --error-bg:     #2d1515;
+    --error-text:   #fca5a5;
   }
 }
 
@@ -294,8 +281,6 @@ async function save() {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text-primary);
-  font-family: 'Figtree', sans-serif;
-  font-weight: 400;
   transition: background 0.2s, color 0.2s;
 }
 
@@ -323,7 +308,6 @@ async function save() {
   background: none;
   border: none;
   color: var(--text-secondary);
-  font-family: 'Figtree', sans-serif;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
@@ -342,7 +326,6 @@ async function save() {
 }
 
 .page-title {
-  font-family: 'Cormorant Garamond', Georgia, serif;
   font-size: 1.5rem;
   font-weight: 500;
   color: var(--text-primary);
@@ -481,57 +464,10 @@ async function save() {
 .identity-fields {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 8px;
 }
 
-.field-group {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.field-label {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--text-secondary);
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
-.required {
-  color: var(--accent);
-}
-
-.field-input {
-  width: 100%;
-  padding: 11px 14px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  color: var(--text-primary);
-  font-family: 'Figtree', sans-serif;
-  font-size: 1rem;
-  font-weight: 400;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-  box-sizing: border-box;
-
-  &::placeholder {
-    color: var(--text-muted);
-  }
-
-  &:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
-  }
-}
-
-.field-hint {
-  font-size: 0.78rem;
-  color: var(--text-muted);
-}
-
-// ── Columns (Values / Visions / Vehicles) ─────────────────────────
+// ── Columns (Community Layers) ────────────────────────────────────
 .columns-grid {
   display: grid;
   grid-template-columns: 1fr 1px 1fr 1px 1fr;
@@ -552,36 +488,12 @@ async function save() {
   // Suppress the sub-component h3 heading since columns-section provides its own visual rhythm
   // (sub-components are already stripped of our external redundant labels)
   :deep(h3) {
-    font-family: 'Figtree', sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
     letter-spacing: 0.07em;
     text-transform: uppercase;
     color: var(--text-secondary);
     margin-bottom: 16px;
-  }
-
-  // Style the internal input to match our field-input
-  :deep(.strings-input) {
-    font-family: 'Figtree', sans-serif;
-    font-size: 0.9375rem;
-    padding: 10px 13px;
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    background: var(--surface);
-    color: var(--text-primary);
-    transition: border-color 0.15s, box-shadow 0.15s;
-
-    &:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
-    }
-
-    .dark & {
-      background: var(--surface);
-      border-color: var(--border);
-      color: var(--text-primary);
-    }
   }
 
   // Tighten sub-component description text
@@ -634,10 +546,9 @@ async function save() {
   height: 44px;
   padding: 0 32px;
   background: var(--accent);
-  color: #fff;
+  color: var(--accent-text);
   border: none;
   border-radius: 8px;
-  font-family: 'Figtree', sans-serif;
   font-size: 0.9375rem;
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -655,10 +566,6 @@ async function save() {
   &:disabled {
     opacity: 0.65;
     cursor: not-allowed;
-  }
-
-  &.dark & {
-    color: #111;
   }
 }
 
