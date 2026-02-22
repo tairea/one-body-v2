@@ -62,8 +62,7 @@ function onPhotoChange(event) {
 async function geocodeLocation() {
   if (!locationInput.value) return;
   try {
-    const opencageApiKey = import.meta.env.VITE_OPENCAGE_API_KEY ?? "";
-    const result = await getGeocodedLocation(locationInput.value, opencageApiKey);
+    const result = await getGeocodedLocation(locationInput.value);
     if (result) {
       locationName.value = locationInput.value;
       locationLatitude.value = result.locationLatitude ?? null;

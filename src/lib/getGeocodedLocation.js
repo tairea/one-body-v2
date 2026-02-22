@@ -1,29 +1,31 @@
 // @ts-check
 
 /**
- * Geocode a location with the OpenCage API. If no result is found, returns `null`.
+ * Geocode a location string to coordinates using Nominatim (OpenStreetMap).
+ * Free, no API key required.
  *
  * @param {string} location
- * @param {string} opencageApiKey
  * @returns {Promise<null | { locationLatitude: number, locationLongitude: number }>}
  */
-export async function getGeocodedLocation(location, opencageApiKey) {
+export async function getGeocodedLocation(location) {
   location = location.trim();
   if (!location) return null;
 
-  const url = new URL("https://api.opencagedata.com/geocode/v1/json");
-  url.searchParams.set("key", opencageApiKey);
-  url.searchParams.set("no_annotations", "1");
+  const url = new URL("https://nominatim.openstreetmap.org/search");
   url.searchParams.set("q", location);
+  url.searchParams.set("format", "json");
+  url.searchParams.set("limit", "1");
 
-  const response = await fetch(url);
-  if (!response.ok) throw new Error("Response was not ok");
+  const response = await fetch(url, {
+    headers: { "User-Agent": "one-body-community-app" },
+  });
+  if (!response.ok) return null;
 
-  const { results } = await response.json();
-  const [result] = results;
-  if (!result) return null;
+  const results = await response.json();
+  if (!results.length) return null;
 
-  const { geometry } = result;
-
-  return { locationLatitude: geometry.lat, locationLongitude: geometry.lng };
+  return {
+    locationLatitude: Number(results[0].lat),
+    locationLongitude: Number(results[0].lon),
+  };
 }

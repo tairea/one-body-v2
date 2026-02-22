@@ -280,16 +280,15 @@ async function main() {
     `VITE_COMMUNITY_NAME=${communityName}`,
     `VITE_COMMUNITY_TAGLINE=${communityTagline}`,
     logoUrl ? `VITE_COMMUNITY_LOGO_URL=${logoUrl}` : `# VITE_COMMUNITY_LOGO_URL=`,
-    `# OPENCAGE_API_KEY=  ← add your key from opencagedata.com`,
     `VITE_LAYER1_NAME=${layers[0].name}`,
     `VITE_LAYER1_DESCRIPTION=${layers[0].description}`,
-    `VITE_LAYER1_COLOR=${layers[0].color}`,
+    `VITE_LAYER1_COLOR="${layers[0].color}"`,
     `VITE_LAYER2_NAME=${layers[1].name}`,
     `VITE_LAYER2_DESCRIPTION=${layers[1].description}`,
-    `VITE_LAYER2_COLOR=${layers[1].color}`,
+    `VITE_LAYER2_COLOR="${layers[1].color}"`,
     `VITE_LAYER3_NAME=${layers[2].name}`,
     `VITE_LAYER3_DESCRIPTION=${layers[2].description}`,
-    `VITE_LAYER3_COLOR=${layers[2].color}`,
+    `VITE_LAYER3_COLOR="${layers[2].color}"`,
   ];
   writeFileSync(".env", lines.join("\n") + "\n");
   console.log("✓ .env written");
@@ -358,9 +357,7 @@ async function main() {
   Database:   ${supabaseUrl}
 
 Next steps:
-  1. Add your OPENCAGE_API_KEY to .env  (geocoding for location fields)
-     Get a free key at: https://opencagedata.com
-${wantsDeploy ? "" : "  2. Run:   npm run dev\n  3. Visit: http://localhost:5173\n"}`);
+${wantsDeploy ? "" : "  1. Run:   npm run dev\n  2. Visit: http://localhost:5173\n"}`);
 }
 
 main().catch((err) => {
