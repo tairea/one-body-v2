@@ -77,7 +77,7 @@
             <v-btn
               :loading="saving"
               :disabled="saving"
-              color="primary"
+              :color="appStore.isDarkMode ? 'white' : 'black'"
               size="small"
               variant="flat"
               @click="save"
@@ -360,6 +360,7 @@ async function save() {
     }
 
     await appStore.fetchMyPerson();
+    await appStore.fetchGraph();
     emit("close");
   } catch (/** @type {any} */ err) {
     errorMsg.value = err?.message ?? "Something went wrong.";

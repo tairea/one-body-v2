@@ -92,12 +92,11 @@ watch(profilePanelOpen, (open) => {
 onMounted(async () => {
   await appStore.fetchGraph();
   await appStore.fetchMyPerson();
+  appStore.subscribeToPersonUpdates();
   if (!appStore.myPerson) {
     // New user — open profile panel instead of routing
     profilePanelOpen.value = true;
-    return;
   }
-  appStore.subscribeToPersonUpdates();
 });
 
 onUnmounted(() => {
