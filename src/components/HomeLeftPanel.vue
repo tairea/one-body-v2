@@ -125,8 +125,7 @@ const handleEdgeViewBack = () => {
 .left-overlay {
   position: absolute; /* Always on the left */
   left: 0;
-  top: 40%;
-  transform: translateY(-50%);
+  top: 0;
   width: 300px;
   padding: 20px;
   background-color: transparent;

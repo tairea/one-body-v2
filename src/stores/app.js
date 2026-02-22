@@ -116,6 +116,16 @@ export const useAppStore = defineStore("app", {
       supabase.removeChannel(supabase.channel("people-positions"));
     },
 
+    /** Optimistically update myPerson and the matching entry in people[]. */
+    updateMyPersonLocally(updatedPerson) {
+      this.myPerson = updatedPerson;
+      if (this.people) {
+        this.people = this.people.map((p) =>
+          p.id === updatedPerson.id ? updatedPerson : p
+        );
+      }
+    },
+
     // ── Graph snapshot ────────────────────────────────────────────────────────
 
     async saveGraphSnapshot(graphData) {

@@ -82,10 +82,11 @@ const handleEdgeViewBack = () => {
   }
 };
 
-// When profilePanel opens, zoom to the current user's graph
+// When profilePanel closes, zoom-fit the full graph in the now-restored 100vh viewport.
+// When it opens, ProfilePanel handles the zoom (with panel height offset).
 watch(profilePanelOpen, (open) => {
-  if (open && cytoscapeRef.value && appStore.myPerson?.id) {
-    cytoscapeRef.value.zoomToPersonGraph(`person-${appStore.myPerson.id}`);
+  if (!open && cytoscapeRef.value) {
+    cytoscapeRef.value.zoomToFullView();
   }
 });
 

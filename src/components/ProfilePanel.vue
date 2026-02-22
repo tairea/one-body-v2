@@ -72,8 +72,17 @@
             />
           </div>
 
-          <!-- Save button -->
+          <!-- Close / Save buttons -->
           <div class="save-wrap">
+            <v-btn
+              icon
+              variant="text"
+              size="small"
+              :color="appStore.isDarkMode ? 'white' : 'black'"
+              @click="emit('close')"
+            >
+              <v-icon icon="mdi-close" size="18" />
+            </v-btn>
             <v-btn
               :loading="saving"
               :disabled="saving"
@@ -289,10 +298,27 @@ watch(
     photoPreviewUrl.value = p.photoUrl ?? null;
     // zoom to my person
     if (props.cytoscapeRef && p.id) {
-      props.cytoscapeRef.zoomToPersonGraph?.(`person-${p.id}`);
+      const panelPx = Math.round(window.innerHeight * panelHeight.value / 100);
+      props.cytoscapeRef.zoomToPersonGraph?.(`person-${p.id}`, panelPx);
     }
   },
   { immediate: true }
+);
+
+// Optimistically sync layer changes to the store so the graph updates in real-time
+watch(
+  [layer1, layer2, layer3],
+  () => {
+    const myPerson = appStore.myPerson;
+    if (!myPerson) return;
+    appStore.updateMyPersonLocally({
+      ...myPerson,
+      layer1: layer1.value,
+      layer2: layer2.value,
+      layer3: layer3.value,
+    });
+  },
+  { deep: true }
 );
 
 /** @param {Event} event */

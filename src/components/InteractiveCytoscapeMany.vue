@@ -766,7 +766,9 @@ const zoomToNearestPerson = (clickPos) => {
 };
 
 // Function to zoom to a specific person's graph with animation
-const zoomToPersonGraph = (personId) => {
+// bottomOffset: pixels occupied by the profile panel so we pan the fitted
+// graph up into the visible area above it.
+const zoomToPersonGraph = (personId, bottomOffset = 0) => {
   if (!cyInstances.value || !cyInstances.value.has("main") || isZooming.value)
     return;
 
@@ -861,8 +863,13 @@ const zoomToPersonGraph = (personId) => {
     personId: personId,
   });
 
-  // Reset flag after animation completes
+  // After animation: apply panel offset (pan graph up into visible area) then reset flag
   setTimeout(() => {
+    if (bottomOffset > 0) {
+      // panBy({y: -N}) shifts the canvas upward so nodes appear higher on screen,
+      // centering the fitted graph within the visible area above the panel.
+      mainCy.panBy({ x: 0, y: -(bottomOffset / 2) });
+    }
     isZooming.value = false;
   }, 900); // Slightly longer than animation duration
 };
