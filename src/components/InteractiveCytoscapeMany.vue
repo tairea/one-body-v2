@@ -477,11 +477,10 @@ const initializeGraphData = (personData, personIndex) => {
    * @param {number} depth
    * @param {number} totalSiblings - total chips at this level
    * @param {number} siblingIdx - this chip's index among siblings
+   * @param {number} orbitRadius - radius to use when computing this node's position around parentPos
    */
-  const addChipNodes = (chip, chipId, parentId, parentPos, layerKey, baseColor, depth, totalSiblings, siblingIdx) => {
-    const radii = [120, 160, 195];
+  const addChipNodes = (chip, chipId, parentId, parentPos, layerKey, baseColor, depth, totalSiblings, siblingIdx, orbitRadius) => {
     const lightenAmounts = [0, 0.35, 0.60];
-    const radius = radii[Math.min(depth, 2)];
     const color = lightenColor(baseColor, lightenAmounts[Math.min(depth, 2)]);
 
     let position = null;
@@ -494,8 +493,8 @@ const initializeGraphData = (personData, personIndex) => {
       const count = totalSiblings || 1;
       const angle = (siblingIdx / count) * 2 * Math.PI;
       position = {
-        x: parentPos.x + Math.cos(angle) * radius,
-        y: parentPos.y + Math.sin(angle) * radius,
+        x: parentPos.x + Math.cos(angle) * orbitRadius,
+        y: parentPos.y + Math.sin(angle) * orbitRadius,
       };
     }
 
@@ -518,6 +517,8 @@ const initializeGraphData = (personData, personIndex) => {
       },
     });
 
+    // Sub-nodes orbit their parent at a smaller radius than the layer rings
+    const childOrbitRadius = depth === 0 ? 60 : 40;
     const children = chip.children ?? [];
     children.forEach((child, ci) => {
       addChipNodes(
@@ -530,14 +531,19 @@ const initializeGraphData = (personData, personIndex) => {
         depth + 1,
         children.length,
         ci,
+        childOrbitRadius,
       );
     });
   };
 
+  // Layer ring radii match the original v2 layout: layer1=120, layer2=200, layer3=280
+  const layerOrbitRadii = [120, 200, 280];
+
   // Add layer chip nodes (ChipNode[])
-  for (const layer of layers) {
+  layers.forEach((layer, layerIdx) => {
     const layerKey = layer.key;
     const chips = personData[layerKey] ?? [];
+    const orbitRadius = layerOrbitRadii[layerIdx] ?? 120;
 
     chips.forEach((chip, idx) => {
       const chipId = `${layerKey}-${personData.id}-c${idx}`;
@@ -551,9 +557,10 @@ const initializeGraphData = (personData, personIndex) => {
         0,
         chips.length,
         idx,
+        orbitRadius,
       );
     });
-  }
+  });
 
   return { nodes, edges };
 };
