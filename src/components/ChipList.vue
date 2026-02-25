@@ -124,10 +124,6 @@ defineExpose({ focusInput });
   display: flex;
   align-items: center;
   gap: 6px;
-
-  &--clickable {
-    cursor: pointer;
-  }
   width: 100%;
   box-sizing: border-box;
   padding: 7px 8px 7px 12px;
@@ -137,13 +133,16 @@ defineExpose({ focusInput });
   font-size: 13px;
   font-weight: 500;
 
+  &--clickable {
+    cursor: pointer;
+  }
+
   .dark-mode & {
     color: #fff;
     filter: brightness(0.75);
   }
 
   &--focused {
-    // Slightly inset appearance when shown in focused column
     opacity: 0.85;
 
     &.chip--clickable {

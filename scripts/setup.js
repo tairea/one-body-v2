@@ -345,6 +345,7 @@ async function main() {
 
   // ── 11. Deploy to Vercel (optional) ──────────────────────────────────────
   let appUrl = "http://localhost:5173";
+  let aliasUrl = "";
 
   const wantsDeploy = await confirm({
     message: "Deploy your community to Vercel now for a shareable URL?",
@@ -380,8 +381,11 @@ async function main() {
     const deployResult = spawnSync(
       "npx",
       ["vercel", "--prod", "--yes"],
-      { stdio: ["pipe", "pipe", "inherit"], encoding: "utf8", cwd: "dist" }
+      { stdio: ["pipe", "pipe", "pipe"], encoding: "utf8", cwd: "dist" }
     );
+
+    // Print Vercel progress output
+    if (deployResult.stderr) process.stderr.write(deployResult.stderr);
 
     if (deployResult.status !== 0) {
       console.warn(
@@ -395,21 +399,36 @@ async function main() {
         appUrl = urlMatch[0];
         console.log(`✓ Deployed: ${appUrl}`);
       }
+      // Extract the stable aliased URL (e.g. https://project-name.vercel.app)
+      const aliasMatch = (deployResult.stderr ?? "").match(/Aliased:\s+(https:\/\/\S+)/);
+      if (aliasMatch) {
+        aliasUrl = aliasMatch[1].replace(/\s*\[.*$/, "");
+      }
     }
 
-    await updateSupabaseAuthUrls(appUrl, supabaseUrl, accessToken);
+    await updateSupabaseAuthUrls(aliasUrl || appUrl, supabaseUrl, accessToken);
   }
 
   // ── Done ─────────────────────────────────────────────────────────────────
+  const liveUrl = aliasUrl || appUrl;
   console.log(`
 ✨ Your community is ready!
 
   Community:  ${communityName}
-  App:        ${appUrl}
+  App:        ${appUrl}${aliasUrl ? `\n  App (stable): ${aliasUrl}` : ""}
   Database:   ${supabaseUrl}
 
 Next steps:
-${wantsDeploy ? "" : "  1. Run:   npm run dev\n  2. Visit: http://localhost:5173\n"}`);
+${wantsDeploy ? `  1. Visit your live app: ${liveUrl}
+  2. Create an account and set up your profile
+  3. Share the link with your community members
+  4. Customise the code and redeploy with: npm run deploy
+  5. Run locally for development with: npm run dev
+` : `  1. Start the dev server:  npm run dev
+  2. Visit:  http://localhost:5173
+  3. Create an account and set up your profile
+  4. When ready to go live:  npm run deploy
+`}`);
 }
 
 main().catch((err) => {
