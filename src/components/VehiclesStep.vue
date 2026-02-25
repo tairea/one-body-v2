@@ -109,7 +109,7 @@ export default {
       });
     },
     getChipColor(index) {
-      const dwebColors = [
+      const colors = [
         "#ff4f2d",
         "#e06ef9",
         "#bbdf27",
@@ -117,7 +117,7 @@ export default {
         "#00d6c6",
         "#00b3f3",
       ];
-      return dwebColors[index % dwebColors.length];
+      return colors[index % colors.length];
     },
   },
 };

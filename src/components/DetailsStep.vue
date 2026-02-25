@@ -100,7 +100,7 @@
 
 <script>
 import { useAppStore } from "../stores/app";
-import { getDwebColor } from "../lib/utils";
+import { getAccentColor } from "../lib/utils";
 import { imageFileToDataUrl } from "../lib/imageFileToDataUrl.js";
 
 export default {
@@ -164,8 +164,8 @@ export default {
     },
   },
   mounted() {
-    // Generate a random DWeb color for the profile image border
-    this.profileImageBorderColor = getDwebColor();
+    // Generate a random accent color for the profile image border
+    this.profileImageBorderColor = getAccentColor();
   },
   methods: {
     triggerFileInput() {

@@ -31,7 +31,7 @@ async function handleSignIn() {
   if (err) {
     error.value = err.message;
   } else {
-    router.push("/home");
+    router.push("/");
   }
 }
 
@@ -57,7 +57,7 @@ async function handleMagicLink() {
   error.value = "";
   const { error: err } = await supabase.auth.signInWithOtp({
     email: email.value,
-    options: { emailRedirectTo: window.location.origin + "/home" },
+    options: { emailRedirectTo: window.location.origin },
   });
   loading.value = false;
   if (err) {

@@ -26,16 +26,17 @@ const handleCountdownEnd = () => {
     :class="{ 'dark-mode': appStore.isDarkMode }"
     v-bind="$attrs"
   >
-    <!-- DWEB LOGO & TITLE -->
+    <!-- LOGO & TITLE -->
     <div id="wg">
       <img
         id="logo"
-        src="../assets/org_logo_DWeb.jpeg"
+        src="../assets/org-logo.svg"
         width="100"
         class="mb-4"
+        :class="{ 'invert-logo': appStore.isDarkMode }"
       />
-      <h1>DWeb Fellows Alumni</h1>
-      <h2>A collective of dWeb camp fellows</h2>
+      <h1>Community Members</h1>
+      <h2>A collective of community members</h2>
     </div>
 
     <!-- BUTTONS -->
@@ -108,10 +109,10 @@ const handleCountdownEnd = () => {
 
     <div class="event-description mt-4">
       <h2>
-        At the next DWeb Fellow Social, we'll be sharing this activity and
-        planting the seed for how we can grow our DWeb Fellow alumni
+        At the next community social, we'll be sharing this activity and
+        planting the seed for how we can grow our
         community—sparking new connections, strengthening collaboration, and
-        uniting our skills to build a better, more open web for everyone.
+        uniting our skills to build together.
         <br /><br />
         Make sure to join the Zoom call on August 18th using this link.
         <br /><br />
@@ -125,6 +126,10 @@ const handleCountdownEnd = () => {
 </template>
 
 <style lang="scss" scoped>
+.invert-logo {
+  filter: invert(1);
+}
+
 .left-overlay {
   position: absolute;
   left: 0;

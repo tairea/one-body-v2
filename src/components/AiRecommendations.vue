@@ -6,7 +6,7 @@ import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { useAppStore } from "../stores/app";
 import cytoscape from "cytoscape";
 import cola from "cytoscape-cola";
-import { getPhotoUrl } from "../lib/utils";
+
 /** @import { Person, Recommendation } from "../types.d.ts" */
 
 // Register the cola layout plugin
@@ -419,28 +419,8 @@ const formatTextWithLineBreaks = (text) => {
 };
 
 // Get the appropriate photo URL for a person
-// Handles both local data URLs and remote API photos
 const getPersonPhotoUrl = (personData) => {
-  if (!personData.hasPhoto) {
-    return null;
-  }
-
-  // If the person has a photo field with data (data URL), use it directly
-  if (
-    personData.photo &&
-    typeof personData.photo === "string" &&
-    personData.photo.startsWith("data:")
-  ) {
-    return personData.photo;
-  }
-
-  // If the person has an ID, construct the API URL
-  if (personData.id && typeof personData.id === "number") {
-    return getPhotoUrl(personData, location.href);
-  }
-
-  // Fallback: no photo available
-  return null;
+  return personData.photoUrl ?? null;
 };
 
 // Initialize graph data from person

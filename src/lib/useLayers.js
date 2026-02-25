@@ -10,7 +10,7 @@
 
 /**
  * Returns the 3 community layer definitions, read from VITE_LAYER* env vars.
- * Falls back to DWeb defaults when vars are not set.
+ * Falls back to defaults when env vars are not set.
  * @returns {[LayerDefinition, LayerDefinition, LayerDefinition]}
  */
 export function useLayers() {

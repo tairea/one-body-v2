@@ -13,7 +13,7 @@ import Globe from "globe.gl";
 import { FrontSide } from "three";
 import * as THREE from "three";
 import { useAppStore } from "../stores/app";
-import { dWebColors } from "../lib/utils.js";
+import { accentColors } from "../lib/utils.js";
 /** @import { Person } from "../types.d.ts" */
 
 /**
@@ -104,7 +104,7 @@ export default {
       // Add people locations with photos
       this.addPeopleLocations();
 
-      // Add arc connections to Camp Navarro
+      // Add arc connections to Community Hub
       this.addArcConnections();
 
       // Enable auto-rotation through controls
@@ -172,19 +172,19 @@ export default {
     },
 
     addArcConnections() {
-      // Camp Navarro coordinates in California
-      const campNavarro = { lat: 39.1911, lng: -123.7647 };
+      // Community Hub coordinates in California
+      const communityHub = { lat: 39.1911, lng: -123.7647 };
 
-      // Create arc data connecting each person to Camp Navarro
+      // Create arc data connecting each person to Community Hub
       /** @type {Person[]} */ const people = this.people;
       const arcData = people
         .filter(doesPersonHaveLocation)
         .map((person, index) => ({
           startLat: person.locationLatitude,
           startLng: person.locationLongitude,
-          endLat: campNavarro.lat,
-          endLng: campNavarro.lng,
-          color: dWebColors[index % dWebColors.length], // Cycle through dWebColors
+          endLat: communityHub.lat,
+          endLng: communityHub.lng,
+          color: accentColors[index % accentColors.length],
           name: person.name,
         }));
 
@@ -210,15 +210,15 @@ export default {
             font-weight: 600;
             color: #2d3748;
             white-space: nowrap;
-          ">${arc.name} → Camp Navarro</div>
+          ">${arc.name} → Community Hub</div>
         `,
         );
 
-      // Add combined custom layer for people photos and Camp Navarro logo
-      this.addCombinedCustomLayer(campNavarro);
+      // Add combined custom layer for people photos and Community Hub logo
+      this.addCombinedCustomLayer(communityHub);
     },
 
-    addCombinedCustomLayer(campNavarro) {
+    addCombinedCustomLayer(communityHub) {
       // Convert people data to points format
       /** @type {Person[]} */ const people = this.people;
       const peoplePoints = people.filter(doesPersonHaveLocation).map((person) => ({
@@ -229,15 +229,15 @@ export default {
         type: "person",
       }));
 
-      // Add Camp Navarro to the points
+      // Add Community Hub to the points
       const allPoints = [
         ...peoplePoints,
         {
-          lat: campNavarro.lat,
-          lng: campNavarro.lng,
-          name: "Camp Navarro",
-          logo: "/org_logo_DWeb.jpeg",
-          type: "camp",
+          lat: communityHub.lat,
+          lng: communityHub.lng,
+          name: "Community Hub",
+          logo: "/org-logo.svg",
+          type: "hub",
         },
       ];
 
@@ -315,11 +315,11 @@ export default {
           }
 
           return mesh;
-        } else if (point.type === "camp") {
-          // Create a plane geometry for the Camp Navarro logo (slightly larger than person photos)
+        } else if (point.type === "hub") {
+          // Create a plane geometry for the community logo (slightly larger than person photos)
           const geometry = new THREE.PlaneGeometry(15, 15);
 
-          // Load the DWeb logo texture
+          // Load the community logo texture
           const textureLoader = new THREE.TextureLoader();
           const texture = textureLoader.load(point.logo);
 
@@ -361,13 +361,13 @@ export default {
         }
       });
 
-      // Add separate points layer for Camp Navarro label and interactions
+      // Add separate points layer for Community Hub label and interactions
       this.globe
         .pointsData([
           {
-            lat: campNavarro.lat,
-            lng: campNavarro.lng,
-            name: "Camp Navarro",
+            lat: communityHub.lat,
+            lng: communityHub.lng,
+            name: "Community Hub",
           },
         ])
         .pointColor(() => "transparent")
@@ -376,7 +376,7 @@ export default {
         .pointsMerge(false)
         .pointResolution(12)
         .onPointClick((point) => {
-          console.log("Clicked on Camp Navarro");
+          console.log("Clicked on Community Hub");
         })
         .pointLabel(
           (point) => `
@@ -391,7 +391,7 @@ export default {
             color: #2d3748;
             white-space: nowrap;
             text-align: center;
-          ">🏕️ Camp Navarro<br><span style="font-size: 10px; color: #718096;">DWeb Summit</span></div>
+          ">🏠 Community Hub</div>
         `,
         );
     },

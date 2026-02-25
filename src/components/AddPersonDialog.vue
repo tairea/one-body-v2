@@ -53,24 +53,25 @@
                 <div class="step-intro">
                   <img
                     id="logo"
-                    src="../assets/org_logo_DWeb.jpeg"
+                    src="../assets/org-logo.svg"
                     width="100"
+                    :class="{ 'invert-logo': appStore.isDarkMode }"
                   />
                   <h2>
-                    {{ editingPerson ? "Edit Profile" : "DWeb Fellows Alumni" }}
+                    {{ editingPerson ? "Edit Profile" : "Community Profile" }}
                   </h2>
                   <p v-if="editingPerson" class="dialog-subtitle">
                     Update your profile information below. Make changes to any
                     field and save when you're done.
                   </p>
                   <p v-else class="dialog-subtitle">
-                    This activity is designed to help connect us DWeb Fellows
+                    This activity is designed to help connect community members
                     and grow the community. <br /><br />Tell us a bit about
                     yourself, what excites you and what you're working on. The
-                    more we share, the easier it is to connect, collaborate and
-                    build the decentralized web together. <br /><br /><em
+                    more we share, the easier it is to connect and collaborate
+                    together. <br /><br /><em
                       >Note: The info you enter to create your profile will only
-                      be visible by other DWeb fellows.</em
+                      be visible by other community members.</em
                     >
                   </p>
                 </div>
@@ -127,7 +128,7 @@
                 <div class="step-done">
                   <h3>You're All Set!</h3>
                   <p>
-                    Thank you for sharing your information with the DWeb Fellows
+                    Thank you for sharing your information with the
                     community.
                   </p>
                   <div class="summary-card">
@@ -521,6 +522,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.invert-logo {
+  filter: invert(1);
+}
+
 // Dialog overlay
 .dialog-overlay {
   position: fixed;

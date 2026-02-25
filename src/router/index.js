@@ -8,15 +8,15 @@ import Countdown from "../views/Countdown.vue";
 const routes = [
   {
     path: "/",
-    name: "Auth",
-    component: Auth,
-    meta: { requiresGuest: true },
-  },
-  {
-    path: "/home",
     name: "Home",
     component: Home,
     meta: { requiresAuth: true },
+  },
+  {
+    path: "/auth",
+    name: "Auth",
+    component: Auth,
+    meta: { requiresGuest: true },
   },
   {
     path: "/countdown",
