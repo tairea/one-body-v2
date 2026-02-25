@@ -16,11 +16,12 @@
     <!-- Chip list -->
     <div class="chips">
       <template v-for="(chip, idx) in chips" :key="idx">
-        <!-- Focused mode: show only the focused chip, no × -->
+        <!-- Focused mode: show only the focused chip, clickable to navigate back -->
         <div
           v-if="focusedIdx === idx"
-          class="chip chip--focused"
+          class="chip chip--focused chip--clickable"
           :style="{ '--chip-color': color }"
+          @click="emit('focus', idx)"
         >
           <span class="chip__label">{{ chip.label }}</span>
         </div>
@@ -28,8 +29,9 @@
         <!-- Normal mode -->
         <div
           v-else-if="focusedIdx === null || focusedIdx === undefined"
-          class="chip"
+          class="chip chip--clickable"
           :style="{ '--chip-color': color }"
+          @click="emit('focus', idx)"
         >
           <span class="chip__label">{{ chip.label }}</span>
           <div class="chip__actions">
@@ -122,6 +124,10 @@ defineExpose({ focusInput });
   display: flex;
   align-items: center;
   gap: 6px;
+
+  &--clickable {
+    cursor: pointer;
+  }
   width: 100%;
   box-sizing: border-box;
   padding: 7px 8px 7px 12px;
@@ -139,7 +145,10 @@ defineExpose({ focusInput });
   &--focused {
     // Slightly inset appearance when shown in focused column
     opacity: 0.85;
-    cursor: default;
+
+    &.chip--clickable {
+      cursor: pointer;
+    }
   }
 }
 

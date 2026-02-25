@@ -1014,7 +1014,7 @@ import { useRouter } from "vue-router";
 import { supabase } from "../lib/supabase.js";
 import { useAppStore } from "../stores/app.js";
 import { getGeocodedLocation } from "../lib/getGeocodedLocation.js";
-import StringListStep from "../components/StringListStep.vue";
+import ChipList from "../components/ChipList.vue";
 import VehiclesStep from "../components/VehiclesStep.vue";
 
 const router = useRouter();
@@ -1181,11 +1181,11 @@ async function save() {
         <v-row class="mb-4">
           <v-col cols="12" md="4">
             <div class="text-subtitle-1 font-weight-bold mb-2">Values</div>
-            <StringListStep v-model="values" label="Add a value" />
+            <ChipList v-model="values" label="Add a value" />
           </v-col>
           <v-col cols="12" md="4">
             <div class="text-subtitle-1 font-weight-bold mb-2">Visions</div>
-            <StringListStep v-model="visions" label="Add a vision" />
+            <ChipList v-model="visions" label="Add a vision" />
           </v-col>
           <v-col cols="12" md="4">
             <div class="text-subtitle-1 font-weight-bold mb-2">Vehicles</div>
@@ -1212,9 +1212,9 @@ async function save() {
 </template>
 ```
 
-### Step 2: Check StringListStep and VehiclesStep accept v-model
+### Step 2: Check ChipList and VehiclesStep accept v-model
 
-Open `src/components/StringListStep.vue` and `src/components/VehiclesStep.vue`. Verify they emit `update:modelValue` (standard Vue 3 v-model). If they use a different pattern (e.g. emitting raw events), adapt the Profile.vue binding accordingly.
+Open `src/components/ChipList.vue` and `src/components/VehiclesStep.vue`. Verify they emit `update:modelValue` (standard Vue 3 v-model). If they use a different pattern (e.g. emitting raw events), adapt the Profile.vue binding accordingly.
 
 ### Step 3: Commit
 

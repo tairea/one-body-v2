@@ -153,7 +153,7 @@ Single-screen, no steps:
 └─────────────────────────────────────────┘
 ```
 
-- Reuses existing `VehiclesStep.vue`, `StringListStep.vue` logic as sub-components
+- Reuses existing `VehiclesStep.vue`, `ChipList.vue` logic as sub-components
 - "Save" creates person row + uploads photo
 - "Update" patches existing row + replaces photo if changed
 - Location input uses existing OpenCage geocoding

@@ -1,10 +1,21 @@
 <template>
   <Teleport to="body">
     <div
+      ref="panelRootRef"
       class="profile-panel"
       :class="{ 'dark-mode': appStore.isDarkMode, open: props.open }"
       :style="{ height: panelHeight + 'vh' }"
     >
+      <!-- Close button tucked in top right -->
+      <button
+        type="button"
+        class="panel__close"
+        aria-label="Close"
+        @click="emit('close')"
+      >
+        <v-icon icon="mdi-close" size="14" />
+      </button>
+
       <!-- Drag handle -->
       <div class="panel__handle" @mousedown="startDrag">
         <div class="panel__grip" />
@@ -72,20 +83,11 @@
             />
           </div>
 
-          <!-- Close / Save buttons -->
+          <!-- Save button inline with fields -->
           <div class="save-wrap">
             <v-btn
-              icon
-              variant="text"
-              size="small"
-              :color="appStore.isDarkMode ? 'white' : 'black'"
-              @click="emit('close')"
-            >
-              <v-icon icon="mdi-close" size="18" />
-            </v-btn>
-            <v-btn
               :loading="saving"
-              :disabled="saving"
+              :disabled="saving || !hasMetadataChanges"
               :color="appStore.isDarkMode ? 'white' : 'black'"
               size="small"
               variant="flat"
@@ -105,17 +107,13 @@
               <!-- Column header -->
               <div class="col__header" v-if="col.header">
                 <span class="col__header-name">{{ col.header }}</span>
-                <v-tooltip location="top" v-if="col.headerTooltip">
-                  <template #activator="{ props: tp }">
-                    <v-icon
-                      v-bind="tp"
-                      icon="mdi-information-outline"
-                      size="14"
-                      class="col__header-info"
-                    />
-                  </template>
-                  {{ col.headerTooltip }}
-                </v-tooltip>
+                <v-icon
+                  v-if="col.headerTooltip"
+                  icon="mdi-information-outline"
+                  size="14"
+                  class="col__header-info"
+                  :title="col.headerTooltip"
+                />
               </div>
 
               <!-- Back button (for drill-down col0) -->
@@ -130,7 +128,7 @@
               </button>
 
               <!-- Layer chip list (null state or focused parent in drill-down) -->
-              <StringListStep
+              <ChipList
                 v-if="col.layerKey && col.focusedIdx === null"
                 :chips="getLayerChips(col.layerKey)"
                 :color="getLayerColor(col.layerKey)"
@@ -140,20 +138,28 @@
               />
 
               <!-- Single focused chip (ancestor shown in col0 or col1 of drill-down) -->
-              <StringListStep
+              <div
                 v-else-if="col.layerKey && col.focusedIdx !== null && col.focusedIdx !== undefined"
-                :chips="getLayerChips(col.layerKey)"
-                :color="getLayerColor(col.layerKey)"
-                :focusedIdx="col.focusedIdx"
-                @update="setLayerChips(col.layerKey, $event)"
-                @focus="() => {}"
-              />
+                :style="col.contentOffsetTop != null ? { marginTop: col.contentOffsetTop + 'px' } : {}"
+              >
+                <ChipList
+                  :chips="col.chips ?? getLayerChips(col.layerKey)"
+                  :color="getLayerColor(col.layerKey)"
+                  :focusedIdx="col.focusedIdx"
+                  @update="col.chipsParentPath === null ? setLayerChips(col.layerKey, $event) : setChildrenAtPath(col.chipsParentPath, $event)"
+                  @focus="goToPathFromColumn(col, $event)"
+                />
+              </div>
 
               <!-- Sub-chip input + list (for drill-down children column) -->
-              <div v-else-if="col.chipPath" class="sub-col">
+              <div
+                v-else-if="col.chipPath"
+                class="sub-col"
+                :style="col.subColMarginTop != null ? { marginTop: col.subColMarginTop + 'px' } : {}"
+              >
                 <v-text-field
                   v-model="subChipInput"
-                  label="Add sub-chip…"
+                  :label="getChipAtPath(col.chipPath)?.label ? `Add new node to ${getChipAtPath(col.chipPath).label}` : 'Add new node…'"
                   variant="outlined"
                   density="compact"
                   hide-details
@@ -164,22 +170,23 @@
                   <div
                     v-for="(child, ci) in getChipAtPath(col.chipPath)?.children ?? []"
                     :key="ci"
-                    class="sub-chip"
+                    class="sub-chip sub-chip--clickable"
                     :style="{ '--chip-color': getLayerColorLightened(col.chipLayerKey, 0.35) }"
+                    @click="drillInto(col.chipPath, ci)"
                   >
                     <span class="sub-chip__label">{{ child.label }}</span>
                     <div class="sub-chip__actions">
                       <button
                         type="button"
                         class="sub-chip__drill"
-                        @click="drillInto(col.chipPath, ci)"
+                        @click.stop="drillInto(col.chipPath, ci)"
                       >
                         <v-icon icon="mdi-dots-hexagon" size="14" />
                       </button>
                       <button
                         type="button"
                         class="sub-chip__remove"
-                        @click="removeSubChip(col.chipPath, ci)"
+                        @click.stop="removeSubChip(col.chipPath, ci)"
                       >
                         <v-icon icon="mdi-close" size="12" />
                       </button>
@@ -200,26 +207,36 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, nextTick, onMounted, onBeforeUnmount } from "vue";
 import { supabase } from "../lib/supabase.js";
 import { useAppStore } from "../stores/app.js";
 import { getGeocodedLocation } from "../lib/getGeocodedLocation.js";
 import { useLayers, lightenColor } from "../lib/useLayers.js";
-import StringListStep from "./StringListStep.vue";
+import ChipList from "./ChipList.vue";
 
 const props = defineProps({
   open: { type: Boolean, required: true },
   cytoscapeRef: { type: Object, default: null },
+  /** When set, focus the chip matching this graph node ID (from chip node click on graph) */
+  focusChipNodeId: { type: String, default: null },
 });
 
-const emit = defineEmits(["close"]);
+const emit = defineEmits(["close", "panelHeightChange"]);
 
 const appStore = useAppStore();
 const layers = useLayers();
 
 // ── Panel resize ──────────────────────────────────────────────────────────────
 const panelHeight = ref(40);
+const panelRootRef = ref(null);
 let dragState = null;
+
+function getPanelHeightPx() {
+  if (panelRootRef.value) {
+    return panelRootRef.value.offsetHeight ?? 0;
+  }
+  return Math.round(window.innerHeight * panelHeight.value / 100);
+}
 
 function startDrag(e) {
   dragState = {
@@ -244,9 +261,48 @@ function stopDrag() {
   window.removeEventListener("mouseup", stopDrag);
 }
 
-onUnmounted(() => {
+// Report panel height in px so parent can pass to cytoscape for zoom offset
+watch(
+  [() => props.open, panelHeight],
+  () => {
+    if (props.open) {
+      // nextTick so DOM has updated (especially after resize)
+      nextTick(() => {
+        emit("panelHeightChange", getPanelHeightPx());
+      });
+    } else {
+      emit("panelHeightChange", 0);
+    }
+  },
+  { immediate: true }
+);
+
+onBeforeUnmount(async () => {
   window.removeEventListener("mousemove", onDrag);
   window.removeEventListener("mouseup", stopDrag);
+  // Flush pending chip save so chips are not lost when closing panel
+  if (chipSaveTimeout) {
+    clearTimeout(chipSaveTimeout);
+    chipSaveTimeout = null;
+    const userId = appStore.authUser?.id;
+    if (userId) {
+      try {
+        await supabase
+          .from("people")
+          .upsert(
+            {
+              user_id: userId,
+              layer1_list: layer1.value,
+              layer2_list: layer2.value,
+              layer3_list: layer3.value,
+            },
+            { onConflict: "user_id" }
+          );
+      } catch {
+        // Silent fail
+      }
+    }
+  }
 });
 
 // ── Form fields ───────────────────────────────────────────────────────────────
@@ -278,6 +334,21 @@ const mimeTypes = /** @type {Record<string, string>} */ ({
   svg: "image/svg+xml",
 });
 
+/** Snapshot of metadata when panel opened; used to detect changes for Save button */
+const initialMetadata = ref(/** @type {{ name: string; email: string; telegram: string; locationName: string; locationLatitude: number | null; locationLongitude: number | null } | null} */ (null));
+
+// When graph chip node is clicked, focus the corresponding chip in the panel
+watch(
+  () => props.focusChipNodeId,
+  (nodeId) => {
+    if (!nodeId) return;
+    const parsed = nodeIdToChipPath(nodeId);
+    if (parsed) {
+      focusState.value = { layerKey: parsed.layerKey, path: parsed.path };
+    }
+  }
+);
+
 // Prefill from store when panel opens
 watch(
   () => props.open,
@@ -296,14 +367,38 @@ watch(
     layer2.value = p.layer2.map((c) => ({ ...c, children: [...(c.children ?? [])] }));
     layer3.value = p.layer3.map((c) => ({ ...c, children: [...(c.children ?? [])] }));
     photoPreviewUrl.value = p.photoUrl ?? null;
+    // Snapshot metadata for change detection (chips sync to store in real-time)
+    initialMetadata.value = {
+      name: p.name,
+      email: p.email ?? "",
+      telegram: p.telegram ?? "",
+      locationName: p.locationName ?? "",
+      locationLatitude: p.locationLatitude ?? null,
+      locationLongitude: p.locationLongitude ?? null,
+    };
     // zoom to my person
-    if (props.cytoscapeRef && p.id) {
-      const panelPx = Math.round(window.innerHeight * panelHeight.value / 100);
-      props.cytoscapeRef.zoomToPersonGraph?.(`person-${p.id}`, panelPx);
+    const cytoscape = props.cytoscapeRef?.value ?? props.cytoscapeRef;
+    if (cytoscape && p.id) {
+      const panelPx = props.open ? getPanelHeightPx() : 0;
+      cytoscape.zoomToPersonGraph?.(`person-${p.id}`, panelPx);
     }
   },
   { immediate: true }
 );
+
+const hasMetadataChanges = computed(() => {
+  const init = initialMetadata.value;
+  if (!init) return name.value.trim().length > 0;
+  return (
+    name.value.trim() !== init.name ||
+    (email.value.trim() || "") !== init.email ||
+    (telegram.value.trim() || "") !== init.telegram ||
+    (locationName.value || "") !== init.locationName ||
+    locationLatitude.value !== init.locationLatitude ||
+    locationLongitude.value !== init.locationLongitude ||
+    !!photoFile.value
+  );
+});
 
 // Optimistically sync layer changes to the store so the graph updates in real-time
 watch(
@@ -317,6 +412,36 @@ watch(
       layer2: layer2.value,
       layer3: layer3.value,
     });
+  },
+  { deep: true }
+);
+
+// Persist chips to DB when they change — add, remove, edit (debounced)
+let chipSaveTimeout = /** @type {ReturnType<typeof setTimeout> | null} */ (null);
+watch(
+  [layer1, layer2, layer3],
+  () => {
+    const userId = appStore.authUser?.id;
+    if (!userId) return;
+    if (chipSaveTimeout) clearTimeout(chipSaveTimeout);
+    chipSaveTimeout = setTimeout(async () => {
+      chipSaveTimeout = null;
+      try {
+        await supabase
+          .from("people")
+          .upsert(
+            {
+              user_id: userId,
+              layer1_list: layer1.value,
+              layer2_list: layer2.value,
+              layer3_list: layer3.value,
+            },
+            { onConflict: "user_id" }
+          );
+      } catch {
+        // Silent fail; chips stay in local state
+      }
+    }, 500);
   },
   { deep: true }
 );
@@ -359,21 +484,21 @@ async function save() {
       await geocodeLocation();
     }
 
-    const { error: upsertError } = await supabase.from("people").upsert(
-      {
-        user_id: userId,
-        name: name.value.trim(),
-        email: email.value.trim() || null,
-        telegram: telegram.value.trim() || null,
-        location_name: locationName.value || null,
-        location_latitude: locationLatitude.value,
-        location_longitude: locationLongitude.value,
-        layer1_list: layer1.value,
-        layer2_list: layer2.value,
-        layer3_list: layer3.value,
-      },
-      { onConflict: "user_id" }
-    );
+    const payload = {
+      user_id: userId,
+      name: name.value.trim(),
+      email: email.value.trim() || null,
+      telegram: telegram.value.trim() || null,
+      location_name: locationName.value || null,
+      location_latitude: locationLatitude.value,
+      location_longitude: locationLongitude.value,
+      layer1_list: layer1.value,
+      layer2_list: layer2.value,
+      layer3_list: layer3.value,
+    };
+    const { error: upsertError } = await supabase
+      .from("people")
+      .upsert(payload, { onConflict: "user_id" });
     if (upsertError) throw upsertError;
 
     if (photoFile.value) {
@@ -421,6 +546,32 @@ function getLayerTooltip(layerKey) {
   return layers.find((l) => l.key === layerKey)?.description ?? "";
 }
 
+/** Compute graph node ID from layerKey and chip path. Node IDs match InteractiveCytoscapeMany. */
+function chipPathToNodeId(layerKey, path, personId) {
+  if (!personId || !path?.length) return null;
+  return path.reduce((id, idx) => `${id}-c${idx}`, `${layerKey}-${personId}`);
+}
+
+/** Parse node ID to { layerKey, path } for chip focus. Returns null if not a chip node. */
+function nodeIdToChipPath(nodeId) {
+  if (!nodeId) return null;
+  for (const layer of layers) {
+    const prefix = `${layer.key}-`;
+    if (!nodeId.startsWith(prefix)) continue;
+    const rest = nodeId.slice(prefix.length);
+    if (rest.length < 38) continue; // uuid (36) + "-c"
+    const personId = rest.slice(0, 36);
+    const pathPart = rest.slice(36); // "-c0-c1" or "-c0"
+    const path = pathPart
+      .split("-c")
+      .slice(1)
+      .map((s) => parseInt(s, 10))
+      .filter((n) => !Number.isNaN(n));
+    return { layerKey: layer.key, path };
+  }
+  return null;
+}
+
 function getLayerColorLightened(layerKey, t) {
   const color = getLayerColor(layerKey);
   return lightenColor(color, t);
@@ -435,13 +586,36 @@ function getLayerColorLightened(layerKey, t) {
 const focusState = ref(/** @type {null | { layerKey: string, path: number[] }} */ (null));
 const subChipInput = ref("");
 
+function zoomToFocusedChip() {
+  const p = appStore.myPerson;
+  const cytoscape = props.cytoscapeRef?.value ?? props.cytoscapeRef;
+  if (!p || !focusState.value || !cytoscape) return;
+
+  const nodeId = chipPathToNodeId(
+    focusState.value.layerKey,
+    focusState.value.path,
+    p.id
+  );
+  if (!nodeId) return;
+
+  const panelPx = props.open ? getPanelHeightPx() : 0;
+  cytoscape.zoomToPersonGraph?.(`person-${p.id}`, panelPx, nodeId);
+}
+
 function onFocus(layerKey, idx) {
-  focusState.value = { layerKey, path: [idx] };
+  // Defer to next frame to avoid Vuetify slot warnings (VTooltip/VTextField)
+  requestAnimationFrame(() => {
+    focusState.value = { layerKey, path: [idx] };
+    nextTick(() => zoomToFocusedChip());
+  });
 }
 
 function drillInto(parentPath, childIdx) {
   if (!focusState.value) return;
-  focusState.value = { layerKey: focusState.value.layerKey, path: [...parentPath, childIdx] };
+  requestAnimationFrame(() => {
+    focusState.value = { layerKey: focusState.value.layerKey, path: [...parentPath, childIdx] };
+    nextTick(() => zoomToFocusedChip());
+  });
 }
 
 function goBack() {
@@ -454,6 +628,17 @@ function goBack() {
       path: focusState.value.path.slice(0, -1),
     };
   }
+}
+
+/** Navigate to the chip at given index when clicking an ancestor column chip */
+function goToPathFromColumn(col, idx) {
+  if (!focusState.value) return;
+  const path =
+    col.chipsParentPath === null ? [idx] : [...col.chipsParentPath, idx];
+  requestAnimationFrame(() => {
+    focusState.value = { layerKey: focusState.value.layerKey, path };
+    nextTick(() => zoomToFocusedChip());
+  });
 }
 
 /**
@@ -563,15 +748,20 @@ const columnDefs = computed(() => {
         showBack: true,
         chipPath: null,
         chipLayerKey: null,
+        chips: getLayerChips(fs.layerKey),
+        chipsParentPath: null,
       },
       {
-        header: "Sub-chips",
+        header: getChipAtPath(path)
+          ? `${getChipAtPath(path).label.toUpperCase()} NODES`
+          : "Sub-chips",
         headerTooltip: null,
         layerKey: null,
         focusedIdx: null,
         showBack: false,
         chipPath: path,
         chipLayerKey: fs.layerKey,
+        subColMarginTop: 34,
       },
       {
         header: null,
@@ -587,6 +777,8 @@ const columnDefs = computed(() => {
 
   // path.length >= 2
   // col0 = path[-2] chip (back button), col1 = path[-1] chip alone, col2 = sub-chip input+children
+  const col0ParentPath = path.length === 2 ? null : path.slice(0, -2);
+  const col1ParentPath = path.slice(0, -1);
   return [
     {
       header: getLayerName(fs.layerKey),
@@ -596,6 +788,10 @@ const columnDefs = computed(() => {
       showBack: true,
       chipPath: null,
       chipLayerKey: null,
+      chips: col0ParentPath === null
+        ? getLayerChips(fs.layerKey)
+        : (getChipAtPath(col0ParentPath)?.children ?? []),
+      chipsParentPath: col0ParentPath,
     },
     {
       header: null,
@@ -605,15 +801,21 @@ const columnDefs = computed(() => {
       showBack: false,
       chipPath: null,
       chipLayerKey: null,
+      chips: getChipAtPath(col1ParentPath)?.children ?? [],
+      chipsParentPath: col1ParentPath,
+      contentOffsetTop: 55,
     },
     {
-      header: "Sub-chips",
+      header: getChipAtPath(path)
+        ? `${getChipAtPath(path).label.toUpperCase()} NODES`
+        : "Sub-chips",
       headerTooltip: null,
       layerKey: null,
       focusedIdx: null,
       showBack: false,
       chipPath: path,
       chipLayerKey: fs.layerKey,
+      subColMarginTop: 32,
     },
   ];
 });
@@ -646,6 +848,39 @@ const columnDefs = computed(() => {
   }
 }
 
+.panel__close {
+  position: absolute;
+  top: 6px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #666;
+  transition: color 0.15s, background-color 0.15s;
+  z-index: 10;
+
+  &:hover {
+    color: #000;
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .dark-mode & {
+    color: #999;
+
+    &:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+}
+
 // ── Drag handle ───────────────────────────────────────────────────────────────
 .panel__handle {
   height: 24px;
@@ -675,6 +910,7 @@ const columnDefs = computed(() => {
 // ── Body ──────────────────────────────────────────────────────────────────────
 .panel__body {
   flex: 1;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 0 24px 24px;
   display: flex;
@@ -685,7 +921,7 @@ const columnDefs = computed(() => {
 // ── Identity row ──────────────────────────────────────────────────────────────
 .identity-row {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
   padding-top: 8px;
 }
@@ -781,6 +1017,7 @@ const columnDefs = computed(() => {
   align-items: flex-end;
   gap: 4px;
   flex-shrink: 0;
+  align-self: center;
 }
 
 .save-error {
@@ -872,6 +1109,7 @@ const columnDefs = computed(() => {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  /* margin-top set via :style for alignment with parent chip (2-col: 34px, 3-col: 8px) */
 }
 
 .sub-chips {
@@ -890,6 +1128,10 @@ const columnDefs = computed(() => {
   font-size: 12px;
   font-weight: 500;
   color: #000;
+
+  &.sub-chip--clickable {
+    cursor: pointer;
+  }
 
   .dark-mode & {
     color: #fff;

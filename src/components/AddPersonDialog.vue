@@ -93,7 +93,7 @@
 
             <!-- Step 3: Your Values -->
             <v-stepper-window-item :value="3">
-              <StringListStep
+              <ChipList
                 title="Your Values"
                 description="What are your personal values? What do you care about? This could also include your skills, and experience."
                 instruction="Type a value and press Tab or Enter to add"
@@ -104,7 +104,7 @@
 
             <!-- Step 4: Your Visions -->
             <v-stepper-window-item :value="4">
-              <StringListStep
+              <ChipList
                 title="Your Visions"
                 description="What visions are you working on, or  are wanting to achieve? This might include your interests, passions, goals, purpose."
                 instruction="Type a vision and press Tab or Enter to add"
@@ -233,7 +233,7 @@
 // @ts-check
 import { useAppStore } from "../stores/app";
 import DetailsStep from "./DetailsStep.vue";
-import StringListStep from "./StringListStep.vue";
+import ChipList from "./ChipList.vue";
 import VehiclesStep from "./VehiclesStep.vue";
 import { maybeJsonParse } from "../lib/maybeJsonParse.js";
 import * as is from "../lib/is.js";
@@ -243,7 +243,7 @@ export default {
   name: "AddPersonDialog",
   components: {
     DetailsStep,
-    StringListStep,
+    ChipList,
     VehiclesStep,
   },
   props: {

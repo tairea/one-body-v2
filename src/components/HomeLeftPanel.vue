@@ -12,6 +12,14 @@ const props = defineProps({
     type: String,
     default: "",
   },
+  clickedPersonTelegram: {
+    type: String,
+    default: "",
+  },
+  clickedPersonLocation: {
+    type: String,
+    default: "",
+  },
 });
 
 const emit = defineEmits(["showMembersView", "zoomBack", "edgeViewBack"]);
@@ -80,7 +88,14 @@ const handleEdgeViewBack = () => {
     <div v-if="isZoomed" class="zoomed-view">
       <div class="person-info">
         <h3>{{ clickedPersonName }}</h3>
-        <p>{{ clickedPersonEmail || "No email available" }}</p>
+        <p v-if="clickedPersonEmail" class="person-contact">
+          <a :href="`mailto:${clickedPersonEmail}`">{{ clickedPersonEmail }}</a>
+        </p>
+        <p v-else class="person-contact muted">No email available</p>
+        <p v-if="clickedPersonTelegram" class="person-contact">
+          <a :href="`https://t.me/${clickedPersonTelegram.replace(/^@/, '')}`" target="_blank" rel="noopener noreferrer">{{ clickedPersonTelegram }}</a>
+        </p>
+        <p v-if="clickedPersonLocation" class="person-location">{{ clickedPersonLocation }}</p>
       </div>
       <div class="back-button" @click="handleZoomBack">
         <v-icon icon="mdi-arrow-left" size="20" />
@@ -113,10 +128,14 @@ const handleEdgeViewBack = () => {
         <p class="b1">{{ appStore.people?.length || "?" }} Members</p>
       </div>
 
-      <div id="ai" class="button" @click="handleShowAiRecommendations">
-        <v-icon icon="mdi-robot-love-outline" size="20" />
-        <p class="b1">AI suggested collabs</p>
-      </div>
+      <v-tooltip text="Coming soon" location="right">
+        <template v-slot:activator="{ props }">
+          <div id="ai" class="button disabled" v-bind="props">
+            <v-icon icon="mdi-robot-love-outline" size="20" />
+            <p class="b1">AI suggested collabs</p>
+          </div>
+        </template>
+      </v-tooltip>
     </div>
   </div>
 </template>
@@ -173,6 +192,16 @@ const handleEdgeViewBack = () => {
 
     &:hover {
       background-color: #f5f5f5;
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      background-color: #f5f5f5;
+
+      &:hover {
+        background-color: #f5f5f5;
+      }
     }
 
     img {
@@ -247,6 +276,27 @@ const handleEdgeViewBack = () => {
         color: #666;
         margin: 0;
         line-height: 1.4;
+
+        &.person-contact {
+          margin-top: 4px;
+        }
+
+        &.person-location {
+          margin-top: 4px;
+        }
+
+        &.muted {
+          color: #999;
+        }
+
+        a {
+          color: #2563eb;
+          text-decoration: none;
+
+          &:hover {
+            text-decoration: underline;
+          }
+        }
       }
     }
   }
@@ -305,6 +355,16 @@ const handleEdgeViewBack = () => {
         background-color: rgba(255, 255, 255, 0.1);
       }
 
+      &.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        background-color: rgba(255, 255, 255, 0.03);
+
+        &:hover {
+          background-color: rgba(255, 255, 255, 0.03);
+        }
+      }
+
       .v-icon {
         color: rgba(255, 255, 255, 0.87) !important;
       }
@@ -337,6 +397,14 @@ const handleEdgeViewBack = () => {
 
         p {
           color: rgba(255, 255, 255, 0.6);
+
+          &.muted {
+            color: rgba(255, 255, 255, 0.4);
+          }
+
+          a {
+            color: #60a5fa;
+          }
         }
       }
     }

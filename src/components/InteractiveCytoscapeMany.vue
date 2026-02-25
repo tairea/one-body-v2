@@ -1,10 +1,10 @@
 <script setup>
-import { onMounted, ref, computed, watch, onUnmounted } from "vue";
+import { onMounted, ref, computed, watch, onUnmounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import { useAppStore } from "../stores/app";
 import cytoscape from "cytoscape";
-import { getPhotoUrl } from "../lib/utils";
+
 import { useLayers, lightenColor } from "../lib/useLayers";
 
 const appStore = useAppStore();
@@ -19,16 +19,39 @@ const props = defineProps({
     required: true,
     default: () => [],
   },
+  /** Pixels occupied by profile panel at bottom; used to center zoom in visible area */
+  panelBottomOffset: { type: Number, default: 0 },
 });
 
 // Watch for node label visibility changes
 const showNodeLabels = computed(() => appStore.showNodeLabels);
+
+// Shrink container when panel is open so fit() centers in visible area
+const containerStyle = computed(() => {
+  const offset = props.panelBottomOffset ?? 0;
+  if (offset <= 0) return undefined;
+  return { height: `calc(100vh - ${offset}px)` };
+});
+
+// Resize Cytoscape when container dimensions change (e.g. panel open/close)
+watch(
+  () => props.panelBottomOffset,
+  () => {
+    nextTick(() => {
+      cyInstances.value.forEach((cy) => {
+        if (cy) cy.resize();
+      });
+    });
+  },
+  { flush: "post" }
+);
 
 // Emit events for parent components
 const emit = defineEmits([
   "nodePositionChanged",
   "graphSnapshotSaved",
   "zoomStateChanged",
+  "chipNodeClicked",
 ]);
 
 const containerRef = ref(null);
@@ -41,6 +64,8 @@ const isZooming = ref(false); // Flag to prevent double zooming
 
 // Flag to prevent regeneration loops
 const isUpdatingSnapshot = ref(false);
+// Flag to prevent regeneration during drag (cytoscape internal data updates trigger Vue reactivity)
+const isDragging = ref(false);
 
 // Light mode styles
 const lightModeStyles = [
@@ -67,26 +92,23 @@ const lightModeStyles = [
   {
     selector: "node[type='person']",
     style: {
+      "background-color": "#ffffff",
       "background-image": "data(photo)",
       "background-width": "100%",
       "background-height": "100%",
       "background-fit": "cover",
-      "background-color": "#ffffff",
-      "border-color": "#000000",
+      "border-color": "#a0aec0",
       "border-width": "1px",
       color: "#000000",
       "font-family": "Consolas, monospace",
       "font-size": "6px",
-      label: "data(label)",
+      label: "",
       width: "data(nodeSize)",
       height: "data(nodeSize)",
       "text-wrap": "wrap",
-      "text-max-width": "calc(data(nodeSize) - 4px)",
+      "text-max-width": "data(nodeSize)",
       "text-valign": "center",
       "text-halign": "center",
-      "text-line-height": "1.2",
-      "text-margin-y": "0px",
-      "white-space": "pre-line",
     },
   },
   {
@@ -100,8 +122,8 @@ const lightModeStyles = [
       "font-size": "12px",
       "font-weight": "bold",
       color: "#2d3748",
-      width: "auto",
-      height: "auto",
+      width: "label",
+      height: "label",
       label: "data(label)",
       "text-valign": "center",
       "text-halign": "center",
@@ -202,26 +224,23 @@ const darkModeStyles = [
   {
     selector: "node[type='person']",
     style: {
+      "background-color": "#000000",
       "background-image": "data(photo)",
       "background-width": "100%",
       "background-height": "100%",
       "background-fit": "cover",
-      "background-color": "#000000",
-      "border-color": "#ffffff",
+      "border-color": "#718096",
       "border-width": "1px",
       color: "#ffffff",
       "font-family": "Consolas, monospace",
       "font-size": "6px",
-      label: "data(label)",
+      label: "",
       width: "data(nodeSize)",
       height: "data(nodeSize)",
       "text-wrap": "wrap",
-      "text-max-width": "calc(data(nodeSize) - 4px)",
+      "text-max-width": "data(nodeSize)",
       "text-valign": "center",
       "text-halign": "center",
-      "text-line-height": "1.2",
-      "text-margin-y": "0px",
-      "white-space": "pre-line",
     },
   },
   {
@@ -235,8 +254,8 @@ const darkModeStyles = [
       "font-size": "12px",
       "font-weight": "bold",
       color: "#e2e8f0",
-      width: "auto",
-      height: "auto",
+      width: "label",
+      height: "label",
       label: "data(label)",
       "text-valign": "center",
       "text-halign": "center",
@@ -409,28 +428,9 @@ const formatTextWithLineBreaks = (text) => {
 };
 
 // Get the appropriate photo URL for a person
-// Handles both local data URLs and remote API photos
 const getPersonPhotoUrl = (personData) => {
-  if (!personData.hasPhoto) {
-    return null;
-  }
-
-  // If the person has a photo field with data (data URL), use it directly
-  if (
-    personData.photo &&
-    typeof personData.photo === "string" &&
-    personData.photo.startsWith("data:")
-  ) {
-    return personData.photo;
-  }
-
-  // If the person has an ID, construct the API URL
-  if (personData.id && typeof personData.id === "number") {
-    return getPhotoUrl(personData, location.href);
-  }
-
-  // Fallback: no photo available
-  return null;
+  // photoUrl is set by the mapper from Supabase storage
+  return personData.photoUrl ?? null;
 };
 
 // Initialize graph data from person
@@ -569,10 +569,8 @@ const initializeGraphData = (personData, personIndex) => {
 const setupInteractions = (cyInstance) => {
   // Add click anywhere to zoom to nearest person (background clicks only)
   cyInstance.on("tap", (evt) => {
-    console.log("clicked", evt.target, evt.target.isNode);
     // Only handle background clicks (not node clicks)
     if (!evt.target.isNode) {
-      console.log("Background clicked, finding nearest person...");
       const clickPos = evt.renderedPosition;
       zoomToNearestPerson(clickPos);
     }
@@ -584,18 +582,23 @@ const setupInteractions = (cyInstance) => {
     const nodeData = node.data();
 
     // Zoom to this person's graph
-    zoomToPersonGraph(nodeData.id);
+    zoomToPersonGraph(nodeData.id, props.panelBottomOffset ?? 0);
   });
 
   // Add interactions for non-person nodes
   cyInstance.on("tap", "node[type!='person']", (evt) => {
     const node = evt.target;
     const nodeData = node.data();
+    const nodeId = nodeData.id;
 
-    // For non-person nodes, find the person they belong to and zoom to them
-    const personId = findPersonIdFromNodeId(nodeData.id);
+    // For non-person nodes, zoom directly to this node (single smooth animation)
+    const personId = findPersonIdFromNodeId(nodeId);
     if (personId) {
-      zoomToPersonGraph(personId);
+      zoomToPersonGraph(personId, props.panelBottomOffset ?? 0, nodeId);
+      const personUuid = personId.replace("person-", "");
+      if (appStore.myPerson && appStore.myPerson.id === personUuid) {
+        emit("chipNodeClicked", { nodeId, personId });
+      }
     } else {
       console.log("Clicked node:", nodeData);
     }
@@ -629,6 +632,41 @@ const setupInteractions = (cyInstance) => {
     }
   });
 
+  // Track drag state so we can move descendants with their parent
+  let dragState = null;
+
+  // Guard against Vue reactivity triggering regenerateGraph during drag
+  cyInstance.on("grabon", "node", (evt) => {
+    isDragging.value = true;
+    const node = evt.target;
+    const successors = node.successors("node");
+    if (successors.length > 0) {
+      dragState = {
+        node,
+        lastPos: { ...node.position() },
+        successors,
+      };
+    }
+  });
+  cyInstance.on("freeon", "node", () => {
+    isDragging.value = false;
+    dragState = null;
+  });
+
+  // When dragging a node that has descendants, move them by the same delta
+  cyInstance.on("drag", "node", (evt) => {
+    if (!dragState || evt.target !== dragState.node) return;
+    const node = evt.target;
+    const curPos = node.position();
+    const dx = curPos.x - dragState.lastPos.x;
+    const dy = curPos.y - dragState.lastPos.y;
+    dragState.successors.forEach((s) => {
+      const p = s.position();
+      s.position({ x: p.x + dx, y: p.y + dy });
+    });
+    dragState.lastPos = { ...curPos };
+  });
+
   // Emit position changed after drag ends
   cyInstance.on("dragfreeon", "node", (evt) => {
     const node = evt.target;
@@ -636,6 +674,26 @@ const setupInteractions = (cyInstance) => {
     emit("nodePositionChanged", {
       nodeId: node.id(),
       position: newPosition,
+    });
+  });
+
+  // Show name on hover for person nodes (hide image, show label with background)
+  cyInstance.on("mouseover", "node[type='person']", (evt) => {
+    const node = evt.target;
+    const isDark = appStore.isDarkMode;
+    node.style({
+      "background-image": "none",
+      "background-color": isDark ? "#000000" : "#ffffff",
+      label: node.data("label"),
+      color: isDark ? "#ffffff" : "#000000",
+    });
+  });
+
+  cyInstance.on("mouseout", "node[type='person']", (evt) => {
+    const node = evt.target;
+    node.style({
+      "background-image": node.data("photo"),
+      label: "",
     });
   });
 
@@ -729,117 +787,95 @@ const zoomToNearestPerson = (clickPos) => {
   });
 
   if (nearestPerson) {
-    zoomToPersonGraph(nearestPerson.id());
+    zoomToPersonGraph(nearestPerson.id(), props.panelBottomOffset ?? 0);
   }
 };
 
-// Function to zoom to a specific person's graph with animation
-// bottomOffset: pixels occupied by the profile panel so we pan the fitted
-// graph up into the visible area above it.
-const zoomToPersonGraph = (personId, bottomOffset = 0) => {
+// Zoom to a person's graph. Optional fitToNodeId: fit directly to that chip node (single smooth motion).
+// bottomOffset: reserved for panel; container is already resized, so fit uses visible area.
+const zoomToPersonGraph = (personId, bottomOffset = 0, fitToNodeId = null) => {
   if (!cyInstances.value || !cyInstances.value.has("main") || isZooming.value)
     return;
 
-  isZooming.value = true; // Set flag to prevent double zooming
-
   const mainCy = cyInstances.value.get("main");
+
+  // Ensure Cytoscape has latest container dimensions before fit (critical when panel is open)
+  if (bottomOffset > 0) mainCy.resize();
+
   const personNode = mainCy.$(`#${personId}`);
 
-  if (personNode.length === 0) {
-    isZooming.value = false; // Reset flag if no person found
-    return;
-  }
+  if (personNode.length === 0) return;
 
-  console.log(`Zooming to person: ${personId}`);
+  const alreadyZoomedToPerson =
+    isZoomedToPerson.value && currentZoomedPerson.value === personId;
 
-  // Get all nodes and edges connected to this person
+  // Without fitToNodeId: skip if already zoomed (avoids re-fit on person node click)
+  if (!fitToNodeId && alreadyZoomedToPerson) return;
+
+  isZooming.value = true;
+
   const personGraph = personNode.connectedNodes().add(personNode);
 
-  console.log(`Person graph has ${personGraph.length} nodes`);
+  // Fit target: single node or full person graph
+  let fitTarget = personGraph;
+  const basePadding = fitToNodeId ? 80 : 100;
 
-  // Hide other PEOPLE's graphs (not the person's own nodes)
-  // We need to find all nodes that belong to OTHER people
-  const allPersonNodes = mainCy.$('node[type="person"]');
-  const otherPersonNodes = allPersonNodes.difference(personNode);
+  if (fitToNodeId) {
+    const targetNode = mainCy.$(`#${fitToNodeId}`);
+    if (targetNode.length > 0) fitTarget = targetNode;
+  }
 
-  // Extract the person ID from the selected person's node ID
-  const selectedPersonId = personId.replace("person-", "");
+  // Container is resized when panel is open (height: calc(100vh - panelPx)), so fit
+  // naturally centers in the visible area. Use uniform padding.
+  const fitPadding = basePadding;
 
-  // For each other person, hide their entire graph (person + connected nodes + edges)
-  let allOtherElements = mainCy.collection();
-  otherPersonNodes.forEach((otherPerson) => {
-    // Get the other person's ID
-    const otherPersonId = otherPerson.id().replace("person-", "");
-
-    // Find all nodes that belong to this other person using ID patterns
-    let otherPersonLayerNodes = mainCy.collection();
-    for (const layer of layers) {
-      otherPersonLayerNodes = otherPersonLayerNodes.union(
-        mainCy.$(`node[id^="${layer.key}-${otherPersonId}-"]`)
-      );
-    }
-
-    // Get all edges connected to this other person
-    const otherPersonEdges = otherPerson.connectedEdges();
-
-    // Add all elements from this other person's graph
-    allOtherElements = allOtherElements
-      .union(otherPerson)
-      .union(otherPersonLayerNodes)
-      .union(otherPersonEdges);
-  });
-
-  console.log(
-    `Hiding ${allOtherElements.length} elements from other people's graphs`,
-  );
-  console.log(`Selected person ID: ${selectedPersonId}`);
-
-  // Hide other people's graphs with fade out effect
-  fadeElements(allOtherElements, 0.1, 300);
-
-  // Calculate the bounding box of the person's graph
-  const bbox = personGraph.boundingBox();
-
-  console.log("Bounding box:", bbox);
-
-  // Add some padding around the graph
-  const padding = 100; // Increased padding for better view
-  bbox.x1 -= padding;
-  bbox.y1 -= padding;
-  bbox.x2 += padding;
-  bbox.y2 += padding;
-
-  console.log("Bounding box with padding:", bbox);
-
-  // Fit the view to this person's graph with animation
-  mainCy.animate({
+  const animOpts = {
     fit: {
-      eles: personGraph,
-      padding: padding,
+      eles: fitTarget,
+      padding: fitPadding,
     },
-    duration: 800,
+    duration: 600,
     easing: "ease-in-out",
-  });
+  };
 
-  // Update state
+
+  // Only fade other people's graphs when not already zoomed to this person
+  if (!alreadyZoomedToPerson) {
+    const allPersonNodes = mainCy.$('node[type="person"]');
+    const otherPersonNodes = allPersonNodes.difference(personNode);
+    let allOtherElements = mainCy.collection();
+    otherPersonNodes.forEach((otherPerson) => {
+      const otherPersonId = otherPerson.id().replace("person-", "");
+      let otherPersonLayerNodes = mainCy.collection();
+      for (const layer of layers) {
+        otherPersonLayerNodes = otherPersonLayerNodes.union(
+          mainCy.$(`node[id^="${layer.key}-${otherPersonId}-"]`)
+        );
+      }
+      const otherPersonEdges = otherPerson.connectedEdges();
+      allOtherElements = allOtherElements
+        .union(otherPerson)
+        .union(otherPersonLayerNodes)
+        .union(otherPersonEdges);
+    });
+    fadeElements(allOtherElements, 0.1, 300);
+  }
+
+  mainCy.animate(animOpts);
+
   isZoomedToPerson.value = true;
   currentZoomedPerson.value = personId;
+  emit("zoomStateChanged", { isZoomed: true, personId });
 
-  // Emit event to notify parent components about zoom state change
-  emit("zoomStateChanged", {
-    isZoomed: true,
-    personId: personId,
-  });
-
-  // After animation: apply panel offset (pan graph up into visible area) then reset flag
   setTimeout(() => {
-    if (bottomOffset > 0) {
-      // panBy({y: -N}) shifts the canvas upward so nodes appear higher on screen,
-      // centering the fitted graph within the visible area above the panel.
-      mainCy.panBy({ x: 0, y: -(bottomOffset / 2) });
-    }
     isZooming.value = false;
-  }, 900); // Slightly longer than animation duration
+  }, 660);
+};
+
+// Zoom to a specific chip node. Delegates to zoomToPersonGraph for a single smooth animation.
+const zoomToNode = (nodeId, bottomOffset = 0) => {
+  const personId = findPersonIdFromNodeId(nodeId);
+  if (personId) zoomToPersonGraph(personId, bottomOffset, nodeId);
 };
 
 // Function to zoom back to full view with animation
@@ -954,7 +990,7 @@ const initializeAllGraphs = () => {
       },
       minZoom: 0.1, // Allow more zoom out to see all graphs
       maxZoom: 2,
-      wheelSensitivity: 0.3,
+      wheelSensitivity: 1, // 1 = default; 0.3 was too low (felt sluggish)
       autoungrabify: false,
       autolock: false,
     }),
@@ -1018,7 +1054,7 @@ watch(
 watch(
   () => props.people,
   (newPeople) => {
-    if (newPeople && newPeople.length > 0 && !isUpdatingSnapshot.value) {
+    if (newPeople && newPeople.length > 0 && !isUpdatingSnapshot.value && !isDragging.value) {
       // If people data changes and instances exist, regenerate the graphs
       regenerateGraph();
     }
@@ -1034,7 +1070,8 @@ watch(
       cyInstances.value.size > 0 &&
       props.people &&
       JSON.stringify(newVal) !== JSON.stringify(oldVal) &&
-      !isUpdatingSnapshot.value
+      !isUpdatingSnapshot.value &&
+      !isDragging.value
     ) {
       regenerateGraph();
     }
@@ -1099,6 +1136,7 @@ defineExpose({
   updateNodePosition,
   regenerateGraph,
   zoomToPersonGraph,
+  zoomToNode,
   zoomToFullView,
 });
 
@@ -1145,14 +1183,13 @@ watch(showNodeLabels, (newValue) => {
             "text-wrap": "wrap",
           });
         } else {
-          // Hide labels for all non-person nodes (unless they were clicked/expanded)
-          if (!node.data("expanded")) {
-            node.style({
-              width: 20,
-              height: 20,
-              label: "",
-            });
-          }
+          // Hide ALL labels including clicked/expanded nodes
+          node.style({
+            width: 20,
+            height: 20,
+            label: "",
+          });
+          node.data("expanded", false);
         }
       }
     });
@@ -1212,7 +1249,9 @@ onUnmounted(() => {
     :class="{
       'dark-mode': appStore.isDarkMode,
       fullscreen: appStore.isFullscreen,
+      'panel-open': (props.panelBottomOffset ?? 0) > 0,
     }"
+    :style="containerStyle"
   >
     <div class="cytoscape-container">
       <div ref="containerRef" class="cy-container"></div>
@@ -1226,7 +1265,7 @@ onUnmounted(() => {
   height: 100vh;
   background-color: var(--graph-background-color);
   transition: background-color 0.3s ease;
-  overflow: auto; /* Changed from hidden to auto to allow scrolling */
+  overflow: auto;
   position: fixed;
   top: 0;
   left: 0;
@@ -1234,6 +1273,11 @@ onUnmounted(() => {
 
   &.fullscreen {
     z-index: 2;
+  }
+
+  /* When panel open: constrain so fit() centers in visible area above panel */
+  &.panel-open {
+    overflow: hidden;
   }
 }
 
@@ -1243,9 +1287,15 @@ onUnmounted(() => {
   position: relative;
   background-color: var(--graph-background-color);
   transition: background-color 0.3s ease;
-  /* Ensure container can expand to fit all graphs */
   min-width: max-content;
   min-height: max-content;
+}
+
+/* When panel open, prevent containers from expanding past viewport */
+.interactive-cytoscape-view.panel-open .cytoscape-container,
+.interactive-cytoscape-view.panel-open .cy-container {
+  min-width: 0;
+  min-height: 0;
 }
 
 .cy-container {
@@ -1253,7 +1303,6 @@ onUnmounted(() => {
   height: 100%;
   background-color: var(--graph-background-color);
   transition: background-color 0.3s ease;
-  /* Ensure cytoscape container can expand */
   min-width: max-content;
   min-height: max-content;
 }

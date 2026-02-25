@@ -1,10 +1,11 @@
 <script setup>
 // @ts-check
-import { onMounted, onUnmounted, ref, watch } from "vue";
+import { nextTick, onMounted, onUnmounted, ref, watch } from "vue";
 import DarkModeToggle from "../components/DarkModeToggle.vue";
 import GlobeGL from "../components/GlobeGL.vue";
 import HomeLeftPanel from "../components/HomeLeftPanel.vue";
 import HomeRightPanel from "../components/HomeRightPanel.vue";
+import MobileTopBar from "../components/MobileTopBar.vue";
 import ProfilePanel from "../components/ProfilePanel.vue";
 import { useAppStore } from "../stores/app";
 import AiRecommendations from "../components/AiRecommendations.vue";
@@ -16,6 +17,9 @@ const homeLeftPanelRef = ref(null);
 const aiRecommendationsRef = ref(null);
 
 const profilePanelOpen = ref(false);
+const focusChipNodeId = ref(/** @type {string | null} */ (null));
+const panelBottomOffsetPx = ref(0);
+const isZoomed = ref(false);
 
 // State for handling node position changes
 const hasNodePositionChanges = ref(false);
@@ -24,6 +28,8 @@ const isSavingPositions = ref(false);
 // State for clicked person data
 const clickedPersonName = ref("");
 const clickedPersonEmail = ref("");
+const clickedPersonTelegram = ref("");
+const clickedPersonLocation = ref("");
 
 // Handle node position changes from the cytoscape component
 const handleNodePositionChanged = () => {
@@ -51,6 +57,7 @@ const handleGraphSnapshotSaved = async (graphData) => {
 
 // Handle zoom state changes from cytoscape
 const handleZoomStateChanged = (zoomState) => {
+  isZoomed.value = zoomState.isZoomed;
   if (homeLeftPanelRef.value) {
     homeLeftPanelRef.value.handleZoomStateChange(zoomState);
   }
@@ -60,11 +67,15 @@ const handleZoomStateChanged = (zoomState) => {
     const person = appStore.people.find((p) => p.id === personId);
     if (person) {
       clickedPersonName.value = person.name || "";
-      clickedPersonEmail.value = "";
+      clickedPersonEmail.value = person.email ?? "";
+      clickedPersonTelegram.value = person.telegram ?? "";
+      clickedPersonLocation.value = person.locationName ?? "";
     }
   } else {
     clickedPersonName.value = "";
     clickedPersonEmail.value = "";
+    clickedPersonTelegram.value = "";
+    clickedPersonLocation.value = "";
   }
 };
 
@@ -80,6 +91,15 @@ const handleEdgeViewBack = () => {
   if (aiRecommendationsRef.value) {
     aiRecommendationsRef.value.resetEdgeView();
   }
+};
+
+// When a chip node is clicked on the graph (and it's my person), focus it in the profile panel
+const handleChipNodeClicked = ({ nodeId }) => {
+  profilePanelOpen.value = true;
+  focusChipNodeId.value = nodeId;
+  nextTick(() => {
+    focusChipNodeId.value = null; // Reset so subsequent clicks can re-trigger
+  });
 };
 
 // When profilePanel closes, zoom-fit the full graph in the now-restored 100vh viewport.
@@ -129,6 +149,8 @@ onUnmounted(() => {
       ref="homeLeftPanelRef"
       :clickedPersonName="clickedPersonName"
       :clickedPersonEmail="clickedPersonEmail"
+      :clickedPersonTelegram="clickedPersonTelegram"
+      :clickedPersonLocation="clickedPersonLocation"
       :class="{ 'panel-hidden': appStore.isFullscreen }"
       @zoomBack="handleZoomBack"
       @edgeViewBack="handleEdgeViewBack"
@@ -147,6 +169,17 @@ onUnmounted(() => {
       :class="{ 'panel-hidden': appStore.isFullscreen }"
     />
 
+    <MobileTopBar
+      v-if="appStore.people && appStore.recommendations && !appStore.isFullscreen"
+      :isZoomed="isZoomed"
+      :hasNodePositionChanges="hasNodePositionChanges"
+      :isSavingPositions="isSavingPositions"
+      @zoomBack="handleZoomBack"
+      @edgeViewBack="handleEdgeViewBack"
+      @editProfile="profilePanelOpen = true"
+      @saveNodePositions="handleSaveNodePositions"
+    />
+
     <div
       v-if="appStore.people && appStore.recommendations"
       class="components-container"
@@ -155,10 +188,12 @@ onUnmounted(() => {
       <InteractiveCytoscapeMany
         ref="cytoscapeRef"
         :people="appStore.people"
+        :panelBottomOffset="panelBottomOffsetPx"
         :class="{ active: appStore.activeComponent === 'cytoscape' }"
         @nodePositionChanged="handleNodePositionChanged"
         @graphSnapshotSaved="handleGraphSnapshotSaved"
         @zoomStateChanged="handleZoomStateChanged"
+        @chipNodeClicked="handleChipNodeClicked"
       />
       <GlobeGL
         :people="appStore.people"
@@ -176,7 +211,9 @@ onUnmounted(() => {
     <ProfilePanel
       :open="profilePanelOpen"
       :cytoscapeRef="cytoscapeRef"
+      :focusChipNodeId="focusChipNodeId"
       @close="profilePanelOpen = false"
+      @panelHeightChange="panelBottomOffsetPx = $event"
     />
 
   </div>
