@@ -52,11 +52,12 @@
           <div class="identity-fields">
             <v-text-field
               v-model="name"
-              label="Name"
+              label="Name *"
               variant="outlined"
               density="compact"
               hide-details
               class="field-name"
+              placeholder="Required"
             />
             <v-text-field
               v-model="email"
@@ -99,8 +100,8 @@
           </div>
         </div>
 
-        <!-- Columns -->
-        <div class="columns">
+        <!-- Columns (chiplists) — only show after profile name is saved -->
+        <div v-if="appStore.myPerson" class="columns">
           <template v-for="(col, colIdx) in columnDefs" :key="colIdx">
             <div class="col-divider" v-if="colIdx > 0" />
             <div class="col">
@@ -287,17 +288,15 @@ onBeforeUnmount(async () => {
     const userId = appStore.authUser?.id;
     if (userId) {
       try {
-        await supabase
+        const { error } = await supabase
           .from("people")
-          .upsert(
-            {
-              user_id: userId,
-              layer1_list: layer1.value,
-              layer2_list: layer2.value,
-              layer3_list: layer3.value,
-            },
-            { onConflict: "user_id" }
-          );
+          .update({
+            layer1_list: layer1.value,
+            layer2_list: layer2.value,
+            layer3_list: layer3.value,
+          })
+          .eq("user_id", userId);
+        if (error) throw error;
       } catch {
         // Silent fail
       }
@@ -349,6 +348,9 @@ watch(
   }
 );
 
+// Skip syncing layers to store during initial form load (avoids unnecessary graph regeneration)
+const isInitializingFromStore = ref(false);
+
 // Prefill from store when panel opens
 watch(
   () => props.open,
@@ -356,6 +358,12 @@ watch(
     if (!open) return;
     const p = appStore.myPerson;
     if (!p) return;
+    isInitializingFromStore.value = true;
+    // Cancel any pending chip save so we don't trigger Realtime → graph regeneration
+    if (chipSaveTimeout) {
+      clearTimeout(chipSaveTimeout);
+      chipSaveTimeout = null;
+    }
     name.value = p.name;
     email.value = p.email ?? "";
     telegram.value = p.telegram ?? "";
@@ -382,6 +390,9 @@ watch(
       const panelPx = props.open ? getPanelHeightPx() : 0;
       cytoscape.zoomToPersonGraph?.(`person-${p.id}`, panelPx);
     }
+    nextTick(() => {
+      isInitializingFromStore.value = false;
+    });
   },
   { immediate: true }
 );
@@ -401,9 +412,11 @@ const hasMetadataChanges = computed(() => {
 });
 
 // Optimistically sync layer changes to the store so the graph updates in real-time
+// Skip during initial form load to avoid triggering graph regeneration (which would reset node positions)
 watch(
   [layer1, layer2, layer3],
   () => {
+    if (isInitializingFromStore.value) return;
     const myPerson = appStore.myPerson;
     if (!myPerson) return;
     appStore.updateMyPersonLocally({
@@ -417,27 +430,27 @@ watch(
 );
 
 // Persist chips to DB when they change — add, remove, edit (debounced)
+// Skip during initial form load — saving would trigger Realtime → graph regeneration → position reset
 let chipSaveTimeout = /** @type {ReturnType<typeof setTimeout> | null} */ (null);
 watch(
   [layer1, layer2, layer3],
   () => {
+    if (isInitializingFromStore.value) return;
     const userId = appStore.authUser?.id;
     if (!userId) return;
     if (chipSaveTimeout) clearTimeout(chipSaveTimeout);
     chipSaveTimeout = setTimeout(async () => {
       chipSaveTimeout = null;
       try {
-        await supabase
+        const { error } = await supabase
           .from("people")
-          .upsert(
-            {
-              user_id: userId,
-              layer1_list: layer1.value,
-              layer2_list: layer2.value,
-              layer3_list: layer3.value,
-            },
-            { onConflict: "user_id" }
-          );
+          .update({
+            layer1_list: layer1.value,
+            layer2_list: layer2.value,
+            layer3_list: layer3.value,
+          })
+          .eq("user_id", userId);
+        if (error) throw error;
       } catch {
         // Silent fail; chips stay in local state
       }
@@ -512,7 +525,19 @@ async function save() {
 
     await appStore.fetchMyPerson();
     await appStore.fetchGraph();
-    emit("close");
+    // Keep panel open — don't close on save. User closes via X.
+    // Update snapshot so Save is disabled until user makes changes again
+    const p = appStore.myPerson;
+    if (p) {
+      initialMetadata.value = {
+        name: p.name,
+        email: p.email ?? "",
+        telegram: p.telegram ?? "",
+        locationName: p.locationName ?? "",
+        locationLatitude: p.locationLatitude ?? null,
+        locationLongitude: p.locationLongitude ?? null,
+      };
+    }
   } catch (/** @type {any} */ err) {
     errorMsg.value = err?.message ?? "Something went wrong.";
   } finally {

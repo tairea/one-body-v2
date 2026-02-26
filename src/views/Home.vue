@@ -8,6 +8,7 @@ import HomeRightPanel from "../components/HomeRightPanel.vue";
 import MobileTopBar from "../components/MobileTopBar.vue";
 import ProfilePanel from "../components/ProfilePanel.vue";
 import { useAppStore } from "../stores/app";
+import { supabase } from "../lib/supabase.js";
 import AiRecommendations from "../components/AiRecommendations.vue";
 import InteractiveCytoscapeMany from "../components/InteractiveCytoscapeMany.vue";
 
@@ -114,8 +115,20 @@ onMounted(async () => {
   await appStore.fetchGraph();
   await appStore.fetchMyPerson();
   appStore.subscribeToPersonUpdates();
-  if (!appStore.myPerson) {
-    // New user — open profile panel instead of routing
+  if (!appStore.myPerson && appStore.authUser) {
+    // New user — create a "New Member" placeholder so they see their node immediately
+    await supabase.from("people").upsert(
+      {
+        user_id: appStore.authUser.id,
+        name: "New Member",
+        layer1_list: [],
+        layer2_list: [],
+        layer3_list: [],
+      },
+      { onConflict: "user_id" }
+    );
+    await appStore.fetchMyPerson();
+    await appStore.fetchGraph();
     profilePanelOpen.value = true;
   }
 });

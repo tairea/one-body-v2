@@ -342,6 +342,10 @@ const updateGraphStyles = () => {
   cyInstances.value.forEach((cy) => {
     if (cy) {
       cy.style(newStyles);
+      // Re-apply name labels for person nodes that have no photo
+      cy.$('node[type="person"]').forEach((node) => {
+        if (!node.data("hasPhoto")) applyNoPhotoStyle(node);
+      });
     }
   });
 
@@ -434,15 +438,17 @@ const getPersonPhotoUrl = (personData) => {
 };
 
 // Initialize graph data from person
-const initializeGraphData = (personData, personIndex) => {
+/** @param {Record<string, {x: number, y: number}> | null} livePositionsMap - live positions from current graph (takes precedence over snapshot) */
+const initializeGraphData = (personData, personIndex, livePositionsMap = null) => {
   const nodes = [];
   const edges = [];
 
-  // Check if we have saved positions
+  // Check if we have saved positions (from DB snapshot or live capture)
   const hasSavedPositions =
-    personData.personsGraphSnapshot &&
-    personData.personsGraphSnapshot.nodes &&
-    personData.personsGraphSnapshot.nodes.length > 0;
+    (livePositionsMap && Object.keys(livePositionsMap).length > 0) ||
+    (personData.personsGraphSnapshot &&
+      personData.personsGraphSnapshot.nodes &&
+      personData.personsGraphSnapshot.nodes.length > 0);
 
   // Calculate offset for this person's graph
   const graphOffset = {
@@ -450,8 +456,15 @@ const initializeGraphData = (personData, personIndex) => {
     y: Math.floor(personIndex / 3) * 600,
   };
 
-  // Person node position
-  const personPos = { x: graphOffset.x, y: graphOffset.y };
+  // Person node position (preserve from live or snapshot if available)
+  const personNodeId = `person-${personData.id}`;
+  let personPos = { x: graphOffset.x, y: graphOffset.y };
+  if (livePositionsMap?.[personNodeId]) {
+    personPos = livePositionsMap[personNodeId];
+  } else if (personData.personsGraphSnapshot?.nodes?.length) {
+    const savedPerson = personData.personsGraphSnapshot.nodes.find((n) => n.id === personNodeId);
+    if (savedPerson?.position) personPos = savedPerson.position;
+  }
 
   // Add person node (center of this person's graph)
   const personNode = {
@@ -460,6 +473,7 @@ const initializeGraphData = (personData, personIndex) => {
       label: formatTextWithLineBreaks(personData.name),
       type: "person",
       photo: getPersonPhotoUrl(personData),
+      hasPhoto: true, // optimistic — checked async after graph init
       nodeSize: calculatePersonNodeSize(personData.name),
     },
     position: personPos,
@@ -484,7 +498,12 @@ const initializeGraphData = (personData, personIndex) => {
     const color = lightenColor(baseColor, lightenAmounts[Math.min(depth, 2)]);
 
     let position = null;
-    if (hasSavedPositions) {
+    if (livePositionsMap && livePositionsMap[chipId]) {
+      position = livePositionsMap[chipId];
+    } else if (
+      personData.personsGraphSnapshot?.nodes &&
+      personData.personsGraphSnapshot.nodes.length > 0
+    ) {
       const savedNode = personData.personsGraphSnapshot.nodes.find((n) => n.id === chipId);
       if (savedNode) position = savedNode.position;
     }
@@ -677,9 +696,11 @@ const setupInteractions = (cyInstance) => {
     });
   });
 
-  // Show name on hover for person nodes (hide image, show label with background)
+  // Show name on hover for person nodes that have a photo (hide image, show label with background)
+  // Nodes without a photo always show their name, so hover is a no-op for them.
   cyInstance.on("mouseover", "node[type='person']", (evt) => {
     const node = evt.target;
+    if (!node.data("hasPhoto")) return; // already showing name
     const isDark = appStore.isDarkMode;
     node.style({
       "background-image": "none",
@@ -691,6 +712,7 @@ const setupInteractions = (cyInstance) => {
 
   cyInstance.on("mouseout", "node[type='person']", (evt) => {
     const node = evt.target;
+    if (!node.data("hasPhoto")) return; // keep name visible
     node.style({
       "background-image": node.data("photo"),
       label: "",
@@ -924,31 +946,51 @@ const zoomToFullView = () => {
 
 // Function to regenerate the graph with updated person data
 const regenerateGraph = () => {
-  if (
-    !cyInstances.value ||
-    cyInstances.value.size === 0 ||
-    !props.people ||
-    isUpdatingSnapshot.value
-  )
+  if (!props.people || props.people.length === 0 || isUpdatingSnapshot.value)
     return;
 
   try {
-    // Clear all existing instances
-    cyInstances.value.forEach((cy) => {
-      if (cy) {
-        cy.elements().remove();
-      }
-    });
+    // Capture current node positions from live graph before clearing (preserves positions when adding chips)
+    let livePositionsMap = null;
+    const mainCy = cyInstances.value?.get("main");
+    if (mainCy && mainCy.nodes().length > 0) {
+      livePositionsMap = {};
+      mainCy.nodes().forEach((node) => {
+        livePositionsMap[node.id()] = { ...node.position() };
+      });
+    }
 
-    // Reinitialize all graphs
-    initializeAllGraphs();
+    // Clear existing instances if any (handles both cold start and update)
+    if (cyInstances.value && cyInstances.value.size > 0) {
+      cyInstances.value.forEach((cy) => {
+        if (cy) {
+          cy.elements().remove();
+        }
+      });
+    }
+
+    // Reinitialize all graphs (also handles first init when going from 0 → 1 person)
+    initializeAllGraphs(livePositionsMap);
   } catch (error) {
     console.error("Error regenerating graphs:", error);
   }
 };
 
+/** Mark a person node as having no photo — always show the name label. */
+const applyNoPhotoStyle = (node) => {
+  node.data("hasPhoto", false);
+  const isDark = appStore.isDarkMode;
+  node.style({
+    "background-image": "none",
+    "background-color": isDark ? "#000000" : "#ffffff",
+    label: node.data("label"),
+    color: isDark ? "#ffffff" : "#000000",
+  });
+};
+
 // Function to initialize all graphs for all people
-const initializeAllGraphs = () => {
+/** @param {Record<string, {x: number, y: number}> | null} livePositionsMap - current positions from live graph (preserves layout when adding chips) */
+const initializeAllGraphs = (livePositionsMap = null) => {
   if (!props.people || props.people.length === 0) return;
 
   // Clear existing instances
@@ -964,7 +1006,7 @@ const initializeAllGraphs = () => {
   const allEdges = [];
 
   props.people.forEach((personData, index) => {
-    const { nodes, edges } = initializeGraphData(personData, index);
+    const { nodes, edges } = initializeGraphData(personData, index, livePositionsMap);
     allNodes.push(...nodes);
     allEdges.push(...edges);
   });
@@ -1040,6 +1082,20 @@ const initializeAllGraphs = () => {
 
   // Add interactions
   setupInteractions(mainCy);
+
+  // Async: probe each person node's photo URL; if missing, show name permanently
+  const personNodes = mainCy.$('node[type="person"]');
+  personNodes.forEach((node) => {
+    const photoUrl = node.data("photo");
+    if (!photoUrl) {
+      applyNoPhotoStyle(node);
+      return;
+    }
+    const img = new Image();
+    img.onload = () => { /* photo exists, keep default hover behaviour */ };
+    img.onerror = () => applyNoPhotoStyle(node);
+    img.src = photoUrl;
+  });
 };
 
 // Watch for dark mode changes

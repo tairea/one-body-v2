@@ -1,7 +1,9 @@
 <script setup>
 // @ts-check
-import { defineEmits, defineProps, ref, watch } from "vue";
+import { computed, defineEmits, defineProps, ref } from "vue";
+import { useRouter } from "vue-router";
 import { useAppStore } from "../stores/app";
+import { supabase } from "../lib/supabase.js";
 
 const props = defineProps({
   clickedPersonName: {
@@ -24,6 +26,7 @@ const props = defineProps({
 
 const emit = defineEmits(["showMembersView", "zoomBack", "edgeViewBack"]);
 const appStore = useAppStore();
+const router = useRouter();
 
 const communityName = import.meta.env.VITE_COMMUNITY_NAME || "One Body";
 const communityTagline = import.meta.env.VITE_COMMUNITY_TAGLINE || "";
@@ -32,6 +35,17 @@ const communityLogoUrl = import.meta.env.VITE_COMMUNITY_LOGO_URL || "";
 // Add state for zoom
 const isZoomed = ref(false);
 const currentPersonId = ref(null);
+
+// Delete account
+const deleteDialogOpen = ref(false);
+const deleteInProgress = ref(false);
+const deleteError = ref("");
+
+const isOwnProfile = computed(() => {
+  if (!appStore.myPerson || !currentPersonId.value) return false;
+  const rawId = String(currentPersonId.value).replace(/^person-/, "");
+  return appStore.myPerson.id === rawId;
+});
 
 // Watch for zoom state changes from parent
 const handleZoomStateChange = (zoomState) => {
@@ -62,6 +76,40 @@ const handleZoomBack = () => {
 
 const handleEdgeViewBack = () => {
   emit("edgeViewBack");
+};
+
+const openDeleteDialog = () => {
+  deleteError.value = "";
+  deleteDialogOpen.value = true;
+};
+
+const closeDeleteDialog = () => {
+  if (!deleteInProgress.value) {
+    deleteDialogOpen.value = false;
+    deleteError.value = "";
+  }
+};
+
+const confirmDeleteAccount = async () => {
+  deleteInProgress.value = true;
+  deleteError.value = "";
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      deleteError.value = "You must be logged in to delete your account.";
+      return;
+    }
+    const { error } = await supabase.functions.invoke("delete-account", {
+      headers: { Authorization: `Bearer ${session.access_token}` },
+    });
+    if (error) throw error;
+    await appStore.signOut();
+    router.push("/auth");
+  } catch (err) {
+    deleteError.value = err?.message || "Failed to delete account";
+  } finally {
+    deleteInProgress.value = false;
+  }
 };
 </script>
 
@@ -96,12 +144,52 @@ const handleEdgeViewBack = () => {
           <a :href="`https://t.me/${clickedPersonTelegram.replace(/^@/, '')}`" target="_blank" rel="noopener noreferrer">{{ clickedPersonTelegram }}</a>
         </p>
         <p v-if="clickedPersonLocation" class="person-location">{{ clickedPersonLocation }}</p>
+        <p v-if="isOwnProfile" class="delete-account-link-wrap">
+          <button type="button" class="delete-account-link" @click="openDeleteDialog">
+            Delete my account
+          </button>
+        </p>
       </div>
       <div class="back-button" @click="handleZoomBack">
         <v-icon icon="mdi-arrow-left" size="20" />
         <span>Back</span>
       </div>
     </div>
+
+    <!-- Delete account confirmation dialog -->
+    <v-dialog
+      v-model="deleteDialogOpen"
+      max-width="400"
+      persistent
+      @click:outside="closeDeleteDialog"
+    >
+      <v-card>
+        <v-card-title>Delete your account?</v-card-title>
+        <v-card-text>
+          <p>This will permanently remove your profile and all your data. You will be signed out and will need to create a new account to rejoin.</p>
+          <p v-if="deleteError" class="delete-error">Error: {{ deleteError }}</p>
+        </v-card-text>
+        <v-card-actions>
+          <v-spacer />
+          <v-btn
+            variant="text"
+            :disabled="deleteInProgress"
+            @click="closeDeleteDialog"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="error"
+            variant="flat"
+            :loading="deleteInProgress"
+            :disabled="deleteInProgress"
+            @click="confirmDeleteAccount"
+          >
+            Delete
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
 
     <!-- EDGE VIEW - Show back button for edge collaborations -->
     <div v-if="appStore.isEdgeView" class="edge-view">
@@ -299,6 +387,25 @@ const handleEdgeViewBack = () => {
         }
       }
     }
+
+    .delete-account-link-wrap {
+      margin-top: 16px;
+    }
+
+    .delete-account-link {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: inherit;
+      color: #dc3545;
+      text-decoration: none;
+      cursor: pointer;
+      font-family: inherit;
+
+      &:hover {
+        text-decoration: underline;
+      }
+    }
   }
 
   // Edge view styles
@@ -407,6 +514,15 @@ const handleEdgeViewBack = () => {
           }
         }
       }
+
+      .delete-account-link {
+        color: #f87171;
+        margin-top:20px;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
     }
 
     .edge-view {
@@ -428,5 +544,12 @@ const handleEdgeViewBack = () => {
       }
     }
   }
+}
+
+/* Top-level so it applies to dialog content teleported to body */
+.delete-error {
+  color: #dc3545;
+  margin-top: 12px;
+  font-size: 0.75rem;
 }
 </style>

@@ -13,7 +13,7 @@ import Globe from "globe.gl";
 import { FrontSide } from "three";
 import * as THREE from "three";
 import { useAppStore } from "../stores/app";
-import { accentColors } from "../lib/utils.js";
+import { useLayers } from "../lib/useLayers.js";
 /** @import { Person } from "../types.d.ts" */
 
 /**
@@ -104,7 +104,7 @@ export default {
       // Add people locations with photos
       this.addPeopleLocations();
 
-      // Add arc connections to Community Hub
+      // Add arc connections between members
       this.addArcConnections();
 
       // Enable auto-rotation through controls
@@ -172,21 +172,29 @@ export default {
     },
 
     addArcConnections() {
-      // Community Hub coordinates in California
-      const communityHub = { lat: 39.1911, lng: -123.7647 };
+      // Use the 3 community colors from setup (Values, Visions, Vehicles)
+      const communityColors = useLayers().map((l) => l.color);
 
-      // Create arc data connecting each person to Community Hub
       /** @type {Person[]} */ const people = this.people;
-      const arcData = people
-        .filter(doesPersonHaveLocation)
-        .map((person, index) => ({
-          startLat: person.locationLatitude,
-          startLng: person.locationLongitude,
-          endLat: communityHub.lat,
-          endLng: communityHub.lng,
-          color: accentColors[index % accentColors.length],
-          name: person.name,
-        }));
+      const peopleWithLocation = people.filter(doesPersonHaveLocation);
+
+      // Create arc data linking all member nodes to each other (one arc per pair)
+      const arcData = [];
+      for (let i = 0; i < peopleWithLocation.length; i++) {
+        for (let j = i + 1; j < peopleWithLocation.length; j++) {
+          const a = peopleWithLocation[i];
+          const b = peopleWithLocation[j];
+          const arcIndex = arcData.length;
+          arcData.push({
+            startLat: a.locationLatitude,
+            startLng: a.locationLongitude,
+            endLat: b.locationLatitude,
+            endLng: b.locationLongitude,
+            color: communityColors[arcIndex % communityColors.length],
+            names: `${a.name} ↔ ${b.name}`,
+          });
+        }
+      }
 
       // Add arcs layer
       this.globe
@@ -196,7 +204,7 @@ export default {
         .arcStroke(0.5)
         .arcCurveResolution(64)
         .onArcClick((arc) => {
-          console.log("Clicked on arc to:", arc.name);
+          console.log("Clicked on arc:", arc.names);
         })
         .arcLabel(
           (arc) => `
@@ -210,15 +218,15 @@ export default {
             font-weight: 600;
             color: #2d3748;
             white-space: nowrap;
-          ">${arc.name} → Community Hub</div>
+          ">${arc.names}</div>
         `,
         );
 
-      // Add combined custom layer for people photos and Community Hub logo
-      this.addCombinedCustomLayer(communityHub);
+      // Add combined custom layer for people photos (no hub)
+      this.addCombinedCustomLayer();
     },
 
-    addCombinedCustomLayer(communityHub) {
+    addCombinedCustomLayer() {
       // Convert people data to points format
       /** @type {Person[]} */ const people = this.people;
       const peoplePoints = people.filter(doesPersonHaveLocation).map((person) => ({
@@ -229,20 +237,8 @@ export default {
         type: "person",
       }));
 
-      // Add Community Hub to the points
-      const allPoints = [
-        ...peoplePoints,
-        {
-          lat: communityHub.lat,
-          lng: communityHub.lng,
-          name: "Community Hub",
-          logo: "/org-logo.svg",
-          type: "hub",
-        },
-      ];
-
-      // Create a custom layer for all markers
-      this.globe.customLayerData(allPoints).customThreeObject((point) => {
+      // Create a custom layer for people photos (no hub)
+      this.globe.customLayerData(peoplePoints).customThreeObject((point) => {
         if (point.type === "person") {
           // Create a plane geometry for the person photo
           const geometry = new THREE.PlaneGeometry(10, 10);
@@ -315,85 +311,8 @@ export default {
           }
 
           return mesh;
-        } else if (point.type === "hub") {
-          // Create a plane geometry for the community logo (slightly larger than person photos)
-          const geometry = new THREE.PlaneGeometry(15, 15);
-
-          // Load the community logo texture
-          const textureLoader = new THREE.TextureLoader();
-          const texture = textureLoader.load(point.logo);
-
-          // Create material with the logo texture
-          const material = new THREE.MeshBasicMaterial({
-            map: texture,
-            transparent: true,
-            side: THREE.DoubleSide,
-            alphaTest: 0.1,
-          });
-
-          // Create the mesh
-          const mesh = new THREE.Mesh(geometry, material);
-
-          // Position the mesh at the correct lat/lng coordinates
-          const coords = this.globe.getCoords(point.lat, point.lng, 0.03); // Slightly higher than person markers
-          mesh.position.set(coords.x, coords.y, coords.z);
-
-          // Orient the mesh to be flat against the globe surface at this location
-          const normal = new THREE.Vector3(
-            coords.x,
-            coords.y,
-            coords.z,
-          ).normalize();
-          const up = new THREE.Vector3(0, 1, 0);
-          const right = new THREE.Vector3()
-            .crossVectors(up, normal)
-            .normalize();
-          const correctedUp = new THREE.Vector3()
-            .crossVectors(normal, right)
-            .normalize();
-
-          // Create a rotation matrix to orient the plane
-          const matrix = new THREE.Matrix4();
-          matrix.makeBasis(right, correctedUp, normal);
-          mesh.setRotationFromMatrix(matrix);
-
-          return mesh;
         }
       });
-
-      // Add separate points layer for Community Hub label and interactions
-      this.globe
-        .pointsData([
-          {
-            lat: communityHub.lat,
-            lng: communityHub.lng,
-            name: "Community Hub",
-          },
-        ])
-        .pointColor(() => "transparent")
-        .pointAltitude(0.08)
-        .pointRadius(0.01)
-        .pointsMerge(false)
-        .pointResolution(12)
-        .onPointClick((point) => {
-          console.log("Clicked on Community Hub");
-        })
-        .pointLabel(
-          (point) => `
-          <div style="
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 8px;
-            padding: 8px 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            border: 2px solid #4299e1;
-            font-size: 12px;
-            font-weight: 700;
-            color: #2d3748;
-            white-space: nowrap;
-            text-align: center;
-          ">🏠 Community Hub</div>
-        `,
-        );
     },
 
     updateTheme() {

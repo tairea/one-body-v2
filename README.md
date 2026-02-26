@@ -1,6 +1,6 @@
 # One Body
 
-**The One Body Problem** is the challenge of coordinating many people as one — discovering shared values, aligning visions, and connecting the vehicles (projects and initiatives) that bring communities together.
+**The One Body Problem** is the challenge of coordinating a community people people as one — discovering shared values or ideas that you can set for you community (called layers).
 
 One Body is an open-source tool that maps the relationships between people in a community through an interactive graph. Members create profiles describing what matters to them across three customisable layers, and the app visualises the overlaps — making it easy to find collaborators, spark conversations, and strengthen the whole.
 
@@ -10,7 +10,7 @@ Built with [Vue.js](https://vuejs.org/), [Cytoscape.js](https://js.cytoscape.org
 
 ## Features
 
-- **Interactive community graph** — person nodes linked by shared values, visions, and vehicles, powered by Cytoscape.js
+- **Interactive community graph** — person nodes linked by shared layers, powered by Cytoscape.js
 - **Member profiles** — each member describes themselves across three community-defined layers
 - **Hierarchical chip nodes** — drill into any layer to see sub-topics and connections
 - **3D globe view** — visualise your community geographically with Globe.GL
