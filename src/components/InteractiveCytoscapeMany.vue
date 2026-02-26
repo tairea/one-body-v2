@@ -973,14 +973,17 @@ const regenerateGraph = () => {
     return;
 
   try {
-    // Capture current node positions from live graph before clearing (preserves positions when adding chips)
+    // Capture current node positions and viewport from live graph before clearing
     let livePositionsMap = null;
+    let savedViewport = null;
     const mainCy = cyInstances.value?.get("main");
     if (mainCy && mainCy.nodes().length > 0) {
       livePositionsMap = {};
       mainCy.nodes().forEach((node) => {
         livePositionsMap[node.id()] = { ...node.position() };
       });
+      // Save viewport so we can restore it after rebuild (prevents jump-to-fit)
+      savedViewport = { zoom: mainCy.zoom(), pan: { ...mainCy.pan() } };
     }
 
     // Clear existing instances if any (handles both cold start and update)
@@ -993,7 +996,7 @@ const regenerateGraph = () => {
     }
 
     // Reinitialize all graphs (also handles first init when going from 0 → 1 person)
-    initializeAllGraphs(livePositionsMap);
+    initializeAllGraphs(livePositionsMap, savedViewport);
   } catch (error) {
     console.error("Error regenerating graphs:", error);
   }
@@ -1013,7 +1016,8 @@ const applyNoPhotoStyle = (node) => {
 
 // Function to initialize all graphs for all people
 /** @param {Record<string, {x: number, y: number}> | null} livePositionsMap - current positions from live graph (preserves layout when adding chips) */
-const initializeAllGraphs = (livePositionsMap = null) => {
+/** @param {{ zoom: number, pan: { x: number, y: number } } | null} savedViewport - previous viewport to restore (skip fit-to-all) */
+const initializeAllGraphs = (livePositionsMap = null, savedViewport = null) => {
   if (!props.people || props.people.length === 0) return;
 
   // Clear existing instances
@@ -1050,7 +1054,7 @@ const initializeAllGraphs = (livePositionsMap = null) => {
           acc[node.data.id] = node.position;
           return acc;
         }, {}),
-        fit: true,
+        fit: !savedViewport, // Skip fit when restoring a previous viewport
         animate: false,
       },
       minZoom: 0.1, // Allow more zoom out to see all graphs
@@ -1077,20 +1081,11 @@ const initializeAllGraphs = (livePositionsMap = null) => {
     mainCy.nodes().ungrabify();
   }
 
-  // Center the view and ensure proper fit with custom padding
-  mainCy.fit({
-    padding: {
-      left: 300,
-      right: 300,
-      top: 100,
-      bottom: 100,
-    },
-  });
-  mainCy.center();
-
-  // Force a resize to ensure proper rendering
-  setTimeout(() => {
-    mainCy.resize();
+  if (savedViewport) {
+    // Restore previous viewport exactly — no fit/center jump
+    mainCy.viewport({ zoom: savedViewport.zoom, pan: savedViewport.pan });
+  } else {
+    // First load — fit all graphs with padding
     mainCy.fit({
       padding: {
         left: 300,
@@ -1100,6 +1095,23 @@ const initializeAllGraphs = (livePositionsMap = null) => {
       },
     });
     mainCy.center();
+  }
+
+  // Force a resize to ensure proper rendering
+  setTimeout(() => {
+    mainCy.resize();
+
+    if (!savedViewport) {
+      mainCy.fit({
+        padding: {
+          left: 300,
+          right: 300,
+          top: 100,
+          bottom: 100,
+        },
+      });
+      mainCy.center();
+    }
 
     // Force style refresh to ensure person node sizes are applied
     mainCy.style().update();
