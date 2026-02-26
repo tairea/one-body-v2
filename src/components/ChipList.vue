@@ -111,6 +111,23 @@ defineExpose({ focusInput });
   display: flex;
   flex-direction: column;
   gap: 6px;
+
+  /* Ensure v-text-field outline is visible in light mode */
+  &:not(.dark-mode) :deep(.v-field),
+  &:not(.dark-mode) :deep(.v-field__outline),
+  &:not(.dark-mode) :deep(.v-field__outline__start),
+  &:not(.dark-mode) :deep(.v-field__outline__notch),
+  &:not(.dark-mode) :deep(.v-field__outline__end) {
+    color: #000;
+    --v-field-border-opacity: 0.38;
+  }
+
+  &:not(.dark-mode) :deep(.v-field:hover) .v-field__outline,
+  &:not(.dark-mode) :deep(.v-field:hover) .v-field__outline__start,
+  &:not(.dark-mode) :deep(.v-field:hover) .v-field__outline__notch,
+  &:not(.dark-mode) :deep(.v-field:hover) .v-field__outline__end {
+    --v-field-border-opacity: 0.87;
+  }
 }
 
 .chips {

@@ -4,6 +4,7 @@ import { computed, defineEmits, defineProps, ref } from "vue";
 import { useRouter } from "vue-router";
 import { useAppStore } from "../stores/app";
 import { supabase } from "../lib/supabase.js";
+import { getCountryFlag } from "../lib/countryToFlag.js";
 
 const props = defineProps({
   clickedPersonName: {
@@ -90,6 +91,11 @@ const closeDeleteDialog = () => {
   }
 };
 
+const handleSignOut = async () => {
+  await appStore.signOut();
+  router.push("/auth");
+};
+
 const confirmDeleteAccount = async () => {
   deleteInProgress.value = true;
   deleteError.value = "";
@@ -141,14 +147,19 @@ const confirmDeleteAccount = async () => {
         </p>
         <p v-else class="person-contact muted">No email available</p>
         <p v-if="clickedPersonTelegram" class="person-contact">
-          <a :href="`https://t.me/${clickedPersonTelegram.replace(/^@/, '')}`" target="_blank" rel="noopener noreferrer">{{ clickedPersonTelegram }}</a>
+          <a :href="`https://t.me/${clickedPersonTelegram.replace(/^@/, '')}`" target="_blank" rel="noopener noreferrer">@{{ clickedPersonTelegram }}</a>
         </p>
-        <p v-if="clickedPersonLocation" class="person-location">{{ clickedPersonLocation }}</p>
-        <p v-if="isOwnProfile" class="delete-account-link-wrap">
-          <button type="button" class="delete-account-link" @click="openDeleteDialog">
+        <p v-if="clickedPersonLocation" class="person-location">
+          {{ clickedPersonLocation }} <span v-if="getCountryFlag(clickedPersonLocation)" class="location-flag" :aria-hidden="true">{{ getCountryFlag(clickedPersonLocation) }}</span>
+        </p>
+        <div v-if="isOwnProfile" class="account-actions">
+          <button type="button" class="account-link" @click="handleSignOut">
+            Sign out
+          </button>
+          <button type="button" class="account-link account-link--danger" @click="openDeleteDialog">
             Delete my account
           </button>
-        </p>
+        </div>
       </div>
       <div class="back-button" @click="handleZoomBack">
         <v-icon icon="mdi-arrow-left" size="20" />
@@ -386,24 +397,37 @@ const confirmDeleteAccount = async () => {
           }
         }
       }
+
+      .location-flag {
+        margin-right: 6px;
+      }
     }
 
-    .delete-account-link-wrap {
+    .account-actions {
       margin-top: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      align-items: center;
+      text-align: center;
     }
 
-    .delete-account-link {
+    .account-link {
       background: none;
       border: none;
       padding: 0;
-      font-size: inherit;
-      color: #dc3545;
+      font-size: 0.8rem;
+      color: #2563eb;
       text-decoration: none;
       cursor: pointer;
       font-family: inherit;
 
       &:hover {
         text-decoration: underline;
+      }
+
+      &--danger {
+        color: #dc3545;
       }
     }
   }
@@ -515,12 +539,15 @@ const confirmDeleteAccount = async () => {
         }
       }
 
-      .delete-account-link {
-        color: #f87171;
-        margin-top:20px;
+      .account-link {
+        color: rgba(255, 255, 255, 0.87);
 
         &:hover {
           text-decoration: underline;
+        }
+
+        &--danger {
+          color: #f87171;
         }
       }
     }

@@ -3,7 +3,10 @@
     <div
       ref="panelRootRef"
       class="profile-panel"
-      :class="{ 'dark-mode': appStore.isDarkMode, open: props.open }"
+      :class="[
+        { 'dark-mode': appStore.isDarkMode, open: props.open },
+        appStore.isDarkMode ? 'v-theme--dark' : 'v-theme--light'
+      ]"
       :style="{ height: panelHeight + 'vh' }"
     >
       <!-- Close button tucked in top right -->
@@ -871,6 +874,23 @@ const columnDefs = computed(() => {
     border-top-color: #2e2e2e;
     color: #fff;
   }
+
+  /* Ensure v-text-field outlines are visible in light mode (panel teleported outside v-app) */
+  &:not(.dark-mode) :deep(.v-field),
+  &:not(.dark-mode) :deep(.v-field__outline),
+  &:not(.dark-mode) :deep(.v-field__outline__start),
+  &:not(.dark-mode) :deep(.v-field__outline__notch),
+  &:not(.dark-mode) :deep(.v-field__outline__end) {
+    color: #000;
+    --v-field-border-opacity: 0.38;
+  }
+
+  &:not(.dark-mode) :deep(.v-field:hover) .v-field__outline,
+  &:not(.dark-mode) :deep(.v-field:hover) .v-field__outline__start,
+  &:not(.dark-mode) :deep(.v-field:hover) .v-field__outline__notch,
+  &:not(.dark-mode) :deep(.v-field:hover) .v-field__outline__end {
+    --v-field-border-opacity: 0.87;
+  }
 }
 
 .panel__close {
@@ -999,10 +1019,10 @@ const columnDefs = computed(() => {
 }
 
 .avatar-placeholder-icon {
-  color: #ccc;
+  color: #757575;
 
   .dark-mode & {
-    color: #444;
+    color: #8e8e8e;
   }
 }
 
@@ -1033,6 +1053,21 @@ const columnDefs = computed(() => {
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr 1fr;
+  }
+
+  /* Ensure text fields are visible in light mode (panel is teleported outside v-app) */
+  :deep(.v-field__input),
+  :deep(.v-label) {
+    color: #1a1a1a;
+  }
+
+  :deep(.v-field--variant-outlined) {
+    --v-field-input-opacity: 1;
+  }
+
+  .dark-mode & :deep(.v-field__input),
+  .dark-mode & :deep(.v-label) {
+    color: rgba(255, 255, 255, 0.87);
   }
 }
 
@@ -1137,6 +1172,17 @@ const columnDefs = computed(() => {
   flex-direction: column;
   gap: 6px;
   /* margin-top set via :style for alignment with parent chip (2-col: 34px, 3-col: 8px) */
+
+  /* Ensure sub-chip input is visible in light mode */
+  :deep(.v-field__input),
+  :deep(.v-label) {
+    color: #1a1a1a;
+  }
+
+  .dark-mode & :deep(.v-field__input),
+  .dark-mode & :deep(.v-label) {
+    color: rgba(255, 255, 255, 0.87);
+  }
 }
 
 .sub-chips {
