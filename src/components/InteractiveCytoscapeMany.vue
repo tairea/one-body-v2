@@ -437,34 +437,51 @@ const getPersonPhotoUrl = (personData) => {
   return personData.photoUrl ?? null;
 };
 
+// Grid layout constants — spacing must exceed 2× the outermost node radius
+// (layer3 orbit 280 + d1 60 + d2 40 = 380px) so graphs never overlap.
+const GRID_COLUMNS = 3;
+const GRID_SPACING = 600;
+
 // Initialize graph data from person
 /** @param {Record<string, {x: number, y: number}> | null} livePositionsMap - live positions from current graph (takes precedence over snapshot) */
 const initializeGraphData = (personData, personIndex, livePositionsMap = null) => {
   const nodes = [];
   const edges = [];
 
-  // Check if we have saved positions (from DB snapshot or live capture)
-  const hasSavedPositions =
-    (livePositionsMap && Object.keys(livePositionsMap).length > 0) ||
-    (personData.personsGraphSnapshot &&
-      personData.personsGraphSnapshot.nodes &&
-      personData.personsGraphSnapshot.nodes.length > 0);
-
-  // Calculate offset for this person's graph
+  // Calculate grid cell for this person's graph
   const graphOffset = {
-    x: (personIndex % 3) * 600,
-    y: Math.floor(personIndex / 3) * 600,
+    x: (personIndex % GRID_COLUMNS) * GRID_SPACING,
+    y: Math.floor(personIndex / GRID_COLUMNS) * GRID_SPACING,
   };
 
-  // Person node position (preserve from live or snapshot if available)
+  // Person node position — live positions take priority, then snapshot
+  // positions (re-centred to current grid cell), then grid default.
   const personNodeId = `person-${personData.id}`;
   let personPos = { x: graphOffset.x, y: graphOffset.y };
+
+  // Snapshot offset: saved positions are absolute from a previous grid layout.
+  // Compute the delta from the snapshot's person center so we can re-apply
+  // relative positions within the current grid cell.
+  let snapshotDelta = null;
+  if (
+    !livePositionsMap &&
+    personData.personsGraphSnapshot?.nodes?.length
+  ) {
+    const savedPerson = personData.personsGraphSnapshot.nodes.find(
+      (n) => n.id === personNodeId
+    );
+    if (savedPerson?.position) {
+      snapshotDelta = {
+        x: graphOffset.x - savedPerson.position.x,
+        y: graphOffset.y - savedPerson.position.y,
+      };
+    }
+  }
+
   if (livePositionsMap?.[personNodeId]) {
     personPos = livePositionsMap[personNodeId];
-  } else if (personData.personsGraphSnapshot?.nodes?.length) {
-    const savedPerson = personData.personsGraphSnapshot.nodes.find((n) => n.id === personNodeId);
-    if (savedPerson?.position) personPos = savedPerson.position;
   }
+  // (snapshot person pos is always re-centred to graphOffset above)
 
   // Add person node (center of this person's graph)
   const personNode = {
@@ -501,11 +518,17 @@ const initializeGraphData = (personData, personIndex, livePositionsMap = null) =
     if (livePositionsMap && livePositionsMap[chipId]) {
       position = livePositionsMap[chipId];
     } else if (
-      personData.personsGraphSnapshot?.nodes &&
-      personData.personsGraphSnapshot.nodes.length > 0
+      snapshotDelta &&
+      personData.personsGraphSnapshot?.nodes?.length
     ) {
       const savedNode = personData.personsGraphSnapshot.nodes.find((n) => n.id === chipId);
-      if (savedNode) position = savedNode.position;
+      if (savedNode?.position) {
+        // Re-centre saved position into current grid cell
+        position = {
+          x: savedNode.position.x + snapshotDelta.x,
+          y: savedNode.position.y + snapshotDelta.y,
+        };
+      }
     }
 
     if (!position) {
@@ -686,7 +709,7 @@ const setupInteractions = (cyInstance) => {
     dragState.lastPos = { ...curPos };
   });
 
-  // Emit position changed after drag ends
+  // Emit position changed after drag ends (only fires for own nodes since others can't be dragged)
   cyInstance.on("dragfreeon", "node", (evt) => {
     const node = evt.target;
     const newPosition = node.position();
@@ -1040,6 +1063,20 @@ const initializeAllGraphs = (livePositionsMap = null) => {
 
   const mainCy = cyInstances.value.get("main");
 
+  // Lock all nodes that don't belong to the current user so they can't be dragged
+  const myId = appStore.myPerson?.id;
+  if (myId) {
+    mainCy.nodes().forEach((node) => {
+      const personId = findPersonIdFromNodeId(node.id());
+      if (personId !== `person-${myId}`) {
+        node.ungrabify();
+      }
+    });
+  } else {
+    // No signed-in user — lock everything
+    mainCy.nodes().ungrabify();
+  }
+
   // Center the view and ensure proper fit with custom padding
   mainCy.fit({
     padding: {
@@ -1146,9 +1183,19 @@ const saveGraphSnapshot = async () => {
     const mainCy = cyInstances.value.get("main");
     if (!mainCy) return;
 
-    // For now, we'll save the entire graph state
-    // In the future, you might want to save individual person snapshots
-    const nodes = mainCy.nodes().map((node) => ({
+    // Only save nodes/edges belonging to the current user's graph
+    const myId = appStore.myPerson?.id;
+    if (!myId) return;
+
+    const isMyGraphNode = (node) => {
+      const personId = findPersonIdFromNodeId(node.id());
+      return personId === `person-${myId}`;
+    };
+
+    const myNodes = mainCy.nodes().filter(isMyGraphNode);
+    const myNodeIds = new Set(myNodes.map((n) => n.id()));
+
+    const nodes = myNodes.map((node) => ({
       id: node.id(),
       label: node.data("label"),
       type: node.data("type"),
@@ -1157,7 +1204,9 @@ const saveGraphSnapshot = async () => {
       position: node.position(),
     }));
 
-    const edges = mainCy.edges().map((edge) => ({
+    const edges = mainCy.edges().filter((edge) =>
+      myNodeIds.has(edge.source().id()) && myNodeIds.has(edge.target().id())
+    ).map((edge) => ({
       id: edge.id(),
       source: edge.source().id(),
       target: edge.target().id(),

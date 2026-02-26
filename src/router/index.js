@@ -38,6 +38,11 @@ router.beforeEach(async (to) => {
   const isAuthed = !!session;
 
   if (to.meta.requiresAuth && !isAuthed) {
+    // Preserve Supabase email-verification hash so Auth.vue can show a message
+    const hash = window.location.hash;
+    if (hash && (hash.includes("type=signup") || hash.includes("type=email"))) {
+      return { name: "Auth", query: { verified: "1" } };
+    }
     return { name: "Auth" };
   }
   if (to.meta.requiresGuest && isAuthed) {

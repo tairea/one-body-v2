@@ -1,6 +1,6 @@
 <script setup>
 // @ts-check
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { supabase } from "../lib/supabase.js";
 import { useAppStore } from "../stores/app.js";
@@ -19,6 +19,22 @@ const password = ref("");
 const loading = ref(false);
 const message = ref("");
 const error = ref("");
+
+// Detect redirect back from Supabase email verification link.
+// Supabase appends hash fragments (#access_token=…&type=signup) or the router
+// may have forwarded a query param (?verified=1) from the guard.
+onMounted(() => {
+  const hash = window.location.hash;
+  const params = new URLSearchParams(window.location.search);
+  if (
+    (hash && (hash.includes("type=signup") || hash.includes("type=email"))) ||
+    params.has("verified")
+  ) {
+    message.value = "Awesome, your account is verified! You can now sign in.";
+    // Clean up so it doesn't linger in the URL
+    history.replaceState(null, "", window.location.pathname);
+  }
+});
 
 async function handleSignIn() {
   loading.value = true;
