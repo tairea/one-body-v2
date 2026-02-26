@@ -1,6 +1,6 @@
 # One Body
 
-**The One Body Problem** is the challenge of coordinating a community people people as one — discovering shared values or ideas that you can set for you community (called layers).
+**The One Body Problem** is the challenge of coordinating a community people to work as one towards a shared vision or goals.
 
 One Body is an open-source tool that maps the relationships between people in a community through an interactive graph. Members create profiles describing what matters to them across three customisable layers, and the app visualises the overlaps — making it easy to find collaborators, spark conversations, and strengthen the whole.
 
