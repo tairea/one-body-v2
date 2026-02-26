@@ -1076,7 +1076,9 @@ const columnDefs = computed(() => {
   flex-direction: column;
   gap: 8px;
   min-width: 0;
-  overflow: hidden;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .col--empty {
